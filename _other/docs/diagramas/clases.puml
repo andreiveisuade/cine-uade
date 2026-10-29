@@ -186,6 +186,7 @@ package "model.funciones" {
     + Funcion(pelicula : Pelicula, sala : Sala, inicio : LocalDateTime, formato : FormatoDeFuncion, programacionId : Integer)
     + {static} yaPaso(inicio : LocalDateTime, ahora : LocalDateTime) : boolean
     + yaEmpezo(ahora : LocalDateTime) : boolean
+    + reprogramar(pelicula : Pelicula, sala : Sala, inicio : LocalDateTime, formato : FormatoDeFuncion) : void
     + exigirProgramableA(ahora : LocalDateTime) : void
     + getFin(duracionMinutos : int) : LocalDateTime
     + precioEn(sala : Sala) : Dinero

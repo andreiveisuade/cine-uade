@@ -335,6 +335,7 @@ deducirlo del nombre del rol. Clave mala y email inexistente dan el mismo `401`.
 | `PATCH /salas/{salaId}/asientos/{codigo}` | `{"estado":"FUERA_DE_SERVICIO"}` o `HABILITADO` (R9) |
 | `GET /funciones?peliculaId=&salaId=&desde=&hasta=` | Con película y sala, por `inicio`. `hasta` incluye todo el día |
 | `POST /funciones` | Película confirmada, sin superposición en la sala (R3), 3D solo en sala que lo soporta (R8), `inicio` futuro (R20), sin segundos y dentro del próximo año. Dos pedidos a la vez sobre la misma sala y hora: el segundo da `409 Ya hay una función en esa sala a esa hora` |
+| `PUT /funciones/{id}` | Mismo cuerpo, validaciones y mensajes que el alta; R3 no cuenta la función misma. `409` si tiene reservas, aun canceladas (R12). La generada por una programación se desprende y queda suelta: la grilla no vuelve a generar ese pase |
 | `DELETE /funciones/{id}` | `409` si tiene reservas, aun canceladas (R12) |
 
 ## Programaciones (CU-03b)

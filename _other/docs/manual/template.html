@@ -537,7 +537,7 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td>CU-01</td><td>Admin</td><td>Alta, baja y listado de películas</td><td>R1, R2, R7</td></tr>
             <tr><td>CU-01b</td><td>Ambos</td><td>Filtrar películas por género</td><td>—</td></tr>
             <tr><td>CU-02</td><td>Admin</td><td>Alta, baja y listado de salas con su mapa</td><td>R2</td></tr>
-            <tr><td>CU-03</td><td>Admin</td><td>Programar una función</td><td>R3, R20</td></tr>
+            <tr><td>CU-03</td><td>Admin</td><td>Programar una función y editarla mientras no tenga reservas</td><td>R3, R8, R12, R20</td></tr>
             <tr><td>CU-03b</td><td>Admin</td><td>Grilla: previsualizar, aplicar, dar de baja</td><td>R3, R8, R20</td></tr>
             <tr><td>CU-03c</td><td>Admin</td><td>Ver la programación como <a href="#agenda">agenda</a></td><td>—</td></tr>
             <tr><td>CU-04</td><td>Ambos</td><td>Consultar cartelera y funciones</td><td>—</td></tr>
@@ -576,6 +576,7 @@ body.lightbox-locked { overflow: hidden; }
       <h3>Otros flujos alternativos</h3>
       <ul>
         <li><strong>CU-03:</strong> si otro pedido programó esa sala a esa hora en el mismo instante, 409 «Ya hay una función en esa sala a esa hora».</li>
+        <li><strong>CU-03, editar:</strong> <code>PUT /api/funciones/{id}</code> pide lo mismo que el alta y rechaza con los mismos textos; la función no choca con el horario que deja. Con reservas, aunque estén canceladas, 409 «La función N tiene reservas: no se puede editar» (R12). La generada por una grilla se desprende y queda suelta.</li>
         <li><strong>CU-05:</strong> email sin verificar en Google, o de un empleado: vuelve a <code>#/ingresar?error=</code> con el motivo y no entra. Cancelar en Google: «No se pudo ingresar con Google: volvé a intentarlo». Sin credenciales de Google en el servidor, el botón sale deshabilitado (R28).</li>
         <li><strong>CU-05b:</strong> con sesión, <code>PUT /api/cuenta</code> cambia el nombre (mismas reglas que el alta; el email es el de Google y no cambia). <code>DELETE /api/cuenta</code>, con una confirmación, cierra la sesión: reservas, pagos y entradas quedan, y las RESERVADAS sin pagar vencen solas. Entrar de nuevo con Google la reabre (R23, R26).</li>
         <li><strong>CU-07b:</strong> el candy se arma como un carrito: cada tarjeta lleva «Agregar» y, con algo, el contador «− N +» en el mismo lugar (tope 20 por producto, el «+» dice por qué no suma); «Tu pedido», con la forma de la entrada, lista las entradas y el candy en renglones con cantidad, subtotal, sacar y vaciar, y en su talón el pago. El total cambia en el acto y «Pagar» espera a que el backend guarde; si rechaza, vuelve a lo guardado y lo dice. Si MP rechaza el pago, la vuelta llega al ticket con el motivo y «Terminar la compra» lleva de nuevo a Tu compra para probar otro medio; las butacas siguen guardadas hasta <code>venceEn</code>. Cambiar el candy después de abrir un pago invalida ese checkout (409 al cobrar), por eso cada «Pagar» abre uno nuevo.</li>
@@ -853,7 +854,7 @@ docker compose up -d --build
             <tr><td><code>GestorRevisionCartelera</code></td><td>Buzón de importadas: alta, confirmar, descartar</td></tr>
             <tr><td><code>GestorImportaciones</code></td><td>Corre el importador de TMDB y guarda el historial</td></tr>
             <tr><td><code>GestorSalas</code></td><td>ABM de salas y fuera de servicio (R9, R12)</td></tr>
-            <tr><td><code>GestorFunciones</code></td><td>Alta y baja de funciones sueltas (R3, R12)</td></tr>
+            <tr><td><code>GestorFunciones</code></td><td>Alta, edición y baja de funciones sueltas (R3, R12)</td></tr>
             <tr><td><code>AgendaDeSala</code></td><td>Tramos ocupados de una sala, leídos una vez; única definición de R3</td></tr>
             <tr><td><code>GestorProgramaciones</code></td><td>Grillas: previsualizar, aplicar, extender, baja; saltea el pasado (R20)</td></tr>
             <tr><td><code>PlanificadorGrilla</code>, <code>RepartoDePases</code>, <code>VentanaDelDia</code>, <code>ElencoGrilla</code>, <code>IndicadoresGrilla</code>, <code>PuntajeConfiable</code></td><td><a href="#planificador">Planificador</a>: orquesta / elige películas / mide la propuesta / puntaje bayesiano. <code>RepartoDePases</code> reparte los turnos y <code>VentanaDelDia</code> define la ventana horaria (<a href="#it-v8">V8</a>)</td></tr>
@@ -1070,7 +1071,7 @@ docker compose up -d --build
           <tbody>
             <tr><td>400</td><td><code>DatoInvalido</code></td><td>El pedido está mal y repetirlo no cambia nada: topes, formato, función empezada (R19), sin código de autorización (R11), «no es el día» en la puerta (R18), email de empleado al comprar</td></tr>
             <tr><td>404</td><td><code>RecursoNoEncontrado</code></td><td>No existe, o es de otro cliente (R21: el mismo texto)</td></tr>
-            <tr><td>409</td><td><code>ConflictoDeNegocio</code>, <code>ButacaOcupada</code></td><td>Pedido válido que choca con el estado: cobrar una reserva pagada, cancelada o vencida (R5, R17); cancelar una cobrada (R13) o vencida (R17); entrar sin pagar o por segunda vez (R18); candy para una reserva sin pagar; borrar algo en uso (R12); nombre repetido; butaca tomada (R4); <code>@Version</code></td></tr>
+            <tr><td>409</td><td><code>ConflictoDeNegocio</code>, <code>ButacaOcupada</code></td><td>Pedido válido que choca con el estado: cobrar una reserva pagada, cancelada o vencida (R5, R17); cancelar una cobrada (R13) o vencida (R17); entrar sin pagar o por segunda vez (R18); candy para una reserva sin pagar; borrar o editar algo en uso (R12); nombre repetido; butaca tomada (R4); <code>@Version</code></td></tr>
             <tr><td>429</td><td><code>DemasiadosIntentos</code></td><td>Cinco claves mal seguidas por email o IP (solo Basic)</td></tr>
           </tbody>
         </table>
@@ -1606,6 +1607,7 @@ docker compose up -d --build
       </figure>
       <ul>
         <li><strong>Materializa funciones:</strong> cada una tiene reservas y vida propia. Dar de baja la grilla no las borra (<code>programacion_id</code> admite <code>NULL</code>), solo deja de generar. El patrón no se edita: se da de baja y se crea otro.</li>
+        <li><strong>Editar una generada la desprende:</strong> <code>Funcion.reprogramar</code> deja <code>programacion_id</code> en <code>NULL</code> y la función queda suelta. La grilla no rellena el hueco: avanza por fecha procesada (<code>generadaHasta</code>), no por función existente.</li>
         <li><strong>Un solo plan:</strong> así la previsualización predice el alta. El alta rechaza con los mismos textos y en el mismo orden que una función suelta.</li>
         <li><strong>Sin cron:</strong> la cartelera extiende las grillas abiertas antes de listar; es idempotente porque cada grilla sabe hasta dónde generó.</li>
         <li><strong>R20:</strong> la grilla saltea el pase pasado; la función suelta se rechaza (el encargado eligió la hora). Criterio único: <code>Funcion.yaPaso</code>, estático para preguntar antes de que exista. Las pasadas no se tocan: historial (<a href="#reglas">R12</a>).</li>
@@ -1863,7 +1865,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
             <tr><td>R9</td><td>Una butaca fuera de servicio no se vende en ninguna función</td></tr>
             <tr><td>R10</td><td>Toda película tiene clasificación por edad</td></tr>
             <tr><td>R11</td><td>Los medios electrónicos exigen código de autorización</td></tr>
-            <tr><td>R12</td><td>No se elimina película con funciones o grilla, sala con funciones o grilla, ni función con reservas</td></tr>
+            <tr><td>R12</td><td>No se elimina película con funciones o grilla, sala con funciones o grilla, ni se elimina o edita una función con reservas</td></tr>
             <tr><td>R13</td><td>Solo se cancela una reserva sin cobrar (409)</td></tr>
             <tr><td>R14</td><td>Un combo cuesta menos que sus componentes sueltos</td></tr>
             <tr><td>R15</td><td>Las promociones no se acumulan: gana la de mayor descuento (empate: menor id). Una atada a medios es solo de la boletería: la web cobra con <code>MERCADO_PAGO</code>, que la caja no ofrece y ninguna promo nombra</td></tr>
@@ -2010,7 +2012,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
           <thead><tr><th>Requisito</th><th>Prueba automática</th></tr></thead>
           <tbody>
             <tr><td>R1, R2, R7, R10</td><td><code>GestorCarteleraTest</code>, <code>PeliculaTest</code>, <code>SalaTest</code></td></tr>
-            <tr><td>R3, R8, R12</td><td><code>FuncionTest</code>, <code>GestorFuncionesTest</code>, <code>GestorProgramacionesTest</code></td></tr>
+            <tr><td>R3, R8, R12</td><td><code>FuncionTest</code>, <code>GestorFuncionesTest</code>, <code>GestorProgramacionesTest</code>, <code>FuncionControllerTest</code>, <code>PantallaFuncionesTest</code></td></tr>
             <tr><td>R20</td><td><code>GestorFuncionesTest</code>, <code>PlanificadorGrillaTest</code></td></tr>
             <tr><td>R21</td><td><code>CuentaDelClienteTest</code></td></tr>
             <tr><td>R23, R26</td><td><code>CuentaControllerTest</code> (<code>laBajaSeReabreConGoogle</code>), <code>GestorClientesTest</code>, <code>MiCuenta.test.jsx</code></td></tr>
