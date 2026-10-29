@@ -5,12 +5,19 @@ import ar.uade.cine.swing.api.ErrorApi;
 import javax.swing.SwingWorker;
 import java.awt.Component;
 import java.awt.Cursor;
+import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 
 // Corre un pedido al backend fuera del EDT y vuelve con el resultado, para que la ventana no se congele.
 public final class Tarea {
+
+    // Varios pedidos a la vez sobre la misma pantalla (las miniaturas de los pósters) comparten la espera:
+    // el cursor vuelve cuando termina el último, no el primero. Se usan solo desde el EDT.
+    private static final Map<Component, Integer> EN_CURSO = new WeakHashMap<>();
+    private static final Map<Component, Cursor> ANTERIOR = new WeakHashMap<>();
 
     private Tarea() {
     }
@@ -22,8 +29,10 @@ public final class Tarea {
 
     public static <T> void ejecutar(Component origen, Callable<T> trabajo, Consumer<T> alTerminar,
                                     Consumer<ErrorApi> alFallar) {
-        Cursor anterior = origen.getCursor();
-        origen.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+        if (EN_CURSO.merge(origen, 1, Integer::sum) == 1) {
+            ANTERIOR.put(origen, origen.getCursor());
+            origen.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+        }
         new SwingWorker<T, Void>() {
             @Override
             protected T doInBackground() throws Exception {
@@ -32,7 +41,10 @@ public final class Tarea {
 
             @Override
             protected void done() {
-                origen.setCursor(anterior);
+                if (EN_CURSO.merge(origen, -1, Integer::sum) == 0) {
+                    EN_CURSO.remove(origen);
+                    origen.setCursor(ANTERIOR.remove(origen));
+                }
                 T resultado;
                 try {
                     resultado = get();
