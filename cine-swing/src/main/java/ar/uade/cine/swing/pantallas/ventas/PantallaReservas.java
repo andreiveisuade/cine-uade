@@ -108,7 +108,8 @@ public final class PantallaReservas extends PantallaListado<Reserva> {
     protected void alRecargar(List<Reserva> todas) {
         List<Reserva> aCobrar = todas.stream().filter(Reserva::cobrable).toList();
         long activas = todas.stream().filter(x -> !"CANCELADA".equals(x.estado())).count();
-        double pendiente = aCobrar.stream().mapToDouble(Reserva::total).sum();
+        // R30: el candy pedido en la web se cobra junto con la reserva.
+        double pendiente = aCobrar.stream().mapToDouble(r -> r.total() + r.totalCandy()).sum();
         resumen.setText(todas.size() + " reservas · " + activas + " activas · " + aCobrar.size()
                 + " pendientes de cobro" + (aCobrar.isEmpty() ? "" : " (" + precio(pendiente) + ")"));
     }

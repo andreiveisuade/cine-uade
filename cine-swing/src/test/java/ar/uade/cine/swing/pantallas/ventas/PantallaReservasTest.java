@@ -51,6 +51,20 @@ class PantallaReservasTest {
     }
 
     @Test
+    void loPendienteSumaElCandyPedidoEnLaWebQueSeCobraConLaReserva() {
+        String candy = "[{\"id\":12,\"reservaId\":5,\"estado\":\"PENDIENTE\",\"fecha\":\"2026-11-05T09:50:00\","
+                + "\"items\":[{\"nombre\":\"Pochoclos\",\"cantidad\":1,\"subtotal\":3000.0}],\"total\":3000.0,\"ahorro\":0.0}]";
+        servidor.responder("GET /api/reservas", 200, "[" + reserva(5, "RESERVADA", true, "null")
+                .replace("\"cancelable\":true}", "\"cancelable\":true,\"candy\":" + candy + "}") + "]");
+        encargado.cerrar();
+
+        encargado = Operador.en(() -> new PantallaReservas(new ApiVentas(new ClienteHttp(servidor.url())),
+                navegacion));
+
+        encargado.esperarTexto("1 pendientes de cobro ($ 10.500)");
+    }
+
+    @Test
     void soloSeCobraLaQueElBackendDiceCobrable() {
         assertFalse(encargado.habilitado("Cobrar"));
 
