@@ -24,7 +24,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import java.awt.BorderLayout;
-import java.awt.GridLayout;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
@@ -78,9 +77,6 @@ public final class PantallaPlanificador extends Pantalla {
         previsualizar.addActionListener(e -> correr(false));
         aplicar.addActionListener(e -> correr(true));
         aplicar.setEnabled(false);
-        JPanel botones = new JPanel(new GridLayout(2, 1, 0, 6));
-        botones.add(previsualizar);
-        botones.add(aplicar);
 
         Formulario formulario = new Formulario()
                 .ancho(Componentes.subtitulo("Cuándo"))
@@ -88,15 +84,15 @@ public final class PantallaPlanificador extends Pantalla {
                 .campo("Días", dias)
                 .campo("Apertura", apertura)
                 .campo("Cierre", cierre)
-                .ancho(Componentes.nota("A esa hora tiene que haber terminado la última función."))
+                .ancho(Componentes.nota("A esa hora tiene que haber terminado la última función"))
                 .ancho(Componentes.subtitulo("Qué"))
                 .campo("Películas", cuantasPeliculas)
                 .obligatorio("Precio base", precioBase)
                 .campo("Idioma", idioma)
                 .campo("Proyección", proyeccion)
-                .ancho(botones)
+                .ancho(Componentes.aLaDerecha(previsualizar, aplicar))
                 .ancho(error)
-                .ancho(Componentes.nota("Previsualizar no crea nada."))
+                .ancho(Componentes.nota("Previsualizar no crea nada"))
                 .cerrar();
 
         Campos.alCambiar(this::criteriosCambiados, desde, apertura, cierre, idioma, proyeccion, dias,

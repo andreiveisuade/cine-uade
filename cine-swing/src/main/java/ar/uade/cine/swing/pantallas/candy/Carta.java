@@ -20,6 +20,7 @@ import ar.uade.cine.swing.pantallas.acciones.BotonesDeFila;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -39,10 +40,10 @@ final class Carta extends Seccion {
     private final JButton editar = new JButton("Editar");
     private final Tabla<Producto> tabla = new Tabla<>(
             Columna.<Producto>de("Producto", Producto::nombre).ancho(200),
-            Columna.<Producto>de("Tipo", p -> etiqueta(p.tipo())),
-            Columna.<Producto>de("Trae", PantallaCandy::componentesDe).ancho(220),
+            Columna.<Producto>de("Tipo", p -> etiqueta(p.tipo())).ancho(100),
+            Columna.<Producto>de("Trae", PantallaCandy::componentesDe).ancho(180),
             Columna.<Producto>numero("Precio", p -> precio(p.precio())),
-            Columna.<Producto>de("Estado", p -> p.disponible() ? "A la venta" : "Fuera de la carta")
+            Columna.<Producto>de("Estado", p -> p.disponible() ? "A la venta" : "Fuera de la carta").ancho(120)
                     .comoEstado(p -> p.disponible() ? Colores.exito() : Colores.secundario()))
             .vacia("La carta está vacía: agregá el primer producto a la derecha");
     private final JLabel resumen = new JLabel(" ");
@@ -96,16 +97,23 @@ final class Carta extends Seccion {
 
         // Una sola alta a la vista: con las dos apiladas competían por el mismo costado.
         JTabbedPane altas = new JTabbedPane();
-        altas.addTab("Producto suelto", Componentes.conBorde(new Formulario()
+        altas.addTab("Producto suelto", arriba(Componentes.conBorde(new Formulario()
                 .ancho(Componentes.subtitulo("Nuevo producto"))
                 .obligatorio("Nombre", nombreProducto)
                 .obligatorio("Tipo", tipoProducto)
                 .obligatorio("Precio", precioProducto)
                 .campo("Imagen", imagenProducto)
                 .ancho(Componentes.aLaDerecha(agregar))
-                .ancho(errorProducto)));
-        altas.addTab("Combo", formularioCombo);
+                .ancho(errorProducto))));
+        altas.addTab("Combo", arriba(formularioCombo));
         return Componentes.lateral(altas);
+    }
+
+    // Las pestañas miden lo que la más alta: cada tarjeta arriba, y no estirada ni centrada en el hueco.
+    private static JPanel arriba(JComponent contenido) {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.add(contenido, BorderLayout.NORTH);
+        return panel;
     }
 
     private void recargar() {

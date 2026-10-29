@@ -45,9 +45,9 @@ public final class PantallaFunciones extends PantallaListado<Funcion> {
     private final FormularioFuncion formulario;
     private final Tabla<Funcion> tabla = new Tabla<>(
             Columna.<Funcion>de("Cuándo", f -> dia(f.inicio()) + "  " + hora(f.inicio())).ancho(140),
-            Columna.<Funcion>de("Película", f -> f.pelicula().titulo()).ancho(260),
+            Columna.<Funcion>de("Película", f -> f.pelicula().titulo()).ancho(200),
             Columna.<Funcion>de("Sala", f -> f.sala().nombre()),
-            Columna.<Funcion>de("Formato", f -> etiqueta(f.proyeccion()) + " · " + etiqueta(f.idioma())),
+            Columna.<Funcion>de("Formato", f -> etiqueta(f.proyeccion()) + " · " + etiqueta(f.idioma())).ancho(130),
             Columna.<Funcion>numero("Precio", f -> precio(f.precio())))
             .vacia("Ninguna función con esos filtros");
 

@@ -25,11 +25,14 @@ final class ResultadoGrilla extends JScrollPane {
         setViewportView(contenido);
         setBorder(null);
         getVerticalScrollBar().setUnitIncrement(16);
+        vaciar();
     }
 
-    /** Sin propuesta: los criterios cambiaron o el servidor la rechazó. */
+    /** Sin propuesta: los criterios cambiaron o el servidor la rechazó. Dice qué va a aparecer, no un hueco. */
     void vaciar() {
         contenido.removeAll();
+        agregar(Componentes.nota("Elegí los criterios y apretá Previsualizar: acá aparece cómo quedaría la semana, "
+                + "sin crear nada"));
         refrescar();
     }
 

@@ -46,7 +46,7 @@ public final class PantallaPeliculas extends PantallaListado<Pelicula> {
     private final Tabla<Pelicula> tabla = new Tabla<>(
             Columna.<Pelicula>de("", p -> posters.get(p.id())).ancho(44),
             Columna.<Pelicula>de("Título", p -> p.titulo() + (p.anio() > 0 ? " (" + p.anio() + ")" : "")).ancho(220),
-            Columna.<Pelicula>de("Duración", p -> duracion(p.duracionMinutos())),
+            Columna.<Pelicula>de("Duración", p -> duracion(p.duracionMinutos())).ancho(80),
             Columna.<Pelicula>de("Edad", p -> etiqueta(p.clasificacion())),
             Columna.<Pelicula>de("Géneros", p -> p.generos().stream().map(g -> etiqueta(g))
                     .collect(Collectors.joining(", "))).ancho(180),

@@ -9,6 +9,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.Timer;
+import java.awt.FlowLayout;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -107,8 +108,11 @@ public final class BarraFiltros extends JPanel {
         conteo.setText(texto);
     }
 
+    // La etiqueta y su campo van juntos: si la barra salta de línea, «Hasta» no queda lejos de su fecha.
     private void agregar(JComponent... componentes) {
-        for (JComponent componente : componentes) add(componente);
+        JPanel juntos = new JPanel(new FlowLayout(FlowLayout.LEFT, Componentes.PEGADO, 0));
+        for (JComponent componente : componentes) juntos.add(componente);
+        add(componentes.length == 1 ? componentes[0] : juntos);
     }
 
     private void cambio() {
