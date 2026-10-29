@@ -35,7 +35,6 @@ final class PanelInforme extends JPanel {
                 + "Solo se le atribuye a una función lo que se compró junto con la entrada, porque esa reserva es lo "
                 + "único que dice de qué función se trata. Por eso la suma de los informes de todas las funciones de "
                 + "un día da menos que el arqueo de ese día, y la diferencia es el mostrador."));
-        contenido.relleno();
         add(Componentes.conBorde(contenido));
     }
 }

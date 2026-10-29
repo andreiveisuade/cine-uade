@@ -83,6 +83,8 @@ final class FormularioPromocion extends Seccion {
                 .campo("Hasta hora", horaHasta)
                 .ancho(new JLabel("Medios (ninguno = cualquiera)"))
                 .ancho(panelMedios)
+                // R15: la web cobra con Mercado Pago, sin promo por medio; por eso no figura entre estos.
+                .ancho(Componentes.nota("Los medios aplican en boletería"))
                 .campo("Imagen", imagen)
                 .ancho(Componentes.aLaDerecha(cancelar, guardar))
                 .ancho(error)

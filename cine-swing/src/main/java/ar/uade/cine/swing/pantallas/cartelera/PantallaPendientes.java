@@ -7,6 +7,7 @@ import ar.uade.cine.swing.comun.AlAnchoDelVisor;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.comun.Mensajes;
+import ar.uade.cine.swing.comun.Pila;
 import ar.uade.cine.swing.comun.Poster;
 import ar.uade.cine.swing.comun.Tarea;
 import ar.uade.cine.swing.pantallas.Destino;
@@ -18,8 +19,8 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import java.awt.BorderLayout;
-import java.awt.FlowLayout;
 import java.awt.GridLayout;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
@@ -34,7 +35,7 @@ public final class PantallaPendientes extends Pantalla {
     private final ApiCartelera apiCartelera;
     private final ApiImagenes apiImagenes;
     private final Navegacion navegacion;
-    private final JPanel tarjetas = new JPanel(new GridLayout(0, 1, 0, 12));
+    private final JPanel tarjetas = new JPanel(new GridLayout(0, 1, 0, Componentes.CERCA));
 
     public PantallaPendientes(ApiCartelera apiCartelera, ApiImagenes apiImagenes, Navegacion navegacion) {
         super("Por revisar", "Lo que trajo el importador de TMDB y todavía nadie miró. Hasta que las confirmes no "
@@ -84,20 +85,20 @@ public final class PantallaPendientes extends Pantalla {
     }
 
     private JPanel tarjeta(Pelicula pelicula) {
-        // Sin ancho fijo: corta línea al de la tarjeta, que es todo lo que deja el póster.
-        JLabel datos = Componentes.texto("<b style='font-size:13pt'>"
-                + escapar(pelicula.titulo()) + "</b><br>"
-                + (pelicula.anio() > 0 ? pelicula.anio() : "—") + " · " + duracion(pelicula.duracionMinutos())
-                + " · " + etiqueta(pelicula.clasificacion()) + "<br>"
-                + escapar(vacioSi(pelicula.director(), "Sin director")) + "<br>"
-                + pelicula.generos().stream().map(g -> etiqueta(g)).collect(Collectors.joining(", "))
-                + "<p style='margin-top:6px'>" + escapar(vacioSi(pelicula.sinopsis(), "Sin sinopsis.")) + "</p>");
+        // Título, datos y la decisión en una línea; la sinopsis debajo corta al ancho que deja el póster.
+        List<String> datos = new ArrayList<>();
+        if (pelicula.anio() > 0) datos.add(String.valueOf(pelicula.anio()));
+        datos.add(duracion(pelicula.duracionMinutos()));
+        datos.add(etiqueta(pelicula.clasificacion()));
+        if (pelicula.director() != null && !pelicula.director().isBlank()) datos.add(escapar(pelicula.director()));
+        datos.add(pelicula.generos().stream().map(g -> etiqueta(g)).collect(Collectors.joining(", ")));
         JButton confirmar = Componentes.primario(new JButton("Confirmar"));
         JButton descartar = Componentes.peligro(new JButton("Descartar"));
-        JPanel botones = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
-        botones.add(descartar);
-        botones.add(confirmar);
-        JPanel contenido = new JPanel(new BorderLayout(16, 8));
+        JPanel cabeza = new JPanel(new BorderLayout(Componentes.BLOQUE, 0));
+        cabeza.add(new Pila().agregar(Componentes.subtitulo(pelicula.titulo()),
+                Componentes.nota(String.join(" · ", datos))), BorderLayout.CENTER);
+        cabeza.add(Componentes.aLaDerecha(descartar, confirmar), BorderLayout.EAST);
+        JPanel contenido = new JPanel(new BorderLayout(Componentes.APARTE, 0));
         JPanel tarjeta = Componentes.conBorde(contenido);
         // Deshabilitados mientras viaja: dos clics seguidos mandarían confirmar y descartar la misma película.
         confirmar.addActionListener(e -> decidir(tarjeta, confirmar, descartar,
@@ -111,9 +112,9 @@ public final class PantallaPendientes extends Pantalla {
                     pelicula.titulo() + " descartada");
         });
 
-        JPanel texto = new JPanel(new BorderLayout(0, 8));
-        texto.add(datos, BorderLayout.NORTH);
-        texto.add(botones, BorderLayout.SOUTH);
+        JPanel texto = new JPanel(new BorderLayout(0, Componentes.CERCA));
+        texto.add(cabeza, BorderLayout.NORTH);
+        texto.add(Componentes.texto(escapar(vacioSi(pelicula.sinopsis(), "Sin sinopsis"))), BorderLayout.CENTER);
         JPanel poster = new JPanel(new BorderLayout());
         poster.add(new Poster(apiImagenes, pelicula.posterUrl()), BorderLayout.NORTH);
         contenido.add(poster, BorderLayout.WEST);

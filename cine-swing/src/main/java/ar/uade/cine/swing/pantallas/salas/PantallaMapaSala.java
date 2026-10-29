@@ -5,12 +5,12 @@ import ar.uade.cine.swing.api.dto.salas.Asiento;
 import ar.uade.cine.swing.api.dto.salas.Sala;
 import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
-import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.comun.MapaButacas.Estilo;
 import ar.uade.cine.swing.comun.MapaButacas;
 import ar.uade.cine.swing.pantallas.Destino;
 import ar.uade.cine.swing.pantallas.Navegacion;
 import ar.uade.cine.swing.pantallas.Pantalla;
+import com.formdev.flatlaf.ui.FlatUIUtils;
 
 import javax.swing.Icon;
 import javax.swing.JButton;
@@ -20,7 +20,9 @@ import javax.swing.JScrollPane;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.FlowLayout;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.util.List;
 
 import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
@@ -34,6 +36,8 @@ public final class PantallaMapaSala extends Pantalla {
     private final JLabel resumen = new JLabel(" ");
     private final JPanel mapa = new JPanel(new BorderLayout());
 
+    private static final int LADO = 14;
+
     public PantallaMapaSala(ApiSalas apiSalas, Navegacion navegacion, int salaId) {
         super("Butacas", "Clic en una butaca para marcarla fuera de servicio o reponerla. Una butaca rota no se "
                 + "vende en ninguna función.");
@@ -42,14 +46,24 @@ public final class PantallaMapaSala extends Pantalla {
 
         JButton volver = Componentes.deTexto(new JButton("← Salas"));
         volver.addActionListener(e -> navegacion.ir(Destino.SALAS));
-        JPanel norte = new JPanel(new BorderLayout(0, 6));
+        JPanel norte = new JPanel(new BorderLayout(0, Componentes.JUNTO));
         norte.add(volver, BorderLayout.WEST);
         norte.add(resumen, BorderLayout.SOUTH);
 
-        JPanel centro = new JPanel(new BorderLayout(0, 12));
+        // El mapa arriba y la leyenda pegada debajo, en una tarjeta de su tamaño: no flotando en el medio.
+        JPanel mapaConReferencia = new JPanel(new BorderLayout(0, Componentes.APARTE));
+        mapaConReferencia.add(mapa, BorderLayout.CENTER);
+        mapaConReferencia.add(referencia(), BorderLayout.SOUTH);
+        JPanel arriba = new JPanel(new BorderLayout());
+        arriba.add(Componentes.conBorde(mapaConReferencia), BorderLayout.WEST);
+        JPanel alto = new JPanel(new BorderLayout());
+        alto.add(arriba, BorderLayout.NORTH);
+        JScrollPane scroll = new JScrollPane(alto);
+        scroll.setBorder(null);
+
+        JPanel centro = new JPanel(new BorderLayout(0, Componentes.APARTE));
         centro.add(norte, BorderLayout.NORTH);
-        centro.add(new JScrollPane(mapa), BorderLayout.CENTER);
-        centro.add(referencia(), BorderLayout.SOUTH);
+        centro.add(scroll, BorderLayout.CENTER);
         add(centro, BorderLayout.CENTER);
         recargar();
     }
@@ -81,7 +95,7 @@ public final class PantallaMapaSala extends Pantalla {
     }
 
     private static JPanel referencia() {
-        JPanel panel = new JPanel(new FlujoConSalto());
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, Componentes.APARTE, 0));
         panel.add(muestra(Colores.butaca("ESTANDAR"), "disponible"));
         panel.add(muestra(Colores.butacaFueraDeServicio(), "fuera de servicio"));
         for (String tipo : List.of("VIP", "PAREJA", "ACCESIBLE")) {
@@ -91,24 +105,28 @@ public final class PantallaMapaSala extends Pantalla {
     }
 
     private static JLabel muestra(Color color, String texto) {
-        JLabel etiqueta = new JLabel("  " + texto);
+        JLabel etiqueta = new JLabel(texto);
+        etiqueta.setIconTextGap(Componentes.JUNTO);
         etiqueta.setIcon(new Icon() {
             @Override
             public void paintIcon(Component c, Graphics g, int x, int y) {
-                g.setColor(color);
-                g.fillRect(x, y, 12, 12);
-                g.setColor(Colores.borde());
-                g.drawRect(x, y, 12, 12);
+                Graphics2D g2 = (Graphics2D) g.create();
+                FlatUIUtils.setRenderingHints(g2);
+                g2.setColor(color);
+                g2.fillRoundRect(x, y, LADO, LADO, 4, 4);
+                g2.setColor(Colores.borde());
+                g2.drawRoundRect(x, y, LADO, LADO, 4, 4);
+                g2.dispose();
             }
 
             @Override
             public int getIconWidth() {
-                return 13;
+                return LADO + 1;
             }
 
             @Override
             public int getIconHeight() {
-                return 13;
+                return LADO + 1;
             }
         });
         etiqueta.setForeground(Colores.secundario());

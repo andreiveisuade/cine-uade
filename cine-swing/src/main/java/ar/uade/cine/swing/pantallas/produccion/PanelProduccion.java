@@ -2,6 +2,7 @@ package ar.uade.cine.swing.pantallas.produccion;
 
 import ar.uade.cine.swing.api.ApiAiven;
 import ar.uade.cine.swing.api.ApiRender;
+import ar.uade.cine.swing.api.Servidor;
 import ar.uade.cine.swing.api.ErrorApi;
 import ar.uade.cine.swing.api.EstadoServicio;
 import ar.uade.cine.swing.api.EstadoServicio.Fase;
@@ -58,7 +59,7 @@ public final class PanelProduccion extends JPanel {
     private boolean cerrado;
 
     public PanelProduccion(Preferences preferencias) {
-        this(preferencias, CuentaAiven.DEL_SISTEMA, "https://cine-uade.onrender.com", ApiAiven.URL,
+        this(preferencias, CuentaAiven.DEL_SISTEMA, Servidor.PRODUCCION.url(), ApiAiven.URL,
                 Duration.ofSeconds(10));
     }
 

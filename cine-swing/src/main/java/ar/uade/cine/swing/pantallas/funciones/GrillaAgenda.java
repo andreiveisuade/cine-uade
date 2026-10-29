@@ -82,8 +82,12 @@ final class GrillaAgenda extends JPanel {
         etiqueta.setBackground(Colores.fondoPelicula(f.pelicula().id()));
         etiqueta.setForeground(Colores.textoPelicula());
         etiqueta.setFont(etiqueta.getFont().deriveFont(12f));
+        // Lo que ya terminó se apaga: de un vistazo se ve qué queda por delante en el día.
+        boolean termino = LocalDateTime.parse(f.inicio()).plusMinutes(dura).isBefore(LocalDateTime.now());
+        if (termino) etiqueta.setForeground(Colores.secundario());
         etiqueta.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createMatteBorder(0, 3, 0, 0, Colores.bordePelicula(f.pelicula().id())),
+                BorderFactory.createMatteBorder(0, 3, 0, 0,
+                        termino ? Colores.secundario() : Colores.bordePelicula(f.pelicula().id())),
                 BorderFactory.createEmptyBorder(2, 6, 2, 4)));
         etiqueta.setToolTipText("<html>" + escapar(f.pelicula().titulo()) + "<br>" + enHora(arranca) + "–"
                 + enHora(arranca + dura) + " (" + duracion(dura) + ")<br>" + escapar(f.sala().nombre()) + " · "

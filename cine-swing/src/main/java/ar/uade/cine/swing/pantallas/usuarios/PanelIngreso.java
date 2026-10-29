@@ -55,14 +55,14 @@ public final class PanelIngreso extends JPanel {
         this.alIngresar = alIngresar;
 
         JLabel titulo = new JLabel("CINE UADE");
-        titulo.setFont(titulo.getFont().deriveFont(Font.BOLD, 24f));
+        titulo.setFont(titulo.getFont().deriveFont(Font.BOLD, Componentes.LETRA_TITULO));
         mensaje.setForeground(Colores.error());
         if (aviso != null) mensaje.setText(aviso);
         Campos.llenar(servidor, Opcion.de(List.of(Entorno.values()), Entorno::etiqueta));
 
         add(new Formulario()
                 .ancho(titulo)
-                .ancho(Componentes.nota("Panel del encargado"))
+                .ancho(Componentes.nota("Panel del cine: encargado y Puerta"))
                 .campo("Servidor", servidor)
                 .campo(etiquetaUrl, url)
                 .obligatorio("Email", email)

@@ -16,7 +16,7 @@ public final class VentanaLogin extends JFrame {
 
     public VentanaLogin(Preferences preferencias, Function<Servidor, ApiSesion> conectar, String aviso,
                         BiConsumer<Servidor, Empleado> alIngresar) {
-        super("Cine UADE · Encargado");
+        super("Cine UADE · Ingreso");
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         PanelIngreso panel = new PanelIngreso(preferencias, conectar, aviso, (servidor, empleado) -> {
             dispose();

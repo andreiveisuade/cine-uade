@@ -81,22 +81,21 @@ final class PanelBordero extends Seccion {
         contenido.agregar(Componentes.nota("Las tres van separadas porque cuentan cosas distintas: "
                 + "la bruta es a precio de lista, los descuentos son lo que resignó el cine por una promoción suya, y "
                 + "la neta es lo que entró en la caja."));
-        contenido.espacio(12);
+        contenido.espacio(Componentes.CERCA);
 
         JButton emitir = new JButton("Emitir borderó");
         emitir.addActionListener(e -> emitir());
-        JPanel fila = new JPanel(new BorderLayout(8, 0));
+        JPanel fila = new JPanel(new BorderLayout(Componentes.JUNTO, 0));
         fila.add(emitir, BorderLayout.WEST);
         fila.add(Componentes.nota(emitido
-                ? "Emitido el " + fechaHora(bordero.generadoEn()) + "."
-                : "Consultado el " + fechaHora(bordero.generadoEn()) + "."), BorderLayout.CENTER);
+                ? "Emitido el " + fechaHora(bordero.generadoEn())
+                : "Consultado el " + fechaHora(bordero.generadoEn())), BorderLayout.CENTER);
         // BoxLayout reparte el sobrante entre lo que no tiene alto máximo: sin tope, el botón crecía.
         fila.setMaximumSize(new Dimension(Integer.MAX_VALUE, fila.getPreferredSize().height));
         contenido.agregar(fila);
         contenido.agregar(Componentes.nota("Emitir vuelve a pedir el borderó y lo guarda como "
                 + "texto en esta PC. El de una función es uno solo y vale el último, porque las entradas se siguen "
                 + "vendiendo hasta que la película arranca."));
-        contenido.relleno();
         contenido.revalidate();
         contenido.repaint();
     }
@@ -109,7 +108,7 @@ final class PanelBordero extends Seccion {
             Archivos.guardar(this, BorderoTxt.nombreArchivo(funcionId),
                     BorderoTxt.escribir(emision.bordero(), emision.tarifas()), "el borderó")
                     .ifPresent(destino -> avisar("Borderó emitido: " + emision.bordero().espectadores()
-                            + " espectadores, " + precio(emision.bordero().recaudacionNeta()) + ".\nGuardado en "
+                            + " espectadores, " + precio(emision.bordero().recaudacionNeta()) + " · guardado en "
                             + destino));
         });
     }
