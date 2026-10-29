@@ -344,10 +344,12 @@ package "model.ventas" {
     CREDITO
     QR
     TRANSFERENCIA
+    MERCADO_PAGO
     - etiqueta : String
     - requiereAutorizacion : boolean
     + autorizacion(codigo : String) : String
     + seCobraEnCaja() : boolean
+    + seCobraEnLaWeb() : boolean
     + exigirCheckout() : void
   }
   class BloqueoButaca <<Entity>> {

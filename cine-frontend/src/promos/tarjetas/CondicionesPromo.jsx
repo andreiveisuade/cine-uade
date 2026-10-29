@@ -15,7 +15,9 @@ export function CondicionesPromo({ promo }) {
           <Text size="sm" c="dimmed">Del {fecha(promo.vigenciaDesde)} al {fecha(promo.vigenciaHasta)}</Text>
           {promo.horaDesde && <Text size="sm" c="dimmed">Funciones de {promo.horaDesde.slice(0, 5)} a {promo.horaHasta.slice(0, 5)}</Text>}
           <Text size="sm" c="dimmed">
-            {promo.mediosPago.length === 0 ? "Cualquier medio de pago" : `Pagando con ${promo.mediosPago.map(etiqueta).join(", ").toLowerCase()}`}
+            {promo.mediosPago.length === 0
+              ? "En la web y en la boletería, con cualquier medio de pago"
+              : `Pagando con ${promo.mediosPago.map(etiqueta).join(", ").toLowerCase()} en la boletería: en la web no aplica`}
           </Text>
           {promo.tarifasExcluidas.length > 0 && (
             <Text size="sm" c="dimmed">No suma con las tarifas {promo.tarifasExcluidas.map(etiqueta).join(", ").toLowerCase()}</Text>

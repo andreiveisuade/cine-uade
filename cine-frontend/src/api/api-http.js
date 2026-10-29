@@ -84,8 +84,6 @@ export const darDeBaja = () => pedir("/cuenta", { metodo: "DELETE" });
 
 export const obtenerMisReservas = () => get("/reservas/mias");
 
-export const obtenerMediosDePago = () => get("/medios-pago");
-
 export const abrirCheckout = (codigo, medio) =>
   post(`/reservas/codigo/${encodeURIComponent(codigo)}/checkout`, { medio });
 

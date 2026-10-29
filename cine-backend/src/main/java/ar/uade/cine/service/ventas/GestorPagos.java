@@ -74,14 +74,15 @@ public class GestorPagos {
         return pago;
     }
 
-    // Lo que costaría con cada medio electrónico, sin abrir checkouts: el mismo cálculo que el checkout (R30).
+    // Lo que costaría con los medios de la web (hoy solo Mercado Pago), sin abrir checkouts: el mismo cálculo que el
+    // checkout (R30).
     @Transactional(readOnly = true)
     public List<Cotizacion> cotizar(int reservaId) {
         Reserva reserva = buscarReserva(reservaId);
         boolean soloCandy = validarLoQueSeCobra(reserva);
         Dinero candyPendiente = candyPendiente(reserva);
         return Arrays.stream(MedioPago.values())
-                .filter(medio -> !medio.seCobraEnCaja())
+                .filter(MedioPago::seCobraEnLaWeb)
                 .map(medio -> cotizacion(reserva, medio, soloCandy, candyPendiente))
                 .toList();
     }

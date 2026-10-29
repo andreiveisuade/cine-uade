@@ -48,8 +48,10 @@ describe("Promociones", () => {
 
     expect(await screen.findByText("30 % OFF")).toBeInTheDocument();
     expect(screen.getByText("Débito")).toBeInTheDocument();
+    expect(screen.getByText("Solo en la boletería")).toBeInTheDocument();
     expect(screen.getByText("14:00–18:00")).toBeInTheDocument();
     await userEvent.click(screen.getByText("Ver condiciones ▼"));
+    expect(screen.getByText("Pagando con débito en la boletería: en la web no aplica")).toBeInTheDocument();
     expect(screen.getByText("Funciones de 14:00 a 18:00")).toBeInTheDocument();
     expect(screen.getByText("Del 01/08/2026 al 31/12/2026")).toBeInTheDocument();
     expect(screen.getByText("No suma con las tarifas menor, jubilado, estudiante")).toBeInTheDocument();

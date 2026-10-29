@@ -25,8 +25,6 @@ describe("SesionDelCliente", () => {
 });
 
 describe("barra de la cuenta", () => {
-  beforeEach(() => api.obtenerMediosDePago.mockResolvedValue([]));
-
   it.each([
     ["anónimo", () => Promise.reject(new Error("401")), ["Ingresar"], ["Mis reservas", "Salir"]],
     ["con sesión", () => Promise.resolve(ANA), ["Ana", "Mis reservas", "Salir"], ["Ingresar"]],

@@ -541,14 +541,14 @@ class GestorPagosTest extends PruebaDeIntegracion {
 
         List<Cotizacion> cotizaciones = pagos.cotizar(reserva.getId());
 
-        assertEquals(List.of(MedioPago.DEBITO, MedioPago.CREDITO, MedioPago.QR, MedioPago.TRANSFERENCIA),
-                cotizaciones.stream().map(Cotizacion::medio).toList(), "solo los medios con checkout");
-        Cotizacion qr = cotizaciones.get(2);
-        assertEquals(Dinero.de(5000), qr.entradas());
-        assertEquals(Dinero.de(2500), qr.descuento().monto());
-        assertEquals("50 off", qr.descuento().promocion());
-        assertEquals(Dinero.de(8000), qr.candy());
-        assertEquals(Dinero.de(10500), qr.total());
+        assertEquals(List.of(MedioPago.MERCADO_PAGO), cotizaciones.stream().map(Cotizacion::medio).toList(),
+                "la web cobra solo con Mercado Pago");
+        Cotizacion mp = cotizaciones.getFirst();
+        assertEquals(Dinero.de(5000), mp.entradas());
+        assertEquals(Dinero.de(2500), mp.descuento().monto());
+        assertEquals("50 off", mp.descuento().promocion());
+        assertEquals(Dinero.de(8000), mp.candy());
+        assertEquals(Dinero.de(10500), mp.total());
     }
 
     // La cotización no puede prometer otro monto que el que pide el checkout.
@@ -556,9 +556,9 @@ class GestorPagosTest extends PruebaDeIntegracion {
     void elCheckoutPideLoMismoQueLaCotizacionYAlConfirmarCobraElCandy() {
         cincuentaOff();
         Reserva reserva = reservarConCandy();
-        Dinero cotizado = pagos.cotizar(reserva.getId()).get(2).total();
+        Dinero cotizado = pagos.cotizar(reserva.getId()).getFirst().total();
 
-        PasarelaPagos.Checkout checkout = pagos.iniciarCheckout(reserva.getId(), MedioPago.QR);
+        PasarelaPagos.Checkout checkout = pagos.iniciarCheckout(reserva.getId(), MedioPago.MERCADO_PAGO);
         Pago pago = pagos.confirmarCheckout(checkout.id());
 
         assertEquals(cotizado, checkout.monto());
@@ -609,12 +609,12 @@ class GestorPagosTest extends PruebaDeIntegracion {
         cincuentaOff();
         Reserva reserva = pagadaConCandyNuevo();
 
-        Cotizacion qr = pagos.cotizar(reserva.getId()).get(2);
-        PasarelaPagos.Checkout checkout = pagos.iniciarCheckout(reserva.getId(), MedioPago.QR);
+        Cotizacion mp = pagos.cotizar(reserva.getId()).getFirst();
+        PasarelaPagos.Checkout checkout = pagos.iniciarCheckout(reserva.getId(), MedioPago.MERCADO_PAGO);
 
-        assertEquals(Dinero.CERO, qr.entradas());
-        assertEquals(Dinero.CERO, qr.descuento().monto());
-        assertEquals(Dinero.de(4000), qr.total());
+        assertEquals(Dinero.CERO, mp.entradas());
+        assertEquals(Dinero.CERO, mp.descuento().monto());
+        assertEquals(Dinero.de(4000), mp.total());
         assertTrue(checkout.soloCandy());
         assertEquals(Dinero.de(4000), checkout.monto());
     }

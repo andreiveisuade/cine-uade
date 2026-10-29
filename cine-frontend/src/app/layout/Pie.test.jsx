@@ -8,7 +8,6 @@ vi.mock("@/api/api-http.js");
 
 beforeEach(() => {
   api.sesionActual.mockRejectedValue(new Error("401"));
-  api.obtenerMediosDePago.mockResolvedValue([]);
 });
 
 describe("Pie", () => {

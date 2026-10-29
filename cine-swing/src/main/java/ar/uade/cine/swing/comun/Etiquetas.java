@@ -68,7 +68,8 @@ public final class Etiquetas {
             Map.entry("DEBITO", "Débito"),
             Map.entry("CREDITO", "Crédito"),
             Map.entry("QR", "QR"),
-            Map.entry("TRANSFERENCIA", "Transferencia"));
+            Map.entry("TRANSFERENCIA", "Transferencia"),
+            Map.entry("MERCADO_PAGO", "Mercado Pago"));
 
     private Etiquetas() {
     }

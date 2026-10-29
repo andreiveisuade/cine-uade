@@ -757,7 +757,7 @@
 <text class="miembro" data-m="llevaRecibo" x="4650.22380952381" y="2499.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >+ llevaRecibo() : boolean</text>
 </g>
 <g class="clase" data-id="MedioPago" data-nombre="MedioPago">
-<rect x="4511.023809523809" y="2617" width="298" height="237" rx="6" fill="#ffffff" stroke="#4f7f86" stroke-width="1.2"/>
+<rect x="4511.023809523809" y="2617" width="298" height="269" rx="6" fill="#ffffff" stroke="#4f7f86" stroke-width="1.2"/>
 <path d="M4511.6238095238095,2667 V2623 Q4511.6238095238095,2617.6 4517.023809523809,2617.6 H4803.023809523809 Q4808.423809523809,2617.6 4808.423809523809,2623 V2667 Z" fill="#4f7f86" fill-opacity="0.32"/>
 <text x="4660.023809523809" y="2637" text-anchor="middle" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="10" fill="#5a6580" letter-spacing="0.4">«enumeration»</text>
 <text x="4660.023809523809" y="2656" text-anchor="middle" font-family="'Geist', -apple-system, 'Helvetica Neue', sans-serif" font-size="15" font-weight="600" fill="#2d3142">MedioPago</text>
@@ -767,16 +767,19 @@
 <text class="miembro" x="4520.023809523809" y="2715.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >CREDITO</text>
 <text class="miembro" x="4520.023809523809" y="2731.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >QR</text>
 <text class="miembro" x="4520.023809523809" y="2747.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >TRANSFERENCIA</text>
-<line x1="4511.023809523809" y1="2756" x2="4809.023809523809" y2="2756" stroke="#2d3142" stroke-width="0.6" stroke-opacity="0.45"/>
-<text class="miembro" x="4520.023809523809" y="2772.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >- etiqueta : String</text>
-<text class="miembro" x="4520.023809523809" y="2788.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >- requiereAutorizacion : boolean</text>
-<line x1="4511.023809523809" y1="2797" x2="4809.023809523809" y2="2797" stroke="#2d3142" stroke-width="0.6" stroke-opacity="0.45"/>
-<rect class="resalte" data-m="autorizacion" x="4513.023809523809" y="2802.5" width="294" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
-<text class="miembro" data-m="autorizacion" x="4520.023809523809" y="2813.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >+ autorizacion(codigo : String) : String</text>
-<rect class="resalte" data-m="seCobraEnCaja" x="4513.023809523809" y="2818.5" width="294" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
-<text class="miembro" data-m="seCobraEnCaja" x="4520.023809523809" y="2829.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >+ seCobraEnCaja() : boolean</text>
-<rect class="resalte" data-m="exigirCheckout" x="4513.023809523809" y="2834.5" width="294" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
-<text class="miembro" data-m="exigirCheckout" x="4520.023809523809" y="2845.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >+ exigirCheckout() : void</text>
+<text class="miembro" x="4520.023809523809" y="2763.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >MERCADO_PAGO</text>
+<line x1="4511.023809523809" y1="2772" x2="4809.023809523809" y2="2772" stroke="#2d3142" stroke-width="0.6" stroke-opacity="0.45"/>
+<text class="miembro" x="4520.023809523809" y="2788.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >- etiqueta : String</text>
+<text class="miembro" x="4520.023809523809" y="2804.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >- requiereAutorizacion : boolean</text>
+<line x1="4511.023809523809" y1="2813" x2="4809.023809523809" y2="2813" stroke="#2d3142" stroke-width="0.6" stroke-opacity="0.45"/>
+<rect class="resalte" data-m="autorizacion" x="4513.023809523809" y="2818.5" width="294" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
+<text class="miembro" data-m="autorizacion" x="4520.023809523809" y="2829.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >+ autorizacion(codigo : String) : String</text>
+<rect class="resalte" data-m="seCobraEnCaja" x="4513.023809523809" y="2834.5" width="294" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
+<text class="miembro" data-m="seCobraEnCaja" x="4520.023809523809" y="2845.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >+ seCobraEnCaja() : boolean</text>
+<rect class="resalte" data-m="seCobraEnLaWeb" x="4513.023809523809" y="2850.5" width="294" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
+<text class="miembro" data-m="seCobraEnLaWeb" x="4520.023809523809" y="2861.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >+ seCobraEnLaWeb() : boolean</text>
+<rect class="resalte" data-m="exigirCheckout" x="4513.023809523809" y="2866.5" width="294" height="15" rx="2" style="fill:var(--patron)" opacity="0"/>
+<text class="miembro" data-m="exigirCheckout" x="4520.023809523809" y="2877.5" font-family="'Geist Mono', ui-monospace, Menlo, monospace" font-size="11.5" fill="#2d3142" >+ exigirCheckout() : void</text>
 </g>
 <g class="clase" data-id="BloqueoButaca" data-nombre="BloqueoButaca">
 <rect x="3661" y="3752" width="193" height="123" rx="6" fill="#ffffff" stroke="#4f7f86" stroke-width="1.2"/>

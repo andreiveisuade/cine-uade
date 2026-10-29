@@ -56,6 +56,7 @@ const ETIQUETAS = {
   CREDITO: "Crédito",
   QR: "QR",
   TRANSFERENCIA: "Transferencia",
+  MERCADO_PAGO: "Mercado Pago",
 };
 
 export function etiqueta(valor) {

@@ -65,7 +65,7 @@ Límites conocidos: el login con Basic (empleados) y cada pedido de Swing compar
 | `GET /clasificaciones` | `[{"nombre":"ATP","edadMinima":0}, …]` |
 | `GET /tipos-sala` | `[{"nombre":"IMAX","multiplicador":1.6,"soportaTresD":true}, …]` |
 | `GET /idiomas` · `GET /proyecciones` | `["DOBLADA","SUBTITULADA"]` · `["DOS_D","TRES_D"]` |
-| `GET /medios-pago` | `[{"nombre":"EFECTIVO","requiereAutorizacion":false}, …]` |
+| `GET /medios-pago` | `[{"nombre":"EFECTIVO","requiereAutorizacion":false}, …]`: los de la boletería. `MERCADO_PAGO` no figura: es solo de la web |
 | `GET /tarifas` | `[{"nombre":"JUBILADO","requiereAcreditacion":true}, …]` |
 | `GET /tipos-producto` | `[{"nombre":"POCHOCLOS","esCombo":false}, …, {"nombre":"COMBO","esCombo":true}]` |
 | `GET /tipos-promocion` | `[{"nombre":"NXM","campos":["lleva","paga"]}, …]`: qué campos pide cada tipo |
@@ -215,9 +215,11 @@ cancela o vence, el pedido queda `ANULADA` y deja de figurar en `candy`.
    { "medio": "CREDITO", "entradas": 16000, "descuento": 0, "candy": 5500, "total": 21500 }, …]
 ```
 
-- Un renglón por medio con checkout (los de `requiereAutorizacion` en `GET /medios-pago`), en el orden del catálogo.
+- Un renglón por medio de la web: hoy solo `MERCADO_PAGO`, que en la pasarela acepta tarjeta, débito, saldo y transferencia.
+  El front paga con el `medio` del renglón, sin nombrarlo.
 - `total` = `entradas` − `descuento` + `candy`: es el `monto` del checkout que se abra con ese medio. La promo
-  corre solo sobre las entradas (R15, R16); `promocionId` y `promocion` no vienen si no hay.
+  corre solo sobre las entradas (R15, R16); `promocionId` y `promocion` no vienen si no hay. Una promo atada a medios
+  (débito, crédito…) no aplica a `MERCADO_PAGO`: es solo de la boletería.
 - No abre preferencias en Mercado Pago. Misma validación que el checkout: `409` o `400` si no se puede cobrar.
 
 ### Sumar candy a una entrada ya paga
@@ -264,13 +266,13 @@ ven en la reserva. Sin sesión `401`.
 - `Location` apunta a la reserva: `GET /reservas/{id}` trae el pago en `pago` (`null` si no se cobró).
 
 `POST /reservas/{id}/checkout` `{ "medio": "QR" }` (encargado) y `POST /reservas/codigo/{codigo}/checkout`
-(cliente con sesión, solo la suya: sin sesión `401`, ajena `404`): medios electrónicos, efectivo es `400`. Ambos
+(cliente con sesión, solo la suya: sin sesión `401`, ajena `404`; la web manda `MERCADO_PAGO`): medios electrónicos, efectivo es `400`. Ambos
 van por `GestorPagos.iniciarCheckout`, así que medio y descuento coinciden. `201` con
 `{id, reservaId, medio, monto, urlPago, codigoQr}`. `monto` = entradas − descuento + candy pendiente, como la cotización.
 
 - Si el candy (o la promo) cambia después de abrir el checkout, ese checkout ya no se cobra: `409`
   `El monto cambió después de abrir el pago: acercate a la boletería` (en el retorno, como `aviso`). Se abre otro antes de pagar.
-- Pasarela: Checkout Pro de Mercado Pago (sandbox) si hay `MP_ACCESS_TOKEN`; si no, la emulada. La preferencia lleva un ítem por las entradas (ya con el descuento) y otro por el candy, si hay. `urlPago` lleva a una preferencia que vence con la reserva (30 min) y solo acepta los tipos de pago del medio pedido: DEBITO `debit_card`, CREDITO `credit_card`, QR `account_money`, TRANSFERENCIA `bank_transfer`; `account_money` se acepta siempre porque MP no deja excluirlo.
+- Pasarela: Checkout Pro de Mercado Pago (sandbox) si hay `MP_ACCESS_TOKEN`; si no, la emulada. La preferencia lleva un ítem por las entradas (ya con el descuento) y otro por el candy, si hay. `urlPago` lleva a una preferencia que vence con la reserva (30 min) y solo acepta los tipos de pago del medio pedido: DEBITO `debit_card`, CREDITO `credit_card`, QR `account_money`, TRANSFERENCIA `bank_transfer`, MERCADO_PAGO todos; `account_money` se acepta siempre porque MP no deja excluirlo. El pago queda con el medio del checkout: uno de la web, como `MERCADO_PAGO`, aunque se haya pagado con tarjeta.
   Con la emulada, `urlPago` es relativa al sitio: `/#/pasarela-emulada/<id>?monto=<monto>&medio=<MEDIO>`, una pantalla
   de prueba con Aprobar y Rechazar que vuelve por el retorno con `?status=approved` o `?status=rejected`. `monto` es el total, candy incluido.
 - `id` = `<reservaId>-<MEDIO>-<azar>` (el `external_reference` de MP). Un id con otro formato o que MP no conoce da `404`.
@@ -403,7 +405,8 @@ una semana desde hoy, de 14 a 24, ocho títulos, subtitulada en 2D.
 - `PUT /promociones/{id}`: mismo cuerpo, validaciones y mensajes que el alta; reemplaza todo (sin `imagenUrl` le
   saca la imagen) menos `activa`. `404` si no existe; `400` `El tipo de una promoción no se puede cambiar`; `409`
   con el nombre de otra. Una promo ya usada en cobros se edita igual: cada pago congeló su descuento.
-- No se acumulan: gana el mayor descuento (R15). Las tarifas reducidas quedan afuera (R16).
+- No se acumulan: gana el mayor descuento (R15). Las tarifas reducidas quedan afuera (R16). Una atada a medios es
+  solo de la boletería: la web cobra con `MERCADO_PAGO`, que ninguna promo nombra.
 
 `GET /promociones/vigentes` (público): las activas que no terminaron, también las que empiezan más adelante,
 ordenadas por inicio. Sin `id` ni `activa`; `beneficio` lo arma cada tipo y se muestra tal cual. Que aplique a una
