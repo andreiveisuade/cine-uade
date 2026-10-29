@@ -252,7 +252,7 @@ describe("venta cruzada en el ticket", () => {
   });
 
   // El candy pedido no se entrega hasta cobrarse, y lo cobrado se retira una vez con el QR.
-  it("cada renglón del candy dice si falta pagarlo, si se retira o si ya se retiró", async () => {
+  it("el candy va en su bloque de la entrada y cada renglón dice si falta pagarlo, si se retira o si ya se retiró", async () => {
     api.obtenerReservaPorCodigo.mockResolvedValue({ ...reserva("PAGADA"), candy: [
       { id: 1, estado: "COBRADA", retiradaEn: "2026-10-21T19:55:00", items: [{ productoId: 4, nombre: "Combo clásico", cantidad: 1, subtotal: 5500 }] },
       { id: 2, estado: "COBRADA", items: [{ productoId: 1, nombre: "Pochoclos", cantidad: 2, subtotal: 7000 }] },
@@ -260,12 +260,22 @@ describe("venta cruzada en el ticket", () => {
     ] });
     abrir();
 
-    expect(await screen.findByText("1 × Combo clásico")).toBeInTheDocument();
+    expect(await screen.findByText("Candy a retirar")).toBeInTheDocument();
+    expect(screen.getByText("1 × Combo clásico")).toBeInTheDocument();
+    expect(screen.getByText("Se retira en el candy con el mismo QR de la entrada.")).toBeInTheDocument();
     expect(screen.getByText("retirado")).toBeInTheDocument();
     expect(screen.getByText("a retirar")).toBeInTheDocument();
     expect(screen.getByText("sin pagar")).toBeInTheDocument();
     expect(screen.getByText("Total · 2 entradas y candy")).toBeInTheDocument();
     expect(screen.getByText("$ 16.700")).toBeInTheDocument();
+  });
+
+  it("sin candy la entrada no muestra el bloque", async () => {
+    api.obtenerReservaPorCodigo.mockResolvedValue(reserva("PAGADA"));
+    abrir();
+    await screen.findByText("Total · 2 entradas");
+
+    expect(screen.queryByText("Candy a retirar")).not.toBeInTheDocument();
   });
 
   it("una reserva vencida no ofrece nada para sumar", async () => {

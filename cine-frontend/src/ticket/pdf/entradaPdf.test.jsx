@@ -44,11 +44,38 @@ describe("la entrada en PDF", () => {
     expect(textos).toContain("Todavía no está paga: el QR aparece cuando se pague.");
   });
 
-  it("entra en una sola página aunque sean diez butacas y el título sea largo", () => {
+  it("entra en una sola página aunque sean diez butacas, cinco combos y el título sea largo", () => {
     const diez = Array.from({ length: 10 }, (_, i) => ({ codigo: "F" + i, precio: 1000, tarifa: "GENERAL" }));
-    const { doc } = armar({ ...reserva, entradas: diez, pelicula: { titulo: "El señor de los anillos: la comunidad del anillo" } });
+    const combos = Array.from({ length: 5 }, (_, i) => ({ productoId: i, nombre: "Combo " + i, cantidad: 2, subtotal: 9000 }));
+    const { doc } = armar({ ...reserva, entradas: diez, pelicula: { titulo: "El señor de los anillos: la comunidad del anillo" },
+      candy: [{ id: 1, estado: "COBRADA", items: combos }] });
 
     expect(doc.getNumberOfPages()).toBe(1);
+  });
+
+  // R30: lo cobrado se retira con el mismo QR; lo pedido sin pagar no se entrega y no va impreso.
+  it("el candy cobrado va en un bloque a retirar, suma al total y lo sin pagar queda afuera", () => {
+    const { textos } = armar({ ...reserva, candy: [
+      { id: 1, estado: "COBRADA", retiradaEn: "2026-10-21T19:55:00", items: [{ productoId: 4, nombre: "Combo clásico", cantidad: 1, subtotal: 5500 }] },
+      { id: 2, estado: "COBRADA", items: [{ productoId: 1, nombre: "Pochoclos", cantidad: 2, subtotal: 7000 }] },
+      { id: 3, estado: "PENDIENTE", items: [{ productoId: 2, nombre: "Gaseosa", cantidad: 1, subtotal: 2200 }] },
+    ] });
+
+    for (const texto of ["CANDY A RETIRAR", "1 × Combo clásico", "RETIRADO", "2 × Pochoclos", "A RETIRAR", "$ 7.000",
+      "Se retira en el candy con el mismo QR de la entrada.", "Total · 2 entradas y candy", "$ 14.200"]) {
+      expect(textos).toContain(texto);
+    }
+    expect(textos).not.toContain("Gaseosa");
+    expect(textos).not.toContain("SIN PAGAR");
+  });
+
+  it("sin candy cobrado no hay bloque de candy", () => {
+    const { textos } = armar({ ...reserva, candy: [
+      { id: 3, estado: "PENDIENTE", items: [{ productoId: 2, nombre: "Gaseosa", cantidad: 1, subtotal: 2200 }] },
+    ] });
+
+    expect(textos).not.toContain("CANDY A RETIRAR");
+    expect(textos).toContain("Total · 2 entradas $");
   });
 
   it("el QR sale de las celdas que dibujó qrcode.react", () => {

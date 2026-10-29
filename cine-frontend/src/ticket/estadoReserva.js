@@ -34,5 +34,9 @@ export const estadoDelCandy = (compra) => {
   return compra.retiradaEn ? { texto: "retirado", color: "gray" } : { texto: "a retirar", color: "ambar" };
 };
 
+// Cada producto con el estado de su compra: la entrada en pantalla y la del PDF lo listan igual.
+export const renglonesDelCandy = (reserva) => (reserva.candy ?? []).flatMap((c) => c.items.map((i) =>
+  ({ ...i, clave: `${c.id}-${i.productoId}`, estado: estadoDelCandy(c), cobrado: c.estado !== "PENDIENTE" })));
+
 // En dos bloques de cuatro se dicta y se lee mejor en la puerta.
 export const codigoLegible = (codigo) => `${codigo.slice(0, 4)} ${codigo.slice(4)}`;

@@ -1,6 +1,6 @@
 import { etiqueta } from "@/api/etiquetas.js";
 import { diaDelMes, hora, precio } from "@/compartido/formato.js";
-import { avisoDe, CODIGO_POR_ESTADO, codigoLegible, conAcreditacion } from "@/ticket/estadoReserva.js";
+import { avisoDe, CODIGO_POR_ESTADO, codigoLegible, conAcreditacion, renglonesDelCandy } from "@/ticket/estadoReserva.js";
 
 // Los tonos de tema.js y tema.css sobre papel blanco: se imprime sin gastar tinta en fondos.
 const COLOR = {
@@ -135,11 +135,16 @@ function cuerpo(doc, reserva, poster, arriba, corte) {
     y += 8;
   }
 
+  // El PDF solo sale con la entrada paga: lo pedido sin pagar no se entrega y no va impreso.
+  const renglones = renglonesDelCandy(reserva).filter((r) => r.cobrado);
+  if (renglones.length) y = candy(doc, renglones, x, y + 4, ancho) + 2;
+
   const cantidad = reserva.entradas.length;
   letra(doc, "bold", 11, COLOR.texto);
-  doc.text(`Total · ${cantidad} entrada${cantidad === 1 ? "" : "s"}`, x, y + 8, { baseline: "bottom" });
+  doc.text(`Total · ${cantidad} entrada${cantidad === 1 ? "" : "s"}${renglones.length ? " y candy" : ""}`, x, y + 8, { baseline: "bottom" });
   letra(doc, "bold", 22, COLOR.texto);
-  doc.text(precio(reserva.total), x + ancho, y + 9, { align: "right", baseline: "bottom" });
+  doc.text(precio(reserva.total + renglones.reduce((suma, r) => suma + r.subtotal, 0)), x + ancho, y + 9,
+    { align: "right", baseline: "bottom" });
   return y + 9 + RELLENO;
 }
 
@@ -217,6 +222,32 @@ function butaca(doc, entrada, x, y, ancho) {
   doc.setLineDashPattern([0.8, 0.8], 0);
   doc.line(x, y + 8, x + ancho, y + 8);
   doc.setLineDashPattern([], 0);
+}
+
+// Recuadro ámbar dentro del cuerpo: se distingue de las butacas sin salir de la entrada.
+function candy(doc, renglones, x, y, ancho) {
+  const alto = 8 + renglones.length * 7 + 7;
+  doc.setDrawColor(COLOR.ambar);
+  doc.setLineWidth(0.4);
+  doc.setLineDashPattern([1.2, 1], 0);
+  doc.roundedRect(x, y, ancho, alto, 1.5, 1.5, "S");
+  doc.setLineDashPattern([], 0);
+  rotulo(doc, "Candy a retirar", x + 4, y + 3.5);
+  let ry = y + 8;
+  for (const r of renglones) {
+    letra(doc, "normal", 9.5, COLOR.texto);
+    const producto = `${r.cantidad} × ${r.nombre}`;
+    doc.text(producto, x + 4, ry + 3.5, { baseline: "middle" });
+    const corrido = doc.getTextWidth(producto);
+    letra(doc, "bold", 7.5, r.estado.color === "ambar" ? COLOR.ambarTexto : COLOR.tenue);
+    doc.text(r.estado.texto.toUpperCase(), x + 7 + corrido, ry + 3.5, { baseline: "middle" });
+    letra(doc, "bold", 10, COLOR.texto);
+    doc.text(precio(r.subtotal), x + ancho - 4, ry + 3.5, { align: "right", baseline: "middle" });
+    ry += 7;
+  }
+  letra(doc, "normal", 8.5, COLOR.tenue);
+  doc.text("Se retira en el candy con el mismo QR de la entrada.", x + 4, ry + 1, { baseline: "top" });
+  return y + alto;
 }
 
 function insignia(doc, texto, x, y, color) {
