@@ -11,7 +11,6 @@ import org.springframework.data.repository.query.Param;
 
 import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
 import ar.uade.cine.model.ventas.CodigoDeAcceso;
-import ar.uade.cine.model.ventas.EstadoReserva;
 import ar.uade.cine.model.ventas.Reserva;
 import ar.uade.cine.repository.Repositorio;
 import jakarta.persistence.LockModeType;
@@ -47,11 +46,9 @@ public interface ReservaRepository extends Repositorio<Reserva> {
     @Query("""
             select r from Reserva r
               join fetch r.funcion f join fetch f.pelicula join fetch r.cliente
-            where (:estado is null or r.estado = :estado)
-              and (:desde is null or (f.inicio >= :desde and f.inicio < :hasta))
+            where (:desde is null or (f.inicio >= :desde and f.inicio < :hasta))
             order by r.id desc""")
-    List<Reserva> buscar(@Param("estado") EstadoReserva estado, @Param("desde") LocalDateTime desde,
-                         @Param("hasta") LocalDateTime hasta);
+    List<Reserva> buscar(@Param("desde") LocalDateTime desde, @Param("hasta") LocalDateTime hasta);
 
     // Lo que muestra una reserva en una sola consulta, para los listados.
     @Query("""

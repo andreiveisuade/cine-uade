@@ -15,6 +15,7 @@ import ar.uade.cine.model.usuarios.Cliente;
 import ar.uade.cine.model.usuarios.Email;
 import ar.uade.cine.model.ventas.CodigoDeAcceso;
 import ar.uade.cine.model.ventas.Reserva;
+import ar.uade.cine.infrastructure.reloj.Reloj;
 import ar.uade.cine.repository.ventas.ReservaRepository;
 
 // Lecturas de reservas para listados y búsquedas; aparte de GestorReservas, con join fetch contra el N+1.
@@ -24,6 +25,7 @@ import ar.uade.cine.repository.ventas.ReservaRepository;
 public class ConsultasReservas {
 
     private final ReservaRepository reservaRepository;
+    private final Reloj reloj;
 
     public Reserva obtener(int id) {
         return reservaRepository.exigir(id, "la reserva");
@@ -54,8 +56,8 @@ public class ConsultasReservas {
                 .map(reservaRepository::findByCliente_EmailOrderByIdDesc).orElse(List.of());
     }
 
-    // La más nueva primero, ordenada en la base. Estado y día también en la base; el texto en
-    // memoria porque el código de butaca se arma de fila y número.
+    // La más nueva primero, ordenada en la base. El día también en la base; el texto en memoria porque el
+    // código de butaca se arma de fila y número, y el estado porque una vencida sigue RESERVADA hasta que se expira.
     public List<Reserva> buscar(CriteriosReserva criterios) {
         if (criterios == null || criterios.sinFiltros()) {
             return reservaRepository.findAllByOrderByIdDesc();
@@ -63,7 +65,9 @@ public class ConsultasReservas {
         LocalDateTime desde = criterios.dia() == null ? null : criterios.dia().atStartOfDay();
         LocalDateTime hasta = desde == null ? null : desde.plusDays(1);
         String texto = criterios.textoNormalizado();
-        return reservaRepository.buscar(criterios.estado(), desde, hasta).stream()
+        LocalDateTime ahora = reloj.ahora();
+        return reservaRepository.buscar(desde, hasta).stream()
+                .filter(r -> criterios.estado() == null || r.estadoA(ahora) == criterios.estado())
                 .filter(r -> coincideElTexto(r, texto))
                 .toList();
     }

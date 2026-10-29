@@ -556,6 +556,16 @@ class GestorReservasTest extends PruebaDeIntegracion {
         assertEquals(esperadas, consultas.buscar(new CriteriosReserva(estado, dia, texto)).size(), caso);
     }
 
+    // Vencida sin que nadie la expire todavía: el filtro mira el mismo estado que muestra la vista.
+    @Test
+    void elFiltroPorEstadoVeLaReservaVencidaComoVencida() {
+        cargarReservas();
+        reloj.mover(ahora.plusMinutes(Reserva.MINUTOS_PARA_PAGAR + 1));
+
+        assertEquals(0, consultas.buscar(new CriteriosReserva(EstadoReserva.RESERVADA, null, null)).size());
+        assertEquals(2, consultas.buscar(new CriteriosReserva(EstadoReserva.EXPIRADA, null, null)).size());
+    }
+
     @Test
     void buscarConNullEsSinFiltros() {
         cargarReservas();
