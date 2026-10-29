@@ -3,6 +3,7 @@ package ar.uade.cine.swing.pantallas.ventas;
 import ar.uade.cine.swing.api.ApiCandy;
 import ar.uade.cine.swing.api.ApiVentas;
 import ar.uade.cine.swing.api.dto.candy.CompraCandy;
+import ar.uade.cine.swing.api.dto.candy.CompraCandy.Situacion;
 import ar.uade.cine.swing.api.dto.candy.ItemCompra;
 import ar.uade.cine.swing.api.dto.ventas.Entrada;
 import ar.uade.cine.swing.api.dto.ventas.Reserva;
@@ -134,7 +135,8 @@ public final class PantallaPuerta extends Pantalla {
 
     // La web vende el candy con la entrada: la Puerta avisa si hay que entregarlo, como lo dice el ticket.
     private static String candyDe(Reserva reserva) {
-        List<CompraCandy> aRetirar = reserva.candy().stream().filter(c -> "A retirar".equals(c.situacion())).toList();
+        List<CompraCandy> aRetirar = reserva.candy().stream()
+                .filter(c -> c.situacion() == Situacion.A_RETIRAR).toList();
         if (aRetirar.isEmpty()) return "";
         String items = aRetirar.stream().flatMap(c -> c.items().stream())
                 .map(i -> i.cantidad() + "× " + escapar(i.nombre())).collect(Collectors.joining(", "));

@@ -1,5 +1,9 @@
 package ar.uade.cine.swing.api.dto.candy;
 
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.Accessors;
+
 import java.util.List;
 
 // Una venta de candy como la leen Candy, Caja y la Puerta; sin reservaId fue de mostrador, ahorro es el de los combos.
@@ -9,8 +13,17 @@ public record CompraCandy(int id, Integer reservaId, String estado, String fecha
                           double total, double ahorro) {
 
     /** Cómo está para quien lo entrega: sin cobrar, a retirar o ya retirado. */
-    public String situacion() {
-        if (!"COBRADA".equals(estado)) return "Sin cobrar";
-        return retiradaEn == null ? "A retirar" : "Retirado";
+    @Getter
+    @Accessors(fluent = true)
+    @RequiredArgsConstructor
+    public enum Situacion {
+        SIN_COBRAR("Sin cobrar"), A_RETIRAR("A retirar"), RETIRADO("Retirado");
+
+        private final String texto;
+    }
+
+    public Situacion situacion() {
+        if (!"COBRADA".equals(estado)) return Situacion.SIN_COBRAR;
+        return retiradaEn == null ? Situacion.A_RETIRAR : Situacion.RETIRADO;
     }
 }

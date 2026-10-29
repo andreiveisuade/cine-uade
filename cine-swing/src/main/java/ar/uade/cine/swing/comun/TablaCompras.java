@@ -29,10 +29,10 @@ public final class TablaCompras {
                 Columna.<CompraCandy>numero("Ahorro", c -> c.ahorro() > 0 ? precio(c.ahorro()) : "—"),
                 Columna.<CompraCandy>numero("Total", c -> precio(c.total())),
                 // Lo cobrado se entrega en la Puerta con el QR: quien atiende ve qué falta retirar.
-                Columna.<CompraCandy>de("Retiro", CompraCandy::situacion).comoEstado(c -> switch (c.situacion()) {
-                    case "A retirar" -> Colores.aviso();
-                    case "Retirado" -> Colores.exito();
-                    default -> Colores.secundario();
+                Columna.<CompraCandy>de("Retiro", c -> c.situacion().texto()).comoEstado(c -> switch (c.situacion()) {
+                    case A_RETIRAR -> Colores.aviso();
+                    case RETIRADO -> Colores.exito();
+                    case SIN_COBRAR -> Colores.secundario();
                 }));
     }
 }

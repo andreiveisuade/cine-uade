@@ -115,7 +115,7 @@ public final class PantallaCobro extends Pantalla {
         pila.agregar(Componentes.nota(yaNoSeCobra(reserva)));
         pila.agregar(Componentes.renglon("Entradas", precio(reserva.total()), false));
         for (CompraCandy compra : reserva.candy()) {
-            pila.agregar(Componentes.renglon("Candy · " + compra.situacion().toLowerCase(), precio(compra.total()),
+            pila.agregar(Componentes.renglon("Candy · " + compra.situacion().texto().toLowerCase(), precio(compra.total()),
                     false));
         }
         pila.agregar(Componentes.renglon("Total", precio(reserva.total() + reserva.totalCandy()), true));
