@@ -3,14 +3,14 @@ package ar.uade.cine.swing.pantallas.usuarios;
 import ar.uade.cine.swing.api.ApiClientes;
 import ar.uade.cine.swing.api.dto.usuarios.Cliente;
 import ar.uade.cine.swing.comun.Componentes;
+import ar.uade.cine.swing.comun.Formulario;
 import ar.uade.cine.swing.comun.Tarea;
 import ar.uade.cine.swing.comun.Validacion;
 import ar.uade.cine.swing.pantallas.Pantalla;
 
-import javax.swing.BoxLayout;
+import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JLabel;
-import javax.swing.JPanel;
 import javax.swing.JTextField;
 import java.awt.BorderLayout;
 
@@ -29,17 +29,13 @@ public final class PantallaClientes extends Pantalla {
         this.apiClientes = apiClientes;
 
         JButton buscar = Componentes.primario(new JButton("Buscar"));
-        JPanel fila = new JPanel(new BorderLayout(6, 0));
-        fila.add(email, BorderLayout.CENTER);
-        fila.add(buscar, BorderLayout.EAST);
-
-        JPanel formulario = new JPanel();
-        formulario.setLayout(new BoxLayout(formulario, BoxLayout.Y_AXIS));
-        formulario.add(Componentes.izquierda(new JLabel("Email *")));
-        formulario.add(Componentes.izquierda(fila));
-        formulario.add(Componentes.izquierda(error));
-        formulario.add(Componentes.izquierda(encontrado));
-        add(Componentes.lateral(formulario), BorderLayout.WEST);
+        encontrado.setBorder(BorderFactory.createEmptyBorder(Componentes.JUNTO, 0, 0, 0));
+        add(Componentes.lateral(Componentes.conBorde(new Formulario()
+                .ancho(Componentes.subtitulo("Buscar un cliente"))
+                .obligatorio("Email", email)
+                .ancho(Componentes.aLaDerecha(buscar))
+                .ancho(error)
+                .ancho(encontrado))), BorderLayout.WEST);
 
         email.addActionListener(e -> buscar());
         buscar.addActionListener(e -> buscar());

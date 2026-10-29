@@ -44,7 +44,21 @@ class PantallaPuertaTest {
         acomodador.esperarTexto("2 personas");
         assertEquals(0, servidor.veces("GET /api/tarifas"), "pedir carnet lo dice la entrada");
         assertEquals("{\"codigo\":\"abc5\"}", servidor.ultimo("POST /api/acceso").cuerpo());
-        assertEquals("", acomodador.valor("Validar entrada"), "el campo queda vacío para el siguiente");
+        assertEquals("abc5", acomodador.valor("Validar entrada").strip(),
+                "el código queda, elegido: el próximo escaneo lo reemplaza y sirve para entregar el candy");
+    }
+
+    @Test
+    void siLaEntradaTraeCandyCobradoAvisaQueHayQueEntregarlo() {
+        String candy = "[{\"id\":12,\"reservaId\":5,\"estado\":\"COBRADA\",\"fecha\":\"2026-11-05T09:50:00\","
+                + "\"items\":[{\"nombre\":\"Combo clásico\",\"cantidad\":1,\"subtotal\":5500.0}],"
+                + "\"total\":5500.0,\"ahorro\":0.0}]";
+        servidor.responder("POST /api/acceso", 200, reserva(5, "PAGADA", false, "null")
+                .replace("\"cancelable\":false}", "\"cancelable\":false,\"candy\":" + candy + "}"));
+
+        acomodador.tipear("abc5").clic("Validar");
+
+        acomodador.esperarTexto("Candy a retirar:</b> 1× Combo clásico");
     }
 
     @Test

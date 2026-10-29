@@ -13,8 +13,8 @@ import ar.uade.cine.swing.comun.Mensajes;
 import ar.uade.cine.swing.comun.Tarea;
 import ar.uade.cine.swing.comun.Validacion;
 import ar.uade.cine.swing.pantallas.Pantalla;
+import com.formdev.flatlaf.ui.FlatLineBorder;
 
-import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -22,9 +22,11 @@ import javax.swing.JTextField;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.Insets;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static ar.uade.cine.swing.comun.Formato.cantidad;
 import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
@@ -39,6 +41,7 @@ public final class PantallaPuerta extends Pantalla {
     private final JTextField codigo = new JTextField(10);
     private final JLabel resultado = new JLabel();
     private final JLabel error = Componentes.texto(" ");
+    private static final float LETRA_PUERTA = 18f;
 
     public PantallaPuerta(ApiVentas apiVentas, ApiCandy apiCandy) {
         super("Validar entrada", "Escaneá el código del ticket o tipealo. Cada entrada sirve una sola vez, "
@@ -47,23 +50,23 @@ public final class PantallaPuerta extends Pantalla {
         this.apiCandy = apiCandy;
 
         codigo.setFont(new Font(Font.MONOSPACED, Font.BOLD, 26));
+        // Letra grande a propósito: la Puerta se usa de pie y de lejos.
         JButton validar = Componentes.primario(new JButton("Validar"));
-        validar.setFont(validar.getFont().deriveFont(18f));
-        JPanel fila = new JPanel(new FlujoConSalto());
+        validar.setFont(validar.getFont().deriveFont(LETRA_PUERTA));
         JButton entregar = new JButton("Entregar candy");
-        entregar.setFont(entregar.getFont().deriveFont(18f));
+        entregar.setFont(entregar.getFont().deriveFont(LETRA_PUERTA));
+        JPanel fila = new JPanel(new FlujoConSalto());
         fila.add(codigo);
         fila.add(validar);
         fila.add(entregar);
-        resultado.setVerticalAlignment(JLabel.TOP);
 
-        JPanel arriba = new JPanel(new BorderLayout(0, 4));
-        arriba.add(fila, BorderLayout.NORTH);
-        arriba.add(error, BorderLayout.SOUTH);
-        JPanel centro = new JPanel(new BorderLayout(0, 16));
-        centro.add(arriba, BorderLayout.NORTH);
-        centro.add(resultado, BorderLayout.CENTER);
-        add(centro, BorderLayout.CENTER);
+        JPanel columna = new JPanel(new BorderLayout(0, Componentes.APARTE));
+        columna.add(fila, BorderLayout.NORTH);
+        columna.add(error, BorderLayout.CENTER);
+        columna.add(resultado, BorderLayout.SOUTH);
+        JPanel arriba = new JPanel(new BorderLayout());
+        arriba.add(columna, BorderLayout.WEST);
+        add(arriba, BorderLayout.CENTER);
 
         codigo.addActionListener(e -> validar());
         validar.addActionListener(e -> validar());
@@ -84,7 +87,8 @@ public final class PantallaPuerta extends Pantalla {
         pedir(apiCandy::retirarCandy, this::mostrarCandy, "NO SE ENTREGA");
     }
 
-    // El foco vuelve al campo tras cada pedido: en la puerta se encadenan una atrás de otra.
+    // El foco vuelve al campo tras cada pedido, con el código elegido: el próximo escaneo lo reemplaza, y
+    // mientras tanto sirve para entregar el candy de la misma entrada sin volver a tipearlo.
     private <T> void pedir(Function<String, T> pedido, Consumer<T> mostrarBien, String rechazo) {
         Validacion v = new Validacion(error);
         String tipeado = v.texto(codigo, "Código", true);
@@ -106,7 +110,7 @@ public final class PantallaPuerta extends Pantalla {
     }
 
     private void reiniciar() {
-        codigo.setText("");
+        codigo.selectAll();
         codigo.requestFocusInWindow();
     }
 
@@ -125,7 +129,17 @@ public final class PantallaPuerta extends Pantalla {
         int personas = reserva.entradas().size();
         html.append("</table><p>").append(cantidad(personas, "persona", "personas"))
                 .append(" · ingreso registrado ").append(fechaHora(reserva.ingresadaEn())).append("</p>");
+        html.append(candyDe(reserva));
         mostrar(Colores.exito(), "ADELANTE", html.toString());
+    }
+
+    // La web vende el candy con la entrada: la Puerta avisa si hay que entregarlo, como lo dice el ticket.
+    private static String candyDe(Reserva reserva) {
+        List<CompraCandy> aRetirar = reserva.candy().stream().filter(c -> "A retirar".equals(c.situacion())).toList();
+        if (aRetirar.isEmpty()) return "";
+        String items = aRetirar.stream().flatMap(c -> c.items().stream())
+                .map(i -> i.cantidad() + "× " + escapar(i.nombre())).collect(Collectors.joining(", "));
+        return "<p><b>Candy a retirar:</b> " + items + " · apretá «Entregar candy»</p>";
     }
 
     private void mostrarCandy(List<CompraCandy> compras) {
@@ -143,7 +157,7 @@ public final class PantallaPuerta extends Pantalla {
     private void mostrar(Color color, String titulo, String cuerpo) {
         resultado.setText("<html><div style='width:460px'><h1 style='color:" + Colores.hex(color) + "'>" + titulo
                 + "</h1>" + cuerpo + "</div></html>");
-        resultado.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(color, 2),
-                BorderFactory.createEmptyBorder(8, 12, 8, 12)));
+        resultado.setBorder(new FlatLineBorder(new Insets(Componentes.CERCA, Componentes.APARTE, Componentes.CERCA,
+                Componentes.APARTE), color, 2, Componentes.ARCO));
     }
 }

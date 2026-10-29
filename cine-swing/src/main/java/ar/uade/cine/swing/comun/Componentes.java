@@ -38,7 +38,8 @@ public final class Componentes {
     public static final float LETRA_NOTA = 12f;
     public static final float LETRA_ROTULO = 11f;
 
-    private static final int ARCO = 12;
+    /** El redondeo de tarjetas y recuadros. */
+    public static final int ARCO = 12;
 
     private Componentes() {
     }
