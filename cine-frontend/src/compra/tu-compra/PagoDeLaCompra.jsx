@@ -21,8 +21,8 @@ export function PagoDeLaCompra({ cotizacion, actualizando, pagando, error, alPag
         </Group>
       </Stack>
 
-      <Button fullWidth size="md" mt="md" disabled={actualizando} loading={pagando} onClick={alPagar}
-        leftSection={<LogoMercadoPago size={24} />}>
+      <Button fullWidth size="md" mt="md" h="auto" py={10} disabled={actualizando} loading={pagando} onClick={alPagar}
+        leftSection={<LogoMercadoPago size={24} />} styles={{ label: { whiteSpace: "normal", lineHeight: 1.3 } }}>
         {`Pagar ${precio(cotizacion.total)} con Mercado Pago`}
       </Button>
       <Text size="xs" c="dimmed" mt="xs">

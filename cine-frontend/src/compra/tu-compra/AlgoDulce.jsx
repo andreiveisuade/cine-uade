@@ -68,7 +68,7 @@ export function AlgoDulce({ productos, candy }) {
         </Grilla>
       )}
       {sueltos.length > 0 && (
-        <Grilla min={260} gap="var(--mantine-spacing-sm)">
+        <Grilla min={300} gap="var(--mantine-spacing-sm)">
           {sueltos.map((p) => (
             <article key={p.id} className={clases.tarjeta} data-elegido={elegido(p)} aria-label={p.nombre}>
               <div className={clases.suelto}>
@@ -76,7 +76,7 @@ export function AlgoDulce({ productos, candy }) {
                 <Stack gap={8}>
                   <Text fw={650} lh={1.25}>{p.nombre}</Text>
                   <Group justify="space-between" align="center" wrap="nowrap" gap="xs">
-                    <Text className="cine-display cine-cifras" fw={850} fz={22} lh={1}>{precio(p.precio)}</Text>
+                    <Text className="cine-display cine-cifras" fw={850} fz={22} lh={1} style={{ whiteSpace: "nowrap" }}>{precio(p.precio)}</Text>
                     {contador(p)}
                   </Group>
                 </Stack>
