@@ -6,7 +6,6 @@ import ar.uade.cine.swing.api.ApiImagenes;
 import ar.uade.cine.swing.api.dto.cartelera.Pelicula;
 import ar.uade.cine.swing.api.dto.catalogos.Clasificacion;
 import ar.uade.cine.swing.comun.Campos;
-import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.Escala;
 import ar.uade.cine.swing.comun.Opcion;
@@ -51,8 +50,7 @@ public final class PantallaPeliculas extends PantallaListado<Pelicula> {
             Columna.<Pelicula>de("Edad", p -> etiqueta(p.clasificacion())),
             Columna.<Pelicula>de("Géneros", p -> p.generos().stream().map(g -> etiqueta(g))
                     .collect(Collectors.joining(", "))).ancho(180),
-            Columna.<Pelicula>de("Estado", p -> p.enCartelera() ? "Publicada" : "Despublicada").ancho(110)
-                    .comoEstado(p -> p.enCartelera() ? Colores.exito() : Colores.secundario()))
+            Columna.estado("Estado", Pelicula::enCartelera, "Publicada", "Despublicada").ancho(110))
             .vacia("Ninguna película con esos filtros");
 
     public PantallaPeliculas(ApiCartelera apiCartelera, ApiCatalogos apiCatalogos, ApiImagenes apiImagenes) {

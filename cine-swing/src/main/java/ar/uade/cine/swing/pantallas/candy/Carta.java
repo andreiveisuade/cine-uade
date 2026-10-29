@@ -7,7 +7,6 @@ import ar.uade.cine.swing.api.dto.candy.PedidoProducto;
 import ar.uade.cine.swing.api.dto.candy.Producto;
 import ar.uade.cine.swing.comun.CampoImagen;
 import ar.uade.cine.swing.comun.Campos;
-import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.Escala;
 import ar.uade.cine.swing.comun.Formulario;
@@ -43,8 +42,7 @@ final class Carta extends Seccion {
             Columna.<Producto>de("Tipo", p -> etiqueta(p.tipo())).ancho(100),
             Columna.<Producto>de("Trae", PantallaCandy::componentesDe).ancho(180),
             Columna.<Producto>numero("Precio", p -> precio(p.precio())),
-            Columna.<Producto>de("Estado", p -> p.disponible() ? "A la venta" : "Fuera de la carta").ancho(120)
-                    .comoEstado(p -> p.disponible() ? Colores.exito() : Colores.secundario()))
+            Columna.estado("Estado", Producto::disponible, "A la venta", "Fuera de la carta").ancho(120))
             .vacia("La carta está vacía: agregá el primer producto a la derecha");
     private final JLabel resumen = new JLabel(" ");
 

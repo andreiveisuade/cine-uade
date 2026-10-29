@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import lombok.Getter;
 import lombok.experimental.Accessors;
@@ -52,6 +53,12 @@ public final class Tabla<T> {
 
         public static <T> Columna<T> numero(String titulo, Function<T, Object> valor) {
             return new Columna<>(titulo, valor, true, 0, null);
+        }
+
+        /** Dos caras: {@code si} en verde mientras la fila está {@code vigente}; si no, {@code no} en gris. */
+        public static <T> Columna<T> estado(String titulo, Predicate<T> vigente, String si, String no) {
+            return Columna.<T>de(titulo, fila -> vigente.test(fila) ? si : no)
+                    .comoEstado(fila -> vigente.test(fila) ? Colores.exito() : Colores.secundario());
         }
 
         public Columna<T> ancho(int pixeles) {

@@ -5,7 +5,6 @@ import ar.uade.cine.swing.api.ApiImagenes;
 import ar.uade.cine.swing.api.ApiPromociones;
 import ar.uade.cine.swing.api.dto.catalogos.MedioPago;
 import ar.uade.cine.swing.api.dto.promociones.Promocion;
-import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.Escala;
 import ar.uade.cine.swing.comun.SelectorDias;
@@ -46,8 +45,7 @@ public final class PantallaPromociones extends Pantalla {
             Columna.<Promocion>de("Beneficio", PantallaPromociones::beneficio),
             Columna.<Promocion>de("Vigencia", p -> fecha(p.vigenciaDesde()) + " al " + fecha(p.vigenciaHasta())).ancho(170),
             Columna.<Promocion>de("Cuándo", PantallaPromociones::condiciones).ancho(240),
-            Columna.<Promocion>de("Estado", p -> p.activa() ? "Activa" : "Dada de baja")
-                    .comoEstado(p -> p.activa() ? Colores.exito() : Colores.secundario()))
+            Columna.estado("Estado", Promocion::activa, "Activa", "Dada de baja"))
             .vacia("Todavía no hay promociones: creá la primera con el formulario de la derecha");
 
     public PantallaPromociones(ApiCatalogos apiCatalogos, ApiPromociones apiPromociones, ApiImagenes apiImagenes) {

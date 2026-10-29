@@ -8,7 +8,6 @@ import ar.uade.cine.swing.api.dto.cartelera.Pelicula;
 import ar.uade.cine.swing.api.dto.programaciones.Programacion;
 import ar.uade.cine.swing.api.dto.salas.Sala;
 import ar.uade.cine.swing.comun.Campos;
-import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.Escala;
 import ar.uade.cine.swing.comun.Opcion;
@@ -55,8 +54,7 @@ public final class PantallaProgramaciones extends PantallaListado<Programacion> 
             Columna.<Programacion>de("Cuándo", PantallaProgramaciones::cuando).ancho(260),
             Columna.<Programacion>de("Días", p -> SelectorDias.resumen(p.diasSemana())),
             Columna.<Programacion>numero("Precio", p -> precio(p.precio())),
-            Columna.<Programacion>de("Estado", p -> p.activa() ? "Activa" : "Dada de baja")
-                    .comoEstado(p -> p.activa() ? Colores.exito() : Colores.secundario()))
+            Columna.estado("Estado", Programacion::activa, "Activa", "Dada de baja"))
             .vacia("Todavía no hay grillas: armá una con el formulario de la derecha");
     private final JTextArea detalle = Componentes.areaDeLectura(6, 30);
     private final FormularioProgramacion formulario;
