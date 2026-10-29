@@ -47,4 +47,16 @@ class VentasDelDiaTest {
         assertEquals("#5", encargado.celda(0, "Reserva"));
         assertEquals("$ 6.000", encargado.celda(0, "Total"));
     }
+
+    @Test
+    void elCandyPedidoEnLaWebMuestraLaHoraDelCobroYNoLaDelPedido() {
+        servidor.responder("GET /api/candy/compras?fecha=2026-11-06", 200, "[{\"id\":12,\"reservaId\":5,"
+                + "\"estado\":\"COBRADA\",\"fecha\":\"2026-11-05T23:40:00\",\"cobradaEn\":\"2026-11-06T21:15:00\","
+                + "\"medio\":\"DEBITO\",\"items\":[],\"total\":6000.0,\"ahorro\":0.0}]");
+
+        encargado.fecha("Fecha", LocalDate.of(2026, 11, 6));
+
+        encargado.esperarTexto("1 venta");
+        assertEquals("21:15", encargado.celda(0, "Hora"));
+    }
 }

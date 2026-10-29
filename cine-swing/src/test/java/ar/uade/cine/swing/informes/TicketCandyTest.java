@@ -13,7 +13,7 @@ class TicketCandyTest {
 
     @Test
     void escribeLaVentaConSusRenglonesAlineados() {
-        CompraCandy compra = new CompraCandy(8, 25, "2026-08-13T19:40:00", "DEBITO", "AUTH-40219",
+        CompraCandy compra = new CompraCandy(8, 25, "2026-08-13T19:40:00", null, "DEBITO", "AUTH-40219",
                 List.of(new ItemCompra("Pochoclos grandes", 2, 9000), new ItemCompra("Combo pareja", 1, 12000)),
                 21000, 1500);
 
@@ -36,7 +36,7 @@ class TicketCandyTest {
 
     @Test
     void enEfectivoDeMostradorNoHayAutorizacionNiReservaNiAhorro() {
-        CompraCandy compra = new CompraCandy(9, null, "2026-08-13T19:45:00", "EFECTIVO", "",
+        CompraCandy compra = new CompraCandy(9, null, "2026-08-13T19:45:00", null, "EFECTIVO", "",
                 List.of(new ItemCompra("Agua", 1, 1500)), 1500, 0);
 
         String ticket = TicketCandy.escribir(compra);
@@ -48,7 +48,7 @@ class TicketCandyTest {
 
     @Test
     void unNombreLargoSeCortaParaNoPisarElImporte() {
-        CompraCandy compra = new CompraCandy(10, null, "2026-08-13T20:00:00", "EFECTIVO", null,
+        CompraCandy compra = new CompraCandy(10, null, "2026-08-13T20:00:00", null, "EFECTIVO", null,
                 List.of(new ItemCompra("Pochoclos extra grandes con manteca", 1, 6000)), 6000, 0);
 
         String renglon = TicketCandy.escribir(compra).lines().toList().get(4);

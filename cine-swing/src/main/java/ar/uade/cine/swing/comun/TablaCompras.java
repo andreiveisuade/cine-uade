@@ -17,7 +17,7 @@ public final class TablaCompras {
 
     public static Tabla<CompraCandy> crear() {
         return new Tabla<>(
-                Columna.<CompraCandy>de("Hora", c -> hora(c.fecha())).ancho(60),
+                Columna.<CompraCandy>de("Hora", c -> hora(c.cobradaEn())).ancho(60),
                 Columna.<CompraCandy>de("Venta", c -> "#" + c.id()).ancho(60),
                 Columna.<CompraCandy>de("Qué se llevó", c -> c.items().stream()
                         .map(i -> i.cantidad() + "× " + i.nombre()).collect(Collectors.joining(", "))).ancho(260),
