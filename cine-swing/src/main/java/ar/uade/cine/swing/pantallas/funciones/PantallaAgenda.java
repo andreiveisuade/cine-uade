@@ -8,6 +8,7 @@ import ar.uade.cine.swing.comun.Calendario;
 import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
+import ar.uade.cine.swing.comun.Escala;
 import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.comun.Opcion;
 import ar.uade.cine.swing.comun.Opciones;
@@ -84,7 +85,7 @@ public final class PantallaAgenda extends Pantalla {
         vacio.setForeground(Colores.secundario());
         JScrollPane scroll = new JScrollPane(lienzo);
         scroll.getVerticalScrollBar().setUnitIncrement(16);
-        JPanel izquierda = new JPanel(new BorderLayout(0, 8));
+        JPanel izquierda = new JPanel(new BorderLayout(0, Escala.JUNTO));
         izquierda.add(calendario, BorderLayout.NORTH);
         JLabel nota = Componentes.nota("El alto de cada bloque es su duración. Los que duran menos de "
                 + Math.round(GrillaAgenda.ALTO_MINIMO / GrillaAgenda.PX_POR_MINUTO) + " minutos se dibujan con un alto "
@@ -94,7 +95,7 @@ public final class PantallaAgenda extends Pantalla {
         izquierda.add(nota, BorderLayout.CENTER);
         izquierda.setPreferredSize(new Dimension(290, 0));
 
-        JPanel centro = new JPanel(new BorderLayout(0, 8));
+        JPanel centro = new JPanel(new BorderLayout(0, Escala.JUNTO));
         centro.add(barra, BorderLayout.NORTH);
         centro.add(scroll, BorderLayout.CENTER);
         add(izquierda, BorderLayout.WEST);

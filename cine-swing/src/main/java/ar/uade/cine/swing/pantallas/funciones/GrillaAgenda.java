@@ -2,6 +2,7 @@ package ar.uade.cine.swing.pantallas.funciones;
 
 import ar.uade.cine.swing.api.dto.funciones.Funcion;
 import ar.uade.cine.swing.comun.Colores;
+import ar.uade.cine.swing.comun.Escala;
 import ar.uade.cine.swing.pantallas.Navegacion;
 
 import javax.swing.BorderFactory;
@@ -81,14 +82,14 @@ final class GrillaAgenda extends JPanel {
         // Un color estable por película entre recargas: el id decide cuál.
         etiqueta.setBackground(Colores.fondoPelicula(f.pelicula().id()));
         etiqueta.setForeground(Colores.textoPelicula());
-        etiqueta.setFont(etiqueta.getFont().deriveFont(12f));
+        etiqueta.setFont(etiqueta.getFont().deriveFont(Escala.LETRA_NOTA));
         // Lo que ya terminó se apaga: de un vistazo se ve qué queda por delante en el día.
         boolean termino = LocalDateTime.parse(f.inicio()).plusMinutes(dura).isBefore(LocalDateTime.now());
         if (termino) etiqueta.setForeground(Colores.secundario());
         etiqueta.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createMatteBorder(0, 3, 0, 0,
                         termino ? Colores.secundario() : Colores.bordePelicula(f.pelicula().id())),
-                BorderFactory.createEmptyBorder(2, 6, 2, 4)));
+                BorderFactory.createEmptyBorder(2, 6, 2, Escala.PEGADO)));
         etiqueta.setToolTipText("<html>" + escapar(f.pelicula().titulo()) + "<br>" + enHora(arranca) + "–"
                 + enHora(arranca + dura) + " (" + duracion(dura) + ")<br>" + escapar(f.sala().nombre()) + " · "
                 + etiqueta(f.proyeccion()) + " · " + etiqueta(f.idioma()) + " — clic para ver su borderó</html>");
@@ -151,7 +152,7 @@ final class GrillaAgenda extends JPanel {
             g2.setColor(getForeground());
             g2.setFont(base.deriveFont(Font.BOLD, 13f));
             centrar(g2, columnas.get(i).titulo(), x, ancho, 18);
-            g2.setFont(base.deriveFont(12f));
+            g2.setFont(base.deriveFont(Escala.LETRA_NOTA));
             g2.setColor(gris);
             centrar(g2, columnas.get(i).detalle(), x, ancho, 36);
         }
@@ -161,7 +162,7 @@ final class GrillaAgenda extends JPanel {
 
     private void pintarHoras(Graphics2D g2) {
         Color borde = Colores.borde();
-        g2.setFont(getFont().deriveFont(11f));
+        g2.setFont(getFont().deriveFont(Escala.LETRA_ROTULO));
         for (int m = inicio; m <= fin; m += 60) {
             int y = y(m);
             g2.setColor(new Color(borde.getRed(), borde.getGreen(), borde.getBlue(), 128));

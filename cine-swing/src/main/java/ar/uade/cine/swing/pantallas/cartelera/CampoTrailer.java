@@ -1,5 +1,6 @@
 package ar.uade.cine.swing.pantallas.cartelera;
 
+import ar.uade.cine.swing.comun.Escala;
 import ar.uade.cine.swing.comun.Lecturas;
 import ar.uade.cine.swing.comun.Mensajes;
 
@@ -17,7 +18,7 @@ final class CampoTrailer extends JPanel {
     private final JTextField trailer = new JTextField();
 
     CampoTrailer() {
-        super(new BorderLayout(4, 0));
+        super(new BorderLayout(Escala.PEGADO, 0));
         JButton ver = new JButton("Ver");
         ver.addActionListener(e -> ver());
         add(trailer, BorderLayout.CENTER);

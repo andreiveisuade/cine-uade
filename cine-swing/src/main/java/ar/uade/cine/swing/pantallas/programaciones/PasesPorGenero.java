@@ -1,6 +1,7 @@
 package ar.uade.cine.swing.pantallas.programaciones;
 
 import ar.uade.cine.swing.comun.Componentes;
+import ar.uade.cine.swing.comun.Escala;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -31,7 +32,7 @@ final class PasesPorGenero extends JPanel {
     }
 
     private static JPanel barra(String genero, int pases, int funciones) {
-        JPanel fila = new JPanel(new BorderLayout(8, 0));
+        JPanel fila = new JPanel(new BorderLayout(Escala.JUNTO, 0));
         JLabel nombre = new JLabel(genero);
         nombre.setPreferredSize(new Dimension(130, nombre.getPreferredSize().height));
         JProgressBar barra = new JProgressBar(0, funciones);

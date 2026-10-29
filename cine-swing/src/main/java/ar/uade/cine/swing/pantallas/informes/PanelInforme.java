@@ -2,6 +2,7 @@ package ar.uade.cine.swing.pantallas.informes;
 
 import ar.uade.cine.swing.api.dto.informes.InformeFuncion;
 import ar.uade.cine.swing.comun.Componentes;
+import ar.uade.cine.swing.comun.Escala;
 import ar.uade.cine.swing.comun.Pila;
 
 import javax.swing.JPanel;
@@ -20,7 +21,7 @@ final class PanelInforme extends JPanel {
         contenido.agregar(Componentes.subtitulo("Informe de la función"));
         contenido.agregar(Componentes.nota("Cuánto dejó la función entre las dos cajas del cine: "
                 + "boletería y candy."));
-        contenido.espacio(8);
+        contenido.espacio(Escala.JUNTO);
         contenido.agregar(Componentes.renglon("Boletería",
                 precio(informe.boleteria().recaudacionNeta()), false));
         contenido.agregar(Componentes.nota(informe.boleteria().espectadores()
@@ -30,7 +31,7 @@ final class PanelInforme extends JPanel {
                 "compras atribuidas") + " a esta función"));
         contenido.agregar(new JSeparator());
         contenido.agregar(Componentes.renglon("Total", precio(informe.total()), true));
-        contenido.espacio(12);
+        contenido.espacio(Escala.CERCA);
         contenido.agregar(Componentes.nota("<b>El candy de mostrador no entra, a propósito.</b> "
                 + "Solo se le atribuye a una función lo que se compró junto con la entrada, porque esa reserva es lo "
                 + "único que dice de qué función se trata. Por eso la suma de los informes de todas las funciones de "

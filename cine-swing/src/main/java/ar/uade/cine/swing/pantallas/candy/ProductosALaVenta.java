@@ -4,6 +4,7 @@ import ar.uade.cine.swing.api.dto.candy.Producto;
 import ar.uade.cine.swing.comun.AlAnchoDelVisor;
 import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
+import ar.uade.cine.swing.comun.Escala;
 
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -46,7 +47,7 @@ final class ProductosALaVenta extends JScrollPane {
                 c.weightx = columna == 0 ? 1 : 0;
                 c.fill = columna == 0 ? GridBagConstraints.HORIZONTAL : GridBagConstraints.NONE;
                 c.anchor = columna >= 1 ? GridBagConstraints.EAST : GridBagConstraints.WEST;
-                c.insets = new Insets(4, 8, 4, 8);
+                c.insets = new Insets(Escala.PEGADO, Escala.JUNTO, Escala.PEGADO, Escala.JUNTO);
                 filas.add(celdas[columna], c);
             }
             fila++;

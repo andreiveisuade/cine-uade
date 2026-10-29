@@ -47,7 +47,7 @@ public final class Mensajes {
         JLabel barra = new JLabel(" ");
         barra.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createMatteBorder(1, 0, 0, 0, Colores.borde()),
-                BorderFactory.createEmptyBorder(6, 16, 6, 16)));
+                BorderFactory.createEmptyBorder(6, Escala.APARTE, 6, Escala.APARTE)));
         raiz.putClientProperty(BARRA, barra);
         return barra;
     }

@@ -5,6 +5,7 @@ import ar.uade.cine.swing.api.dto.programaciones.PropuestaGrilla;
 import ar.uade.cine.swing.comun.AlAnchoDelVisor;
 import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
+import ar.uade.cine.swing.comun.Escala;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -71,7 +72,7 @@ final class ResultadoGrilla extends JScrollPane {
     }
 
     private static JComponent aviso(String titulo, String texto) {
-        JPanel panel = new JPanel(new BorderLayout(0, 4));
+        JPanel panel = new JPanel(new BorderLayout(0, Escala.PEGADO));
         panel.add(Componentes.subtitulo(titulo), BorderLayout.NORTH);
         if (texto != null) panel.add(Componentes.nota(texto), BorderLayout.CENTER);
         return Componentes.conBorde(panel);
@@ -85,7 +86,7 @@ final class ResultadoGrilla extends JScrollPane {
 
     private void agregar(JComponent componente) {
         componente.setAlignmentX(LEFT_ALIGNMENT);
-        if (contenido.getComponentCount() > 0) contenido.add(Box.createVerticalStrut(12));
+        if (contenido.getComponentCount() > 0) contenido.add(Box.createVerticalStrut(Escala.CERCA));
         contenido.add(componente);
     }
 

@@ -53,7 +53,7 @@ final class PanelBordero extends Seccion {
         contenido.agregar(Componentes.subtitulo("Borderó"));
         contenido.agregar(Componentes.nota("Lo que se declara al INCAA. Cuenta lo <b>cobrado</b>: "
                 + "una reserva sin pagar retiene butacas pero no vendió ninguna entrada."));
-        contenido.espacio(8);
+        contenido.espacio(Escala.JUNTO);
 
         List<Map.Entry<String, Total>> tarifas = List.copyOf(bordero.porTarifa().entrySet());
         if (tarifas.isEmpty()) {
@@ -71,7 +71,7 @@ final class PanelBordero extends Seccion {
             contenido.agregar(scroll);
             contenido.agregar(new JLabel(bordero.espectadores() + " espectadores"));
         }
-        contenido.espacio(8);
+        contenido.espacio(Escala.JUNTO);
         contenido.agregar(Componentes.renglon("Recaudación bruta",
                 precio(bordero.recaudacionBruta()), false));
         contenido.agregar(Componentes.renglon("Descuentos", "− " + precio(bordero.descuentos()),

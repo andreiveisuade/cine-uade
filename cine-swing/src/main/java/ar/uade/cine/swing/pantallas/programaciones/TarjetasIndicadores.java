@@ -2,6 +2,7 @@ package ar.uade.cine.swing.pantallas.programaciones;
 
 import ar.uade.cine.swing.api.dto.programaciones.IndicadoresGrilla;
 import ar.uade.cine.swing.comun.Componentes;
+import ar.uade.cine.swing.comun.Escala;
 
 import javax.swing.JPanel;
 import java.awt.Dimension;
@@ -16,7 +17,7 @@ import static ar.uade.cine.swing.comun.Formato.porcentaje;
 final class TarjetasIndicadores extends JPanel {
 
     TarjetasIndicadores(IndicadoresGrilla i, IndicadoresGrilla anterior) {
-        super(new GridLayout(1, 3, 8, 0));
+        super(new GridLayout(1, 3, Escala.JUNTO, 0));
         add(Componentes.cifra("Ocupación de las salas", porcentaje(i.ocupacion()),
                 String.format(Locale.ROOT, "%,d de %,d minutos con función", i.minutosProgramados(),
                         i.minutosDisponibles()).replace(',', '.'),

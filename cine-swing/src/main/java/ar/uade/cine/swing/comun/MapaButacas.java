@@ -35,7 +35,7 @@ public final class MapaButacas extends JPanel {
         GridBagConstraints pantalla = new GridBagConstraints();
         pantalla.gridy = 0;
         pantalla.fill = GridBagConstraints.HORIZONTAL;
-        pantalla.insets = new Insets(0, 0, 16, 0);
+        pantalla.insets = new Insets(0, 0, Escala.APARTE, 0);
         JLabel etiqueta = new JLabel("P A N T A L L A", SwingConstants.CENTER);
         etiqueta.setOpaque(true);
         etiqueta.setBackground(Colores.pantallaDeSala());
@@ -46,7 +46,7 @@ public final class MapaButacas extends JPanel {
         for (int fila = 1; fila <= filas; fila++) {
             int numero = fila;
             List<Asiento> deLaFila = asientos.stream().filter(a -> a.fila() == numero).toList();
-            JPanel renglon = new JPanel(new FlowLayout(FlowLayout.CENTER, 4, 2));
+            JPanel renglon = new JPanel(new FlowLayout(FlowLayout.CENTER, Escala.PEGADO, 2));
             JLabel letra = new JLabel(deLaFila.isEmpty() ? "" : deLaFila.get(0).codigo().substring(0, 1));
             letra.setPreferredSize(new Dimension(16, 28));
             renglon.add(letra);

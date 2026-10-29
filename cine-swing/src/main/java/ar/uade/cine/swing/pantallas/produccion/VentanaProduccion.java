@@ -1,5 +1,7 @@
 package ar.uade.cine.swing.pantallas.produccion;
 
+import ar.uade.cine.swing.comun.Escala;
+
 import javax.swing.BorderFactory;
 import javax.swing.JDialog;
 import javax.swing.SwingUtilities;
@@ -17,7 +19,7 @@ public final class VentanaProduccion {
         JDialog ventana = new JDialog(SwingUtilities.getWindowAncestor(origen), "Estado de producción",
                 Dialog.ModalityType.MODELESS);
         PanelProduccion panel = new PanelProduccion(preferencias);
-        panel.setBorder(BorderFactory.createEmptyBorder(20, 24, 20, 24));
+        panel.setBorder(BorderFactory.createEmptyBorder(20, Escala.BLOQUE, 20, Escala.BLOQUE));
         ventana.setContentPane(panel);
         ventana.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         ventana.pack();

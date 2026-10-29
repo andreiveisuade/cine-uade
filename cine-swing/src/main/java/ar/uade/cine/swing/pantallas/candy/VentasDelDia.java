@@ -4,6 +4,7 @@ import ar.uade.cine.swing.api.ApiCandy;
 import ar.uade.cine.swing.api.dto.candy.CompraCandy;
 import ar.uade.cine.swing.comun.CampoFecha;
 import ar.uade.cine.swing.comun.Componentes;
+import ar.uade.cine.swing.comun.Escala;
 import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.comun.Formato;
 import ar.uade.cine.swing.comun.Tabla;
@@ -27,7 +28,7 @@ final class VentasDelDia extends Seccion {
     private final Tabla<CompraCandy> tabla = TablaCompras.crear();
 
     VentasDelDia(ApiCandy apiCandy) {
-        super(new BorderLayout(0, 8));
+        super(new BorderLayout(0, Escala.JUNTO));
         this.apiCandy = apiCandy;
         cantidad.setFont(cantidad.getFont().deriveFont(Font.BOLD, 18f));
         JPanel barra = new JPanel(new FlujoConSalto());

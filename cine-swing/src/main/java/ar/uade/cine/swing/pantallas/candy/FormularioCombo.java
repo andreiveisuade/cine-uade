@@ -8,6 +8,7 @@ import ar.uade.cine.swing.comun.CampoImagen;
 import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
+import ar.uade.cine.swing.comun.Escala;
 import ar.uade.cine.swing.comun.Formulario;
 import ar.uade.cine.swing.comun.Tarea;
 import ar.uade.cine.swing.comun.Validacion;
@@ -74,7 +75,7 @@ final class FormularioCombo extends Seccion {
             izquierda.gridy = fila;
             izquierda.weightx = 1;
             izquierda.anchor = GridBagConstraints.WEST;
-            izquierda.insets = new Insets(2, 0, 2, 8);
+            izquierda.insets = new Insets(2, 0, 2, Escala.JUNTO);
             filas.add(etiqueta, izquierda);
             GridBagConstraints derecha = new GridBagConstraints();
             derecha.gridy = fila++;

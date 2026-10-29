@@ -3,6 +3,7 @@ package ar.uade.cine.swing.pantallas.usuarios;
 import ar.uade.cine.swing.api.ApiSesion;
 import ar.uade.cine.swing.api.Servidor;
 import ar.uade.cine.swing.api.dto.usuarios.Empleado;
+import ar.uade.cine.swing.comun.Escala;
 
 import javax.swing.BorderFactory;
 import javax.swing.JFrame;
@@ -22,7 +23,7 @@ public final class VentanaLogin extends JFrame {
             dispose();
             alIngresar.accept(servidor, empleado);
         });
-        panel.setBorder(BorderFactory.createEmptyBorder(24, 28, 24, 28));
+        panel.setBorder(BorderFactory.createEmptyBorder(Escala.BLOQUE, 28, Escala.BLOQUE, 28));
         setContentPane(panel);
         getRootPane().setDefaultButton(panel.botonIngresar());
         pack();

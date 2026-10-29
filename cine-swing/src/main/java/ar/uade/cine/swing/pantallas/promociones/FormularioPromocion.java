@@ -10,6 +10,7 @@ import ar.uade.cine.swing.comun.CampoFecha;
 import ar.uade.cine.swing.comun.CampoImagen;
 import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Componentes;
+import ar.uade.cine.swing.comun.Escala;
 import ar.uade.cine.swing.comun.Formulario;
 import ar.uade.cine.swing.comun.Opcion;
 import ar.uade.cine.swing.comun.SelectorDias;
@@ -49,7 +50,7 @@ final class FormularioPromocion extends Seccion {
     private final JTextField horaDesde = new JTextField();
     private final JTextField horaHasta = new JTextField();
     private final Map<String, JCheckBox> medios = new LinkedHashMap<>();
-    private final JPanel panelMedios = new JPanel(new GridLayout(0, 2, 4, 0));
+    private final JPanel panelMedios = new JPanel(new GridLayout(0, 2, Escala.PEGADO, 0));
     private final CampoImagen imagen;
     private final JButton guardar = Componentes.primario(new JButton("Crear promoción"));
     private final JButton cancelar = new JButton("Cancelar");

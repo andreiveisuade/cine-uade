@@ -7,6 +7,7 @@ import ar.uade.cine.swing.api.dto.ventas.Pago;
 import ar.uade.cine.swing.api.dto.ventas.Reserva;
 import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Componentes;
+import ar.uade.cine.swing.comun.Escala;
 import ar.uade.cine.swing.comun.Opcion;
 import ar.uade.cine.swing.comun.Opciones;
 import ar.uade.cine.swing.comun.Pila;
@@ -52,7 +53,7 @@ final class PanelCobro extends Seccion implements CajaDeCobro {
         Campos.llenar(medio, Opciones.medios(medios));
 
         JLabel total = new JLabel(precio(reserva.total() + reserva.totalCandy()));
-        total.setFont(total.getFont().deriveFont(Font.BOLD, 22f));
+        total.setFont(total.getFont().deriveFont(Font.BOLD, Escala.LETRA_TITULO));
 
         Pila contenido = new Pila();
         contenido.agregar(Componentes.subtitulo("Cobro"));
