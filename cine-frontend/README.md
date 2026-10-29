@@ -33,7 +33,7 @@ src/
     hooks/        useCargar, useEnviar, useTitulo
     layout/       Contenedor, Banda, Grilla, Destacados, Seccion, Encabezado, Volver
     estado/       Cargando, EsperaOError, ErrorCaja, Vacio, Avisos
-    ui/           Poster, Chips, MontoAnimado, MediosDePago
+    ui/           Poster, Chips, MontoAnimado
     formularios/  faltantes
   cartelera/      home con portada, cartelera, película y trailer
   compra/         mapa de butacas y función; selección, bloqueo y tarifas
