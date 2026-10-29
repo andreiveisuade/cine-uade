@@ -1,6 +1,7 @@
 package ar.uade.cine.swing.comun;
 
 import ar.uade.cine.swing.api.ApiImagenes;
+import com.formdev.flatlaf.ui.FlatLineBorder;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -12,6 +13,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Image;
+import java.awt.Insets;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -30,14 +32,16 @@ public final class CampoImagen extends JPanel {
     private String url;
 
     public CampoImagen(ApiImagenes api) {
-        super(new BorderLayout(0, 4));
+        super(new BorderLayout(0, Componentes.JUNTO));
         this.api = api;
         vista.setPreferredSize(new Dimension(ANCHO, ALTO));
+        vista.setForeground(Colores.secundario());
+        vista.setBorder(new FlatLineBorder(new Insets(0, 0, 0, 0), Colores.borde(), 1, Componentes.JUNTO));
         JButton elegir = new JButton("Elegir imagen…");
         elegir.addActionListener(e -> elegir());
         quitar.addActionListener(e -> poner(null));
         add(Componentes.izquierda(vista), BorderLayout.NORTH);
-        add(Componentes.botones(elegir, quitar), BorderLayout.CENTER);
+        add(Componentes.aLaDerecha(quitar, elegir), BorderLayout.CENTER);
         add(error, BorderLayout.SOUTH);
         poner(null);
     }
