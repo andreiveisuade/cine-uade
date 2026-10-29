@@ -10,6 +10,7 @@ import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.comun.Mensajes;
+import ar.uade.cine.swing.comun.Pila;
 import ar.uade.cine.swing.comun.Tarea;
 import ar.uade.cine.swing.comun.Validacion;
 import ar.uade.cine.swing.pantallas.Pantalla;
@@ -60,12 +61,11 @@ public final class PantallaPuerta extends Pantalla {
         fila.add(validar);
         fila.add(entregar);
 
-        JPanel columna = new JPanel(new BorderLayout(0, Componentes.APARTE));
-        columna.add(fila, BorderLayout.NORTH);
-        columna.add(error, BorderLayout.CENTER);
-        columna.add(resultado, BorderLayout.SOUTH);
+        // Arriba y del alto de lo que dice: el veredicto se lee al lado del código, no al pie de la ventana.
+        Pila columna = new Pila();
+        columna.agregar(fila, error).espacio(Componentes.APARTE).agregar(resultado);
         JPanel arriba = new JPanel(new BorderLayout());
-        arriba.add(columna, BorderLayout.WEST);
+        arriba.add(columna, BorderLayout.NORTH);
         add(arriba, BorderLayout.CENTER);
 
         codigo.addActionListener(e -> validar());

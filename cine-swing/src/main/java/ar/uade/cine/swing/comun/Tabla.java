@@ -35,7 +35,7 @@ public final class Tabla<T> {
 
     public static final int ALTO_FILA = 30;
     // El encabezado de columnas más el borde del scroll: lo que hay que sumar para que no aparezca la barra.
-    private static final int ALTO_ENCABEZADO = 34;
+    private static final int ALTO_ENCABEZADO = 36;
 
     /** El alto de scroll que muestra {@code filas} filas enteras, para una tabla corta que no debe scrollear. */
     public static int altoPara(int filas) {
