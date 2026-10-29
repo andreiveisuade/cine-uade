@@ -33,7 +33,7 @@ src/
     hooks/        useCargar, useEnviar, useTitulo
     layout/       Contenedor, Banda, Grilla, Destacados, Seccion, Encabezado, Volver
     estado/       Cargando, EsperaOError, ErrorCaja, Vacio, Avisos
-    ui/           Poster, Chips, MontoAnimado
+    ui/           Poster, Chips, MontoAnimado, LogoMercadoPago
     formularios/  faltantes
   cartelera/      home con portada, cartelera, película y trailer
   compra/         mapa de butacas y función; selección, bloqueo y tarifas
@@ -73,7 +73,8 @@ pantalla lo muestra con `EsperaOError` o `ErrorCaja`.
 - `useReservar(funcionId, recargarMapa)`: crea la reserva y sigue a Tu compra, o recarga el mapa si perdió una butaca.
 - `useCandyDeLaCompra(reserva, alGuardar, alFallar)`: el pedido de candy (sumar, restar, sacar, vaciar), un PUT por vez con los
   clics seguidos juntos; si el backend rechaza, vuelve a lo guardado.
-- `usePagar(codigo)` y `useVueltaDelPago(codigo, alVolver)`: un checkout nuevo por «Pagar» y la vuelta de Mercado Pago.
+- `usePagar(codigo)` y `useVueltaDelPago(codigo, alVolver)`: un checkout nuevo por «Pagar» (con el medio que cotizó el
+  backend, Mercado Pago) y la vuelta de Mercado Pago.
 - `useEsperarPago(codigo, reserva)`: consulta cada 10 s hasta que el pago llega.
 - `useFestejarPago`: confetti una vez cuando el pago llega con la pantalla abierta.
 - `useRotacion(cantidad, frenada)`: la portada avanza sola cada 7 s y se frena con el mouse, el foco, la
