@@ -180,7 +180,7 @@ consulte el mapa de la función (R17 no tiene scheduler).
 | `GET /reservas/mias` | Cliente con sesión: sus reservas con `codigo`, de la más nueva a la más vieja |
 | `POST /reservas/codigo/{codigo}/cancelacion` | Cliente con sesión, solo la suya (R21) y sin cobrar (R13, `409`); libera las butacas (R6). Vencida: `409` `La reserva N venció: sus butacas volvieron a estar disponibles` (R17). Sin sesión `401`; ajena `404` |
 | `GET /reservas/{id}` · `POST /reservas/{id}/cancelacion` | Lo mismo por id, solo `ADMINISTRADOR`: el id se adivina |
-| `GET /reservas?estado=&dia=&q=` | Listado del encargado, de la más nueva a la más vieja. `q` busca en código, butaca, cliente, email y película |
+| `GET /reservas?estado=&dia=&q=` | Listado del encargado, de la más nueva a la más vieja. `q` busca en código, butaca, cliente, email y película; `estado` filtra por el estado efectivo (una vencida sin expirar en la base sale con `EXPIRADA`) |
 
 Toda reserva trae también `candy`: sus compras de candy sin las anuladas, cada una con la forma de
 `GET /candy/compras` (`estado` `PENDIENTE` o `COBRADA`). La `PENDIENTE` es la pedida en la web y se cobra con la
