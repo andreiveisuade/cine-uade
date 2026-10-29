@@ -37,7 +37,7 @@ src/
     formularios/  faltantes
   cartelera/      home con portada, cartelera, película y trailer
   compra/         mapa de butacas y función; selección, bloqueo y tarifas
-    tu-compra/    lo elegido, el candy para sumar y el pago, en una pantalla; también el candy de una entrada paga
+    tu-compra/    lo elegido, el candy como carrito (tarjetas con contador, Tu pedido, barra en el celular) y el pago; también el candy de una entrada paga
   ticket/         la entrada, acciones, venta cruzada
     pago/         espera y festejo del pago
     pdf/          la entrada en PDF para descargar
@@ -71,7 +71,8 @@ pantalla lo muestra con `EsperaOError` o `ErrorCaja`.
 - `useCambiarTarifa()`: cambia la tarifa de una butaca elegida.
 - `useAlternarButaca`: elegir o soltar una butaca y bloquearla en el backend.
 - `useReservar(funcionId, recargarMapa)`: crea la reserva y sigue a Tu compra, o recarga el mapa si perdió una butaca.
-- `useCandyDeLaCompra(reserva, alGuardar)`: el pedido de candy, un PUT por vez con los clics seguidos juntos.
+- `useCandyDeLaCompra(reserva, alGuardar, alFallar)`: el pedido de candy (sumar, restar, sacar, vaciar), un PUT por vez con los
+  clics seguidos juntos; si el backend rechaza, vuelve a lo guardado.
 - `usePagar(codigo)` y `useVueltaDelPago(codigo, alVolver)`: un checkout nuevo por «Pagar» y la vuelta de Mercado Pago.
 - `useEsperarPago(codigo, reserva)`: consulta cada 10 s hasta que el pago llega.
 - `useFestejarPago`: confetti una vez cuando el pago llega con la pantalla abierta.
