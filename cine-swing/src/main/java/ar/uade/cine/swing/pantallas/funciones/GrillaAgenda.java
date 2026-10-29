@@ -143,7 +143,7 @@ final class GrillaAgenda extends JPanel {
         Color borde = Colores.borde();
         Color gris = Colores.secundario();
         Font base = getFont();
-        g2.setColor(new Color(gris.getRed(), gris.getGreen(), gris.getBlue(), 30));
+        g2.setColor(Colores.translucido(gris, 30));
         g2.fillRect(0, 0, getWidth(), ALTO_CABECERA);
         for (int i = 0; i < columnas.size(); i++) {
             int x = ANCHO_HORAS + i * ancho;
@@ -165,7 +165,7 @@ final class GrillaAgenda extends JPanel {
         g2.setFont(getFont().deriveFont(Escala.LETRA_ROTULO));
         for (int m = inicio; m <= fin; m += 60) {
             int y = y(m);
-            g2.setColor(new Color(borde.getRed(), borde.getGreen(), borde.getBlue(), 128));
+            g2.setColor(Colores.translucido(borde, 128));
             g2.drawLine(ANCHO_HORAS, y, getWidth(), y);
             g2.setColor(Colores.secundario());
             String texto = enHora(m);

@@ -210,7 +210,7 @@ public final class Tabla<T> {
             int ancho = medida.stringWidth(getText()) + 2 * Escala.JUNTO;
             int x = getHorizontalAlignment() == RIGHT ? getWidth() - getInsets().right - ancho + Escala.JUNTO
                     : getInsets().left - Escala.JUNTO;
-            g2.setColor(new Color(pastilla.getRed(), pastilla.getGreen(), pastilla.getBlue(), 40));
+            g2.setColor(Colores.translucido(pastilla, 40));
             g2.fillRoundRect(x, (getHeight() - alto) / 2, ancho, alto, alto, alto);
             g2.dispose();
             setOpaque(false);

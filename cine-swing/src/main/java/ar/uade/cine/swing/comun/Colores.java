@@ -91,8 +91,7 @@ public final class Colores {
 
     // Semitransparente: el rayado de la limpieza en la agenda deja ver la grilla de horas de abajo.
     public static Color limpieza() {
-        Color base = par(0x64748B, 0x94A3B8);
-        return new Color(base.getRed(), base.getGreen(), base.getBlue(), 70);
+        return translucido(par(0x64748B, 0x94A3B8), 70);
     }
 
     public static Color pantallaDeSala() {
@@ -126,6 +125,11 @@ public final class Colores {
                 (int) Math.round(color.getRed() * proporcion + base.getRed() * (1 - proporcion)),
                 (int) Math.round(color.getGreen() * proporcion + base.getGreen() * (1 - proporcion)),
                 (int) Math.round(color.getBlue() * proporcion + base.getBlue() * (1 - proporcion)));
+    }
+
+    /** El mismo color dejando ver lo de abajo: {@code alfa} va de 0 (invisible) a 255 (opaco). */
+    public static Color translucido(Color color, int alfa) {
+        return new Color(color.getRed(), color.getGreen(), color.getBlue(), alfa);
     }
 
     /** Para meter un color del tema en el HTML de un JLabel. */
