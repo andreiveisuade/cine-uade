@@ -7,7 +7,7 @@ import lombok.RequiredArgsConstructor;
 import java.util.List;
 import java.util.Map;
 
-// Funciones sueltas: listado con filtros, detalle, alta y baja, como las expone FuncionController.
+// Funciones sueltas: listado con filtros, detalle, alta, edición y baja, como las expone FuncionController.
 @RequiredArgsConstructor
 public final class ApiFunciones {
 
@@ -23,6 +23,10 @@ public final class ApiFunciones {
 
     public Funcion programarFuncion(PedidoFuncion funcion) {
         return http.post("/funciones", funcion, Funcion.class);
+    }
+
+    public Funcion editarFuncion(int id, PedidoFuncion funcion) {
+        return http.put("/funciones/" + id, funcion, Funcion.class);
     }
 
     public void eliminarFuncion(int id) {

@@ -30,7 +30,7 @@ import static ar.uade.cine.swing.comun.Formato.dia;
 import static ar.uade.cine.swing.comun.Formato.hora;
 import static ar.uade.cine.swing.comun.Formato.precio;
 
-// Listado con filtros de las funciones, con el alta al costado; doble clic abre su borderó e informe.
+// Listado con filtros de las funciones, con el alta y la edición al costado; doble clic abre su borderó e informe.
 // Sin anticipar R3 ni R8: el backend las valida y su mensaje llega tal cual.
 public final class PantallaFunciones extends PantallaListado<Funcion> {
 
@@ -102,7 +102,13 @@ public final class PantallaFunciones extends PantallaListado<Funcion> {
     private JPanel accionesDeFila() {
         JButton informes = new JButton("Borderó e informe");
         informes.addActionListener(e -> tabla.seleccionada().ifPresent(this::abrirInformes));
-        JPanel acciones = Componentes.aLaDerecha(informes);
+        // La vista no trae si tiene reservas: el 409 del backend (R12) se muestra tal cual.
+        JButton editar = new JButton("Editar");
+        editar.addActionListener(e -> tabla.seleccionada().ifPresent(formulario::editar));
+        tabla.tabla().getSelectionModel().addListSelectionListener(
+                e -> editar.setEnabled(tabla.seleccionada().isPresent()));
+        editar.setEnabled(false);
+        JPanel acciones = Componentes.aLaDerecha(editar, informes);
         // Command: ver AccionDeFila.
         new BotonesDeFila<>(this, tabla, this::recargar, new BorrarFuncion(apiFunciones)).agregarA(acciones);
         return acciones;

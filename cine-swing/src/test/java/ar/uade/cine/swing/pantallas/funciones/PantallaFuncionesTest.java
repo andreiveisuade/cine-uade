@@ -20,8 +20,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-// Programar una función suelta y filtrar el listado: qué manda, qué muestra y qué rechaza antes de pedir.
+// Programar, editar una función suelta y filtrar el listado: qué manda, qué muestra y qué rechaza antes de pedir.
 class PantallaFuncionesTest {
 
     static final String SALA = "{\"id\":1,\"nombre\":\"Sala 1\",\"tipo\":\"DOS_D\",\"butacasPorFila\":[10],"
@@ -133,6 +135,47 @@ class PantallaFuncionesTest {
         encargado.tipear("Precio base", "5000").clic("Programar");
 
         encargado.esperarTexto("La sala está ocupada de 20:30 a 23:01 por Matrix");
+    }
+
+    @Test
+    void editarPrecargaLaFuncionYGuardaConPutSobreLaMisma() {
+        servidor.responder("PUT /api/funciones/2", 200, funcion(2, "2026-11-05T19:30:00"));
+        assertFalse(encargado.habilitado("Editar"), "sin función elegida no hay qué editar");
+
+        encargado.elegirFila(1).clic("Editar");
+
+        assertTrue(encargado.textos().contains("Editar función"));
+        assertEquals("2026-11-05", encargado.valor("Día"));
+        assertEquals("Matrix (136′)", encargado.valor("Película *"));
+        assertEquals("5000", encargado.valor("Precio base"));
+        encargado.hora("Hora", LocalTime.of(19, 30)).clic("Guardar");
+
+        encargado.esperarTexto("Cambios guardados");
+        assertEquals("{\"peliculaId\":7,\"salaId\":1,\"inicio\":\"2026-11-05T19:30:00\",\"idioma\":\"SUBTITULADA\","
+                + "\"proyeccion\":\"DOS_D\",\"precio\":5000.0}", servidor.ultimo("PUT /api/funciones/2").cuerpo());
+        assertEquals(0, servidor.veces("POST /api/funciones"));
+        assertTrue(encargado.textos().contains("Programar función"), "después de guardar vuelve al alta");
+    }
+
+    @Test
+    void cancelarLaEdicionVuelveAProgramar() {
+        encargado.elegirFila(0).clic("Editar");
+        assertFalse(encargado.hayBoton("Programar"));
+
+        encargado.clic("Cancelar");
+
+        assertTrue(encargado.hayBoton("Programar"));
+        assertTrue(encargado.textos().contains("Programar función"));
+        assertEquals("", encargado.valor("Precio base"));
+    }
+
+    @Test
+    void elRechazoDeLaEdicionSeMuestraTalCual() {
+        servidor.responder("PUT /api/funciones/1", 409, "{\"error\":\"Ya hay una función en esa sala a esa hora\"}");
+        encargado.elegirFila(0).clic("Editar").clic("Guardar");
+
+        encargado.esperarTexto("Ya hay una función en esa sala a esa hora");
+        assertTrue(encargado.textos().contains("Editar función"), "el formulario no se pierde");
     }
 
     @Test
