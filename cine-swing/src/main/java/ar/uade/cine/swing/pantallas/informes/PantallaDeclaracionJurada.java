@@ -101,9 +101,7 @@ public final class PantallaDeclaracionJurada extends Pantalla {
                 .agregar(Componentes.subtitulo("Por película")).espacio(Escala.JUNTO)
                 .agregar(peliculas.conScrollAjustado(MAX_FILAS)).espacio(Escala.APARTE)
                 .agregar(total);
-        JPanel arriba = new JPanel(new BorderLayout());
-        arriba.add(contenido, BorderLayout.NORTH);
-        add(arriba, BorderLayout.CENTER);
+        add(Componentes.arriba(contenido), BorderLayout.CENTER);
         consultar();
     }
 

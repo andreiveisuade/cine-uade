@@ -65,9 +65,7 @@ public final class PantallaPuerta extends Pantalla {
         // Arriba y del alto de lo que dice: el veredicto se lee al lado del código, no al pie de la ventana.
         Pila columna = new Pila();
         columna.agregar(fila, error).espacio(Escala.APARTE).agregar(resultado);
-        JPanel arriba = new JPanel(new BorderLayout());
-        arriba.add(columna, BorderLayout.NORTH);
-        add(arriba, BorderLayout.CENTER);
+        add(Componentes.arriba(columna), BorderLayout.CENTER);
 
         codigo.addActionListener(e -> validar());
         validar.addActionListener(e -> validar());

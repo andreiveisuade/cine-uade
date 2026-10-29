@@ -77,9 +77,7 @@ public final class PantallaCaja extends Pantalla {
                 .agregar(boleteria.conScrollAjustado(MAX_FILAS)).espacio(Escala.BLOQUE)
                 .agregar(tituloCandy).espacio(Escala.JUNTO)
                 .agregar(candy.conScrollAjustado(MAX_FILAS));
-        JPanel arriba = new JPanel(new BorderLayout());
-        arriba.add(contenido, BorderLayout.NORTH);
-        add(arriba, BorderLayout.CENTER);
+        add(Componentes.arriba(contenido), BorderLayout.CENTER);
         recargar();
     }
 

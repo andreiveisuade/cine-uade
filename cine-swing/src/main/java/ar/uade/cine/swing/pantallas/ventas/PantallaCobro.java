@@ -122,9 +122,7 @@ public final class PantallaCobro extends Pantalla {
         JPanel tarjeta = Componentes.conBorde(pila);
         tarjeta.setPreferredSize(new Dimension(Componentes.ANCHO_LATERAL + Escala.MARGEN * 3,
                 tarjeta.getPreferredSize().height));
-        JPanel arriba = new JPanel(new BorderLayout());
-        arriba.add(tarjeta, BorderLayout.NORTH);
-        return arriba;
+        return Componentes.arriba(tarjeta);
     }
 
     private JPanel detalle(Reserva reserva) {

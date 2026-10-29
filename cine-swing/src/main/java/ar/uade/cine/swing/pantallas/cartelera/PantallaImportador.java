@@ -84,10 +84,8 @@ public final class PantallaImportador extends Pantalla {
         JPanel listado = new JPanel(new BorderLayout(0, Escala.JUNTO));
         listado.add(Componentes.subtitulo("Corridas"), BorderLayout.NORTH);
         listado.add(corridas.conScrollAjustado(12), BorderLayout.CENTER);
-        JPanel izquierda = new JPanel(new BorderLayout());
-        izquierda.add(listado, BorderLayout.NORTH);
 
-        JSplitPane partes = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, izquierda, detalle);
+        JSplitPane partes = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, Componentes.arriba(listado), detalle);
         partes.setResizeWeight(0.3);
         partes.setDividerLocation(470);
         partes.setBorder(null);

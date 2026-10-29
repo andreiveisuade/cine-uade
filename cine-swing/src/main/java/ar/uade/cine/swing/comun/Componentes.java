@@ -118,6 +118,13 @@ public final class Componentes {
         return listado;
     }
 
+    /** Pegado arriba y del alto de lo que tiene: no se estira al alto que sobra ni queda flotando en el medio. */
+    public static JPanel arriba(JComponent contenido) {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.add(contenido, BorderLayout.NORTH);
+        return panel;
+    }
+
     /** Cambia lo que muestra un panel: saca todo, pone lo nuevo y lo vuelve a dibujar. */
     public static void reemplazar(Container panel, Component... nuevos) {
         panel.removeAll();
@@ -162,15 +169,9 @@ public final class Componentes {
     /** Una tarjeta: borde redondeado y aire adentro. Formularios, cifras, informes. */
     public static JPanel conBorde(JComponent contenido) {
         JPanel panel = new JPanel(new BorderLayout());
-        tarjeta(panel);
-        panel.add(contenido);
-        return panel;
-    }
-
-    /** Lo mismo para un panel que ya tiene su layout. */
-    public static <P extends JComponent> P tarjeta(P panel) {
         panel.setBorder(new FlatLineBorder(new Insets(Escala.APARTE, Escala.APARTE, Escala.APARTE, Escala.APARTE),
                 Colores.borde(), 1, Escala.ARCO));
+        panel.add(contenido);
         return panel;
     }
 

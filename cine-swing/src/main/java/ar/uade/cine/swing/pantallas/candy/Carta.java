@@ -21,7 +21,6 @@ import ar.uade.cine.swing.pantallas.acciones.BotonesDeFila;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
-import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -97,8 +96,9 @@ final class Carta extends Seccion {
         agregar.addActionListener(e -> crearProducto());
 
         // Una sola alta a la vista: con las dos apiladas competían por el mismo costado.
+        // Las pestañas miden lo que la más alta: cada tarjeta va arriba, no estirada en el hueco.
         JTabbedPane altas = new JTabbedPane();
-        altas.addTab("Producto suelto", arriba(Componentes.conBorde(new Formulario()
+        altas.addTab("Producto suelto", Componentes.arriba(Componentes.conBorde(new Formulario()
                 .ancho(Componentes.subtitulo("Nuevo producto"))
                 .obligatorio("Nombre", nombreProducto)
                 .obligatorio("Tipo", tipoProducto)
@@ -106,15 +106,8 @@ final class Carta extends Seccion {
                 .campo("Imagen", imagenProducto)
                 .ancho(Componentes.aLaDerecha(agregar))
                 .ancho(errorProducto))));
-        altas.addTab("Combo", arriba(formularioCombo));
+        altas.addTab("Combo", Componentes.arriba(formularioCombo));
         return Componentes.lateral(altas);
-    }
-
-    // Las pestañas miden lo que la más alta: cada tarjeta arriba, y no estirada ni centrada en el hueco.
-    private static JPanel arriba(JComponent contenido) {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.add(contenido, BorderLayout.NORTH);
-        return panel;
     }
 
     private void recargar() {

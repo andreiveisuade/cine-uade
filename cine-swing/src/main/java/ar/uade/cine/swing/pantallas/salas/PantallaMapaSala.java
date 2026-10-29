@@ -55,11 +55,9 @@ public final class PantallaMapaSala extends Pantalla {
         JPanel mapaConReferencia = new JPanel(new BorderLayout(0, Escala.APARTE));
         mapaConReferencia.add(mapa, BorderLayout.CENTER);
         mapaConReferencia.add(referencia(), BorderLayout.SOUTH);
-        JPanel arriba = new JPanel(new BorderLayout());
-        arriba.add(Componentes.conBorde(mapaConReferencia), BorderLayout.WEST);
-        JPanel alto = new JPanel(new BorderLayout());
-        alto.add(arriba, BorderLayout.NORTH);
-        JScrollPane scroll = new JScrollPane(alto);
+        JPanel tarjeta = new JPanel(new BorderLayout());
+        tarjeta.add(Componentes.conBorde(mapaConReferencia), BorderLayout.WEST);
+        JScrollPane scroll = new JScrollPane(Componentes.arriba(tarjeta));
         scroll.setBorder(null);
 
         JPanel centro = new JPanel(new BorderLayout(0, Escala.APARTE));

@@ -50,9 +50,7 @@ public final class PantallaInformeFuncion extends Pantalla {
         // Las dos tarjetas miden lo que tienen: el total queda debajo de su último renglón, no al pie de la ventana.
         JPanel arriba = new JPanel(new BorderLayout(0, Escala.APARTE));
         arriba.add(norte, BorderLayout.NORTH);
-        JPanel tarjetas = new JPanel(new BorderLayout());
-        tarjetas.add(cuerpo, BorderLayout.NORTH);
-        arriba.add(tarjetas, BorderLayout.CENTER);
+        arriba.add(Componentes.arriba(cuerpo), BorderLayout.CENTER);
         add(arriba, BorderLayout.CENTER);
 
         cargar(() -> new Datos(apiFunciones.obtenerFuncion(funcionId), apiInformes.obtenerBordero(funcionId),

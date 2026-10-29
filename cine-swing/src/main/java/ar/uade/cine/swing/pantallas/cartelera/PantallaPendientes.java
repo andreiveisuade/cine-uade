@@ -116,9 +116,7 @@ public final class PantallaPendientes extends Pantalla {
         JPanel texto = new JPanel(new BorderLayout(0, Escala.CERCA));
         texto.add(cabeza, BorderLayout.NORTH);
         texto.add(Componentes.texto(escapar(vacioSi(pelicula.sinopsis(), "Sin sinopsis"))), BorderLayout.CENTER);
-        JPanel poster = new JPanel(new BorderLayout());
-        poster.add(new Poster(apiImagenes, pelicula.posterUrl()), BorderLayout.NORTH);
-        contenido.add(poster, BorderLayout.WEST);
+        contenido.add(Componentes.arriba(new Poster(apiImagenes, pelicula.posterUrl())), BorderLayout.WEST);
         contenido.add(texto, BorderLayout.CENTER);
         return tarjeta;
     }
