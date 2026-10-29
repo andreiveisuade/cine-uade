@@ -10,6 +10,7 @@ import ar.uade.cine.swing.api.dto.salas.Sala;
 import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
+import ar.uade.cine.swing.comun.Escala;
 import ar.uade.cine.swing.comun.Opcion;
 import ar.uade.cine.swing.comun.Opciones;
 import ar.uade.cine.swing.comun.SelectorDias;
@@ -82,7 +83,7 @@ public final class PantallaProgramaciones extends PantallaListado<Programacion> 
                 .limpiar(this::recargar);
 
         JPanel listado = Componentes.listado(filtros, filtros.conteo(), accionesDeFila(), tabla.conScroll());
-        JPanel abajo = new JPanel(new BorderLayout(0, Componentes.JUNTO));
+        JPanel abajo = new JPanel(new BorderLayout(0, Escala.JUNTO));
         abajo.add(Componentes.subtitulo("Funciones que generó"), BorderLayout.NORTH);
         abajo.add(new JScrollPane(detalle), BorderLayout.CENTER);
         abajo.add(Componentes.nota("Elegí una grilla para ver qué funciones creó. Darla de baja <b>no borra las "

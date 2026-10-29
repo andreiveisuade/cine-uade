@@ -7,6 +7,7 @@ import ar.uade.cine.swing.api.dto.funciones.Funcion;
 import ar.uade.cine.swing.api.dto.informes.Bordero;
 import ar.uade.cine.swing.api.dto.informes.InformeFuncion;
 import ar.uade.cine.swing.comun.Componentes;
+import ar.uade.cine.swing.comun.Escala;
 import ar.uade.cine.swing.pantallas.Navegacion;
 import ar.uade.cine.swing.pantallas.Pantalla;
 
@@ -31,7 +32,7 @@ public final class PantallaInformeFuncion extends Pantalla {
     private final ApiCatalogos apiCatalogos;
     private final ApiInformes apiInformes;
     private final int funcionId;
-    private final JPanel cuerpo = new JPanel(new GridLayout(1, 2, Componentes.BLOQUE, 0));
+    private final JPanel cuerpo = new JPanel(new GridLayout(1, 2, Escala.BLOQUE, 0));
     private final JLabel subtitulo = new JLabel(" ");
 
     public PantallaInformeFuncion(ApiCatalogos apiCatalogos, ApiFunciones apiFunciones, ApiInformes apiInformes,
@@ -43,11 +44,11 @@ public final class PantallaInformeFuncion extends Pantalla {
 
         JButton volver = Componentes.deTexto(new JButton("← Volver"));
         volver.addActionListener(e -> navegacion.volver());
-        JPanel norte = new JPanel(new BorderLayout(0, Componentes.JUNTO));
+        JPanel norte = new JPanel(new BorderLayout(0, Escala.JUNTO));
         norte.add(volver, BorderLayout.WEST);
         norte.add(subtitulo, BorderLayout.SOUTH);
         // Las dos tarjetas miden lo que tienen: el total queda debajo de su último renglón, no al pie de la ventana.
-        JPanel arriba = new JPanel(new BorderLayout(0, Componentes.APARTE));
+        JPanel arriba = new JPanel(new BorderLayout(0, Escala.APARTE));
         arriba.add(norte, BorderLayout.NORTH);
         JPanel tarjetas = new JPanel(new BorderLayout());
         tarjetas.add(cuerpo, BorderLayout.NORTH);

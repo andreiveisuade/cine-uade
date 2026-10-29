@@ -8,6 +8,7 @@ import ar.uade.cine.swing.api.dto.ventas.Entrada;
 import ar.uade.cine.swing.api.dto.ventas.Reserva;
 import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
+import ar.uade.cine.swing.comun.Escala;
 import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.comun.Mensajes;
 import ar.uade.cine.swing.comun.Pila;
@@ -63,7 +64,7 @@ public final class PantallaPuerta extends Pantalla {
 
         // Arriba y del alto de lo que dice: el veredicto se lee al lado del código, no al pie de la ventana.
         Pila columna = new Pila();
-        columna.agregar(fila, error).espacio(Componentes.APARTE).agregar(resultado);
+        columna.agregar(fila, error).espacio(Escala.APARTE).agregar(resultado);
         JPanel arriba = new JPanel(new BorderLayout());
         arriba.add(columna, BorderLayout.NORTH);
         add(arriba, BorderLayout.CENTER);
@@ -157,7 +158,7 @@ public final class PantallaPuerta extends Pantalla {
     private void mostrar(Color color, String titulo, String cuerpo) {
         resultado.setText("<html><div style='width:460px'><h1 style='color:" + Colores.hex(color) + "'>" + titulo
                 + "</h1>" + cuerpo + "</div></html>");
-        resultado.setBorder(new FlatLineBorder(new Insets(Componentes.CERCA, Componentes.APARTE, Componentes.CERCA,
-                Componentes.APARTE), color, 2, Componentes.ARCO));
+        resultado.setBorder(new FlatLineBorder(new Insets(Escala.CERCA, Escala.APARTE, Escala.CERCA,
+                Escala.APARTE), color, 2, Escala.ARCO));
     }
 }

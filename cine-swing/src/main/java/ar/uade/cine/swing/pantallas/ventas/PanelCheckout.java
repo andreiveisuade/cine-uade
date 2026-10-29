@@ -4,6 +4,7 @@ import ar.uade.cine.swing.api.ApiVentas;
 import ar.uade.cine.swing.api.dto.ventas.Checkout;
 import ar.uade.cine.swing.api.dto.ventas.Pago;
 import ar.uade.cine.swing.comun.Componentes;
+import ar.uade.cine.swing.comun.Escala;
 import ar.uade.cine.swing.comun.Mensajes;
 import ar.uade.cine.swing.comun.Pila;
 import ar.uade.cine.swing.comun.Tarea;
@@ -30,7 +31,7 @@ final class PanelCheckout extends Seccion {
         panel.agregar(Componentes.nota(checkout.id()));
         panel.agregar(new JLabel("El cliente aprueba"));
         JLabel monto = new JLabel(precio(checkout.monto()));
-        monto.setFont(monto.getFont().deriveFont(Font.BOLD, Componentes.LETRA_TITULO));
+        monto.setFont(monto.getFont().deriveFont(Font.BOLD, Escala.LETRA_TITULO));
         panel.agregar(monto);
         panel.agregar(new JLabel("Contenido del QR"));
         panel.agregar(texto(checkout.codigoQr()));

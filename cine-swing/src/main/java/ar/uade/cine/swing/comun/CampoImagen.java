@@ -32,11 +32,11 @@ public final class CampoImagen extends JPanel {
     private String url;
 
     public CampoImagen(ApiImagenes api) {
-        super(new BorderLayout(0, Componentes.JUNTO));
+        super(new BorderLayout(0, Escala.JUNTO));
         this.api = api;
         vista.setPreferredSize(new Dimension(ANCHO, ALTO));
         vista.setForeground(Colores.secundario());
-        vista.setBorder(new FlatLineBorder(new Insets(0, 0, 0, 0), Colores.borde(), 1, Componentes.JUNTO));
+        vista.setBorder(new FlatLineBorder(new Insets(0, 0, 0, 0), Colores.borde(), 1, Escala.JUNTO));
         JButton elegir = new JButton("Elegir imagen…");
         elegir.addActionListener(e -> elegir());
         quitar.addActionListener(e -> poner(null));

@@ -4,6 +4,7 @@ import ar.uade.cine.swing.api.dto.cartelera.Importacion;
 import ar.uade.cine.swing.api.dto.cartelera.PeliculaDeCorrida;
 import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
+import ar.uade.cine.swing.comun.Escala;
 import ar.uade.cine.swing.comun.Pila;
 import ar.uade.cine.swing.comun.Tabla.Columna;
 import ar.uade.cine.swing.comun.Tabla;
@@ -37,10 +38,10 @@ final class DetalleCorrida extends JPanel {
             Columna.<PeliculaDeCorrida>de("Qué pasó", DetalleCorrida::quePaso).ancho(300));
 
     DetalleCorrida(Runnable alRevisar) {
-        super(new BorderLayout(0, Componentes.JUNTO));
+        super(new BorderLayout(0, Escala.JUNTO));
         revisar.setVisible(false);
         revisar.addActionListener(e -> alRevisar.run());
-        JPanel encabezado = new JPanel(new BorderLayout(Componentes.CERCA, 0));
+        JPanel encabezado = new JPanel(new BorderLayout(Escala.CERCA, 0));
         encabezado.add(new Pila().agregar(titulo, resumen), BorderLayout.CENTER);
         encabezado.add(revisar, BorderLayout.EAST);
         add(encabezado, BorderLayout.NORTH);

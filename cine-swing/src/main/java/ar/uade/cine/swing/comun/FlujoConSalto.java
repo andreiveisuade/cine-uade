@@ -12,7 +12,7 @@ import java.awt.Insets;
 public final class FlujoConSalto extends FlowLayout {
 
     public FlujoConSalto() {
-        super(FlowLayout.LEFT, Componentes.JUNTO, Componentes.PEGADO);
+        super(FlowLayout.LEFT, Escala.JUNTO, Escala.PEGADO);
     }
 
     @Override

@@ -3,6 +3,7 @@ package ar.uade.cine.swing.pantallas.usuarios;
 import ar.uade.cine.swing.api.ApiClientes;
 import ar.uade.cine.swing.api.dto.usuarios.Cliente;
 import ar.uade.cine.swing.comun.Componentes;
+import ar.uade.cine.swing.comun.Escala;
 import ar.uade.cine.swing.comun.Formulario;
 import ar.uade.cine.swing.comun.Tarea;
 import ar.uade.cine.swing.comun.Validacion;
@@ -29,7 +30,7 @@ public final class PantallaClientes extends Pantalla {
         this.apiClientes = apiClientes;
 
         JButton buscar = Componentes.primario(new JButton("Buscar"));
-        encontrado.setBorder(BorderFactory.createEmptyBorder(Componentes.JUNTO, 0, 0, 0));
+        encontrado.setBorder(BorderFactory.createEmptyBorder(Escala.JUNTO, 0, 0, 0));
         add(Componentes.lateral(Componentes.conBorde(new Formulario()
                 .ancho(Componentes.subtitulo("Buscar un cliente"))
                 .obligatorio("Email", email)

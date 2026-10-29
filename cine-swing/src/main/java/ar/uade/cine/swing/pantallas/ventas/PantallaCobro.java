@@ -9,6 +9,7 @@ import ar.uade.cine.swing.api.dto.ventas.Entrada;
 import ar.uade.cine.swing.api.dto.ventas.Pago;
 import ar.uade.cine.swing.api.dto.ventas.Reserva;
 import ar.uade.cine.swing.comun.Componentes;
+import ar.uade.cine.swing.comun.Escala;
 import ar.uade.cine.swing.comun.Pila;
 import ar.uade.cine.swing.comun.Tabla.Columna;
 import ar.uade.cine.swing.comun.Tabla;
@@ -50,7 +51,7 @@ public final class PantallaCobro extends Pantalla {
 
         JButton volver = Componentes.deTexto(new JButton("← Reservas"));
         volver.addActionListener(e -> navegacion.ir(Destino.RESERVAS));
-        JPanel centro = new JPanel(new BorderLayout(0, Componentes.JUNTO));
+        JPanel centro = new JPanel(new BorderLayout(0, Escala.JUNTO));
         JPanel fila = new JPanel(new BorderLayout());
         fila.add(volver, BorderLayout.WEST);
         centro.add(fila, BorderLayout.NORTH);
@@ -81,7 +82,7 @@ public final class PantallaCobro extends Pantalla {
             return;
         }
         cuerpo.removeAll();
-        JPanel columnas = new JPanel(new GridLayout(1, 2, Componentes.BLOQUE, 0));
+        JPanel columnas = new JPanel(new GridLayout(1, 2, Escala.BLOQUE, 0));
         columnas.add(new PanelCobro(apiVentas, navegacion, reserva, datos.medios()));
         columnas.add(detalle(reserva));
         cuerpo.add(columnas, BorderLayout.CENTER);
@@ -119,7 +120,7 @@ public final class PantallaCobro extends Pantalla {
         }
         pila.agregar(Componentes.renglon("Total", precio(reserva.total() + reserva.totalCandy()), true));
         JPanel tarjeta = Componentes.conBorde(pila);
-        tarjeta.setPreferredSize(new Dimension(Componentes.ANCHO_LATERAL + Componentes.MARGEN * 3,
+        tarjeta.setPreferredSize(new Dimension(Componentes.ANCHO_LATERAL + Escala.MARGEN * 3,
                 tarjeta.getPreferredSize().height));
         JPanel arriba = new JPanel(new BorderLayout());
         arriba.add(tarjeta, BorderLayout.NORTH);
@@ -127,7 +128,7 @@ public final class PantallaCobro extends Pantalla {
     }
 
     private JPanel detalle(Reserva reserva) {
-        JPanel panel = new JPanel(new BorderLayout(0, Componentes.JUNTO));
+        JPanel panel = new JPanel(new BorderLayout(0, Escala.JUNTO));
         Pila arriba = new Pila();
         arriba.agregar(Componentes.subtitulo(
                 reserva.pelicula() == null ? "—" : reserva.pelicula().titulo()));

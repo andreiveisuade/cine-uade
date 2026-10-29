@@ -5,6 +5,7 @@ import ar.uade.cine.swing.api.dto.salas.Asiento;
 import ar.uade.cine.swing.api.dto.salas.Sala;
 import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
+import ar.uade.cine.swing.comun.Escala;
 import ar.uade.cine.swing.comun.MapaButacas.Estilo;
 import ar.uade.cine.swing.comun.MapaButacas;
 import ar.uade.cine.swing.pantallas.Destino;
@@ -46,12 +47,12 @@ public final class PantallaMapaSala extends Pantalla {
 
         JButton volver = Componentes.deTexto(new JButton("← Salas"));
         volver.addActionListener(e -> navegacion.ir(Destino.SALAS));
-        JPanel norte = new JPanel(new BorderLayout(0, Componentes.JUNTO));
+        JPanel norte = new JPanel(new BorderLayout(0, Escala.JUNTO));
         norte.add(volver, BorderLayout.WEST);
         norte.add(resumen, BorderLayout.SOUTH);
 
         // El mapa arriba y la leyenda pegada debajo, en una tarjeta de su tamaño: no flotando en el medio.
-        JPanel mapaConReferencia = new JPanel(new BorderLayout(0, Componentes.APARTE));
+        JPanel mapaConReferencia = new JPanel(new BorderLayout(0, Escala.APARTE));
         mapaConReferencia.add(mapa, BorderLayout.CENTER);
         mapaConReferencia.add(referencia(), BorderLayout.SOUTH);
         JPanel arriba = new JPanel(new BorderLayout());
@@ -61,7 +62,7 @@ public final class PantallaMapaSala extends Pantalla {
         JScrollPane scroll = new JScrollPane(alto);
         scroll.setBorder(null);
 
-        JPanel centro = new JPanel(new BorderLayout(0, Componentes.APARTE));
+        JPanel centro = new JPanel(new BorderLayout(0, Escala.APARTE));
         centro.add(norte, BorderLayout.NORTH);
         centro.add(scroll, BorderLayout.CENTER);
         add(centro, BorderLayout.CENTER);
@@ -95,7 +96,7 @@ public final class PantallaMapaSala extends Pantalla {
     }
 
     private static JPanel referencia() {
-        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, Componentes.APARTE, 0));
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, Escala.APARTE, 0));
         panel.add(muestra(Colores.butaca("ESTANDAR"), "disponible"));
         panel.add(muestra(Colores.butacaFueraDeServicio(), "fuera de servicio"));
         for (String tipo : List.of("VIP", "PAREJA", "ACCESIBLE")) {
@@ -106,7 +107,7 @@ public final class PantallaMapaSala extends Pantalla {
 
     private static JLabel muestra(Color color, String texto) {
         JLabel etiqueta = new JLabel(texto);
-        etiqueta.setIconTextGap(Componentes.JUNTO);
+        etiqueta.setIconTextGap(Escala.JUNTO);
         etiqueta.setIcon(new Icon() {
             @Override
             public void paintIcon(Component c, Graphics g, int x, int y) {

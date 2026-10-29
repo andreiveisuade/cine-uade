@@ -9,6 +9,7 @@ import ar.uade.cine.swing.comun.CampoImagen;
 import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
+import ar.uade.cine.swing.comun.Escala;
 import ar.uade.cine.swing.comun.Formulario;
 import ar.uade.cine.swing.comun.Opcion;
 import ar.uade.cine.swing.comun.Tabla.Columna;
@@ -58,7 +59,7 @@ final class Carta extends Seccion {
     private final BotonesDeFila<Producto> botones;
 
     Carta(ApiCandy apiCandy, ApiCatalogos apiCatalogos, ApiImagenes apiImagenes) {
-        super(new BorderLayout(Componentes.BLOQUE, 0));
+        super(new BorderLayout(Escala.BLOQUE, 0));
         this.apiCandy = apiCandy;
         this.apiImagenes = apiImagenes;
         this.imagenProducto = new CampoImagen(apiImagenes);
@@ -67,7 +68,7 @@ final class Carta extends Seccion {
         this.botones = new BotonesDeFila<>(this, tabla, this::recargar, new CambiarDisponibilidadProducto(apiCandy));
         JPanel acciones = Componentes.aLaDerecha(editar);
         botones.agregarA(acciones);
-        JPanel centro = new JPanel(new BorderLayout(0, Componentes.JUNTO));
+        JPanel centro = new JPanel(new BorderLayout(0, Escala.JUNTO));
         centro.add(Componentes.listado(null, resumen, acciones, tabla.conScroll()), BorderLayout.CENTER);
         centro.add(Componentes.nota("Los productos no se borran: se sacan de la carta. Uno que ya se vendió tiene "
                 + "que seguir existiendo para que el ticket de esa venta diga qué se llevó. Cambiar un precio no "

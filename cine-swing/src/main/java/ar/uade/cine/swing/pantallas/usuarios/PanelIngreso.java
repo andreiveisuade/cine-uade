@@ -7,6 +7,7 @@ import ar.uade.cine.swing.api.dto.usuarios.Empleado;
 import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
+import ar.uade.cine.swing.comun.Escala;
 import ar.uade.cine.swing.comun.Formulario;
 import ar.uade.cine.swing.comun.Mensajes;
 import ar.uade.cine.swing.comun.Opcion;
@@ -55,7 +56,7 @@ public final class PanelIngreso extends JPanel {
         this.alIngresar = alIngresar;
 
         JLabel titulo = new JLabel("CINE UADE");
-        titulo.setFont(titulo.getFont().deriveFont(Font.BOLD, Componentes.LETRA_TITULO));
+        titulo.setFont(titulo.getFont().deriveFont(Font.BOLD, Escala.LETRA_TITULO));
         mensaje.setForeground(Colores.error());
         if (aviso != null) mensaje.setText(aviso);
         Campos.llenar(servidor, Opcion.de(List.of(Entorno.values()), Entorno::etiqueta));

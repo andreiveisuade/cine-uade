@@ -8,6 +8,7 @@ import ar.uade.cine.swing.api.dto.catalogos.Clasificacion;
 import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
+import ar.uade.cine.swing.comun.Escala;
 import ar.uade.cine.swing.comun.Opcion;
 import ar.uade.cine.swing.comun.Opciones;
 import ar.uade.cine.swing.comun.Poster;
@@ -59,7 +60,7 @@ public final class PantallaPeliculas extends PantallaListado<Pelicula> {
                 + "despublicarla la baja aunque las tenga.");
         this.apiCartelera = apiCartelera;
         this.apiImagenes = apiImagenes;
-        tabla.tabla().setRowHeight(ALTO_POSTER + Componentes.PEGADO * 2);
+        tabla.tabla().setRowHeight(ALTO_POSTER + Escala.PEGADO * 2);
         this.formulario = new FormularioPelicula(apiCartelera, this::recargar);
 
         JComboBox<Opcion<String>> filtroEstado = new JComboBox<>();

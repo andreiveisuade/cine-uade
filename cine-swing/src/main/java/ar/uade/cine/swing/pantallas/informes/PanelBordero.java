@@ -7,6 +7,7 @@ import ar.uade.cine.swing.api.dto.informes.Bordero;
 import ar.uade.cine.swing.api.dto.informes.Total;
 import ar.uade.cine.swing.comun.Archivos;
 import ar.uade.cine.swing.comun.Componentes;
+import ar.uade.cine.swing.comun.Escala;
 import ar.uade.cine.swing.comun.Pila;
 import ar.uade.cine.swing.comun.Tabla.Columna;
 import ar.uade.cine.swing.comun.Tabla;
@@ -81,11 +82,11 @@ final class PanelBordero extends Seccion {
         contenido.agregar(Componentes.nota("Las tres van separadas porque cuentan cosas distintas: "
                 + "la bruta es a precio de lista, los descuentos son lo que resignó el cine por una promoción suya, y "
                 + "la neta es lo que entró en la caja."));
-        contenido.espacio(Componentes.CERCA);
+        contenido.espacio(Escala.CERCA);
 
         JButton emitir = new JButton("Emitir borderó");
         emitir.addActionListener(e -> emitir());
-        JPanel fila = new JPanel(new BorderLayout(Componentes.JUNTO, 0));
+        JPanel fila = new JPanel(new BorderLayout(Escala.JUNTO, 0));
         fila.add(emitir, BorderLayout.WEST);
         fila.add(Componentes.nota(emitido
                 ? "Emitido el " + fechaHora(bordero.generadoEn())

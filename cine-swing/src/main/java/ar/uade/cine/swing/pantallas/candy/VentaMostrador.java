@@ -8,6 +8,7 @@ import ar.uade.cine.swing.api.dto.candy.Producto;
 import ar.uade.cine.swing.api.dto.catalogos.MedioPago;
 import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Componentes;
+import ar.uade.cine.swing.comun.Escala;
 import ar.uade.cine.swing.comun.Formulario;
 import ar.uade.cine.swing.comun.Opcion;
 import ar.uade.cine.swing.comun.Opciones;
@@ -48,7 +49,7 @@ final class VentaMostrador extends Seccion {
     private final JLabel error = Componentes.texto(" ");
 
     VentaMostrador(ApiCandy apiCandy, ApiCatalogos apiCatalogos, ApiClientes apiClientes) {
-        super(new BorderLayout(Componentes.BLOQUE, 0));
+        super(new BorderLayout(Escala.BLOQUE, 0));
         this.apiCandy = apiCandy;
         this.apiClientes = apiClientes;
         JButton cobrar = Componentes.primario(new JButton("Cobrar"));
@@ -69,7 +70,7 @@ final class VentaMostrador extends Seccion {
                 .ancho(Componentes.aLaDerecha(cobrar))
                 .ancho(error));
         Pila costado = new Pila();
-        costado.agregar(cobro).espacio(Componentes.APARTE).agregar(Componentes.conBorde(ticket));
+        costado.agregar(cobro).espacio(Escala.APARTE).agregar(Componentes.conBorde(ticket));
         add(productos, BorderLayout.CENTER);
         add(Componentes.lateral(costado), BorderLayout.EAST);
 

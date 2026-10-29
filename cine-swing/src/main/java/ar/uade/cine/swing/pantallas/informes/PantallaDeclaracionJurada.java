@@ -12,6 +12,7 @@ import ar.uade.cine.swing.comun.Archivos;
 import ar.uade.cine.swing.comun.CampoFecha;
 import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
+import ar.uade.cine.swing.comun.Escala;
 import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.comun.Pila;
 import ar.uade.cine.swing.comun.Tabla.Columna;
@@ -94,11 +95,11 @@ public final class PantallaDeclaracionJurada extends Pantalla {
 
         encabezado.setForeground(Colores.secundario());
         Pila contenido = new Pila();
-        contenido.agregar(barra, error, encabezado).espacio(Componentes.APARTE)
-                .agregar(Componentes.subtitulo("Por función")).espacio(Componentes.JUNTO)
-                .agregar(funciones.conScrollAjustado(MAX_FILAS)).espacio(Componentes.BLOQUE)
-                .agregar(Componentes.subtitulo("Por película")).espacio(Componentes.JUNTO)
-                .agregar(peliculas.conScrollAjustado(MAX_FILAS)).espacio(Componentes.APARTE)
+        contenido.agregar(barra, error, encabezado).espacio(Escala.APARTE)
+                .agregar(Componentes.subtitulo("Por función")).espacio(Escala.JUNTO)
+                .agregar(funciones.conScrollAjustado(MAX_FILAS)).espacio(Escala.BLOQUE)
+                .agregar(Componentes.subtitulo("Por película")).espacio(Escala.JUNTO)
+                .agregar(peliculas.conScrollAjustado(MAX_FILAS)).espacio(Escala.APARTE)
                 .agregar(total);
         JPanel arriba = new JPanel(new BorderLayout());
         arriba.add(contenido, BorderLayout.NORTH);

@@ -7,6 +7,7 @@ import ar.uade.cine.swing.api.dto.catalogos.MedioPago;
 import ar.uade.cine.swing.api.dto.promociones.Promocion;
 import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
+import ar.uade.cine.swing.comun.Escala;
 import ar.uade.cine.swing.comun.SelectorDias;
 import ar.uade.cine.swing.comun.Tabla.Columna;
 import ar.uade.cine.swing.comun.Tabla;
@@ -61,7 +62,7 @@ public final class PantallaPromociones extends Pantalla {
         editar.addActionListener(e -> tabla.seleccionada().ifPresent(formulario::editar));
         JPanel acciones = Componentes.aLaDerecha(editar);
         botones.agregarA(acciones);
-        JPanel centro = new JPanel(new BorderLayout(0, Componentes.JUNTO));
+        JPanel centro = new JPanel(new BorderLayout(0, Escala.JUNTO));
         centro.add(Componentes.listado(null, resumen, acciones, tabla.conScroll()), BorderLayout.CENTER);
         centro.add(Componentes.nota("Las promociones no se borran: se dan de baja. Una que ya se usó en un cobro "
                 + "tiene que seguir existiendo para poder explicar por qué se cobró ese monto."), BorderLayout.SOUTH);

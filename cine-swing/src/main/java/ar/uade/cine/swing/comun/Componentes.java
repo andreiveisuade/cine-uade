@@ -21,26 +21,8 @@ import java.awt.GridLayout;
 import java.awt.Insets;
 
 // Piezas de pantalla que se repiten, para que cada pantalla arme lo suyo y todas se vean igual.
-// Todo espacio y todo tamaño de letra sale de las escalas de acá: sin números sueltos, las pantallas respiran igual.
+// Los espacios y la letra salen de Escala; los colores, de Colores.
 public final class Componentes {
-
-    // La escala de espacios, base 4: del más pegado al margen de la pantalla.
-    public static final int PEGADO = 4;
-    public static final int JUNTO = 8;
-    public static final int CERCA = 12;
-    public static final int APARTE = 16;
-    public static final int BLOQUE = 24;
-    public static final int MARGEN = 32;
-
-    // La escala de letra: cifra de caja, título de pantalla, de tarjeta, cuerpo (la del tema), nota y rótulo.
-    public static final float LETRA_CIFRA = 28f;
-    public static final float LETRA_TITULO = 22f;
-    public static final float LETRA_TARJETA = 16f;
-    public static final float LETRA_NOTA = 12f;
-    public static final float LETRA_ROTULO = 11f;
-
-    /** El redondeo de tarjetas y recuadros. */
-    public static final int ARCO = 12;
 
     private Componentes() {
     }
@@ -50,10 +32,10 @@ public final class Componentes {
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         JLabel etiqueta = new JLabel(titulo);
-        etiqueta.setFont(etiqueta.getFont().deriveFont(Font.BOLD, LETRA_TITULO));
+        etiqueta.setFont(etiqueta.getFont().deriveFont(Font.BOLD, Escala.LETRA_TITULO));
         panel.add(izquierda(etiqueta));
         if (descripcion != null) {
-            panel.add(Box.createVerticalStrut(PEGADO));
+            panel.add(Box.createVerticalStrut(Escala.PEGADO));
             JLabel bajada = nota(descripcion);
             // Una bajada de lectura, no un renglón de 1000 px: corta al ancho que se lee de un tirón.
             bajada.setMaximumSize(new Dimension(640, Integer.MAX_VALUE));
@@ -78,7 +60,7 @@ public final class Componentes {
 
     /** Botones del mismo ancho, uno al lado del otro, como Guardar y Cancelar al pie de un formulario. */
     public static JPanel botones(JButton... botones) {
-        JPanel fila = new JPanel(new GridLayout(1, botones.length, JUNTO, 0));
+        JPanel fila = new JPanel(new GridLayout(1, botones.length, Escala.JUNTO, 0));
         for (JButton boton : botones) fila.add(boton);
         return fila;
     }
@@ -97,7 +79,7 @@ public final class Componentes {
 
     /** Suma un botón más a una fila de {@link #aLaDerecha}, con el mismo espacio entre botones. */
     public static void agregarALaDerecha(JPanel fila, JComponent componente) {
-        if (fila.getComponentCount() > 1) fila.add(Box.createHorizontalStrut(JUNTO));
+        if (fila.getComponentCount() > 1) fila.add(Box.createHorizontalStrut(Escala.JUNTO));
         fila.add(componente);
     }
 
@@ -124,13 +106,13 @@ public final class Componentes {
      * quedan pegadas a la tabla y a la vista del conteo: se elige y se actúa en el mismo lugar. Sin filtros, null.
      */
     public static JPanel listado(JComponent filtros, JComponent resumen, JComponent acciones, JComponent tabla) {
-        JPanel barra = new JPanel(new BorderLayout(BLOQUE, 0));
+        JPanel barra = new JPanel(new BorderLayout(Escala.BLOQUE, 0));
         barra.add(resumen, BorderLayout.WEST);
         barra.add(acciones, BorderLayout.EAST);
-        JPanel arriba = new JPanel(new BorderLayout(0, CERCA));
+        JPanel arriba = new JPanel(new BorderLayout(0, Escala.CERCA));
         if (filtros != null) arriba.add(filtros, BorderLayout.NORTH);
         arriba.add(barra, BorderLayout.SOUTH);
-        JPanel listado = new JPanel(new BorderLayout(0, JUNTO));
+        JPanel listado = new JPanel(new BorderLayout(0, Escala.JUNTO));
         listado.add(arriba, BorderLayout.NORTH);
         listado.add(tabla, BorderLayout.CENTER);
         return listado;
@@ -155,7 +137,7 @@ public final class Componentes {
 
     public static JLabel subtitulo(String texto) {
         JLabel etiqueta = new JLabel(texto);
-        etiqueta.setFont(etiqueta.getFont().deriveFont(Font.BOLD, LETRA_TARJETA));
+        etiqueta.setFont(etiqueta.getFont().deriveFont(Font.BOLD, Escala.LETRA_TARJETA));
         return etiqueta;
     }
 
@@ -163,7 +145,7 @@ public final class Componentes {
     public static JLabel nota(String texto) {
         JLabel etiqueta = texto(texto);
         etiqueta.setForeground(Colores.secundario());
-        etiqueta.setFont(etiqueta.getFont().deriveFont(LETRA_NOTA));
+        etiqueta.setFont(etiqueta.getFont().deriveFont(Escala.LETRA_NOTA));
         return etiqueta;
     }
 
@@ -187,7 +169,8 @@ public final class Componentes {
 
     /** Lo mismo para un panel que ya tiene su layout. */
     public static <P extends JComponent> P tarjeta(P panel) {
-        panel.setBorder(new FlatLineBorder(new Insets(APARTE, APARTE, APARTE, APARTE), Colores.borde(), 1, ARCO));
+        panel.setBorder(new FlatLineBorder(new Insets(Escala.APARTE, Escala.APARTE, Escala.APARTE, Escala.APARTE),
+                Colores.borde(), 1, Escala.ARCO));
         return panel;
     }
 
@@ -197,16 +180,16 @@ public final class Componentes {
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
         JLabel arriba = new JLabel(titulo.toUpperCase());
         arriba.setForeground(Colores.secundario());
-        arriba.setFont(arriba.getFont().deriveFont(LETRA_ROTULO));
+        arriba.setFont(arriba.getFont().deriveFont(Escala.LETRA_ROTULO));
         JLabel numero = new JLabel(valor);
-        numero.setFont(numero.getFont().deriveFont(Font.BOLD, LETRA_CIFRA));
+        numero.setFont(numero.getFont().deriveFont(Font.BOLD, Escala.LETRA_CIFRA));
         panel.add(izquierda(arriba));
-        panel.add(Box.createVerticalStrut(PEGADO));
+        panel.add(Box.createVerticalStrut(Escala.PEGADO));
         panel.add(izquierda(numero));
         if (detalle != null) panel.add(izquierda(texto(detalle)));
         if (variacion != null) {
             JLabel cambio = new JLabel(variacion);
-            cambio.setFont(cambio.getFont().deriveFont(LETRA_ROTULO));
+            cambio.setFont(cambio.getFont().deriveFont(Escala.LETRA_ROTULO));
             panel.add(izquierda(cambio));
         }
         return conBorde(panel);
@@ -218,12 +201,12 @@ public final class Componentes {
         JLabel izquierda = new JLabel(texto);
         JLabel derecha = new JLabel(valor);
         if (fuerte) {
-            izquierda.setFont(izquierda.getFont().deriveFont(Font.BOLD, LETRA_TARJETA));
-            derecha.setFont(derecha.getFont().deriveFont(Font.BOLD, LETRA_TARJETA));
+            izquierda.setFont(izquierda.getFont().deriveFont(Font.BOLD, Escala.LETRA_TARJETA));
+            derecha.setFont(derecha.getFont().deriveFont(Font.BOLD, Escala.LETRA_TARJETA));
         }
         fila.add(izquierda, BorderLayout.WEST);
         fila.add(derecha, BorderLayout.EAST);
-        fila.setBorder(BorderFactory.createEmptyBorder(PEGADO, 0, PEGADO, 0));
+        fila.setBorder(BorderFactory.createEmptyBorder(Escala.PEGADO, 0, Escala.PEGADO, 0));
         fila.setMaximumSize(new Dimension(Integer.MAX_VALUE, fila.getPreferredSize().height));
         return fila;
     }

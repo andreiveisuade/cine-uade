@@ -5,6 +5,7 @@ import ar.uade.cine.swing.api.dto.cartelera.EstadoImportador;
 import ar.uade.cine.swing.api.dto.cartelera.Importacion;
 import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
+import ar.uade.cine.swing.comun.Escala;
 import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.comun.Mensajes;
 import ar.uade.cine.swing.comun.Pila;
@@ -80,7 +81,7 @@ public final class PantallaImportador extends Pantalla {
                         + "cargadas, aunque las hayas descartado, no se vuelven a traer."),
                 error, trayendo);
 
-        JPanel listado = new JPanel(new BorderLayout(0, Componentes.JUNTO));
+        JPanel listado = new JPanel(new BorderLayout(0, Escala.JUNTO));
         listado.add(Componentes.subtitulo("Corridas"), BorderLayout.NORTH);
         listado.add(corridas.conScrollAjustado(12), BorderLayout.CENTER);
         JPanel izquierda = new JPanel(new BorderLayout());
@@ -91,7 +92,7 @@ public final class PantallaImportador extends Pantalla {
         partes.setDividerLocation(470);
         partes.setBorder(null);
 
-        JPanel centro = new JPanel(new BorderLayout(0, Componentes.APARTE));
+        JPanel centro = new JPanel(new BorderLayout(0, Escala.APARTE));
         centro.add(arriba, BorderLayout.NORTH);
         centro.add(partes, BorderLayout.CENTER);
         add(centro, BorderLayout.CENTER);

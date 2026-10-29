@@ -5,6 +5,7 @@ import ar.uade.cine.swing.api.ApiImagenes;
 import ar.uade.cine.swing.api.dto.cartelera.Pelicula;
 import ar.uade.cine.swing.comun.AlAnchoDelVisor;
 import ar.uade.cine.swing.comun.Componentes;
+import ar.uade.cine.swing.comun.Escala;
 import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.comun.Mensajes;
 import ar.uade.cine.swing.comun.Pila;
@@ -35,7 +36,7 @@ public final class PantallaPendientes extends Pantalla {
     private final ApiCartelera apiCartelera;
     private final ApiImagenes apiImagenes;
     private final Navegacion navegacion;
-    private final JPanel tarjetas = new JPanel(new GridLayout(0, 1, 0, Componentes.CERCA));
+    private final JPanel tarjetas = new JPanel(new GridLayout(0, 1, 0, Escala.CERCA));
 
     public PantallaPendientes(ApiCartelera apiCartelera, ApiImagenes apiImagenes, Navegacion navegacion) {
         super("Por revisar", "Lo que trajo el importador de TMDB y todavía nadie miró. Hasta que las confirmes no "
@@ -94,11 +95,11 @@ public final class PantallaPendientes extends Pantalla {
         datos.add(pelicula.generos().stream().map(g -> etiqueta(g)).collect(Collectors.joining(", ")));
         JButton confirmar = Componentes.primario(new JButton("Confirmar"));
         JButton descartar = Componentes.peligro(new JButton("Descartar"));
-        JPanel cabeza = new JPanel(new BorderLayout(Componentes.BLOQUE, 0));
+        JPanel cabeza = new JPanel(new BorderLayout(Escala.BLOQUE, 0));
         cabeza.add(new Pila().agregar(Componentes.subtitulo(pelicula.titulo()),
                 Componentes.nota(String.join(" · ", datos))), BorderLayout.CENTER);
         cabeza.add(Componentes.aLaDerecha(descartar, confirmar), BorderLayout.EAST);
-        JPanel contenido = new JPanel(new BorderLayout(Componentes.APARTE, 0));
+        JPanel contenido = new JPanel(new BorderLayout(Escala.APARTE, 0));
         JPanel tarjeta = Componentes.conBorde(contenido);
         // Deshabilitados mientras viaja: dos clics seguidos mandarían confirmar y descartar la misma película.
         confirmar.addActionListener(e -> decidir(tarjeta, confirmar, descartar,
@@ -112,7 +113,7 @@ public final class PantallaPendientes extends Pantalla {
                     pelicula.titulo() + " descartada");
         });
 
-        JPanel texto = new JPanel(new BorderLayout(0, Componentes.CERCA));
+        JPanel texto = new JPanel(new BorderLayout(0, Escala.CERCA));
         texto.add(cabeza, BorderLayout.NORTH);
         texto.add(Componentes.texto(escapar(vacioSi(pelicula.sinopsis(), "Sin sinopsis"))), BorderLayout.CENTER);
         JPanel poster = new JPanel(new BorderLayout());

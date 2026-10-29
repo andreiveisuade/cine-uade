@@ -1,6 +1,7 @@
 package ar.uade.cine.swing.pantallas;
 
 import ar.uade.cine.swing.comun.Componentes;
+import ar.uade.cine.swing.comun.Escala;
 
 import javax.swing.BorderFactory;
 import javax.swing.JComponent;
@@ -10,12 +11,12 @@ import java.awt.BorderLayout;
 // Lo común a toda pantalla del panel: margen y encabezado; los atajos para pedir y avisar vienen de Seccion.
 public abstract class Pantalla extends Seccion {
 
-    private final JPanel cabecera = new JPanel(new BorderLayout(Componentes.BLOQUE, 0));
+    private final JPanel cabecera = new JPanel(new BorderLayout(Escala.BLOQUE, 0));
 
     protected Pantalla(String titulo, String descripcion) {
-        super(new BorderLayout(Componentes.BLOQUE, Componentes.APARTE));
-        setBorder(BorderFactory.createEmptyBorder(Componentes.BLOQUE, Componentes.MARGEN, Componentes.BLOQUE,
-                Componentes.MARGEN));
+        super(new BorderLayout(Escala.BLOQUE, Escala.APARTE));
+        setBorder(BorderFactory.createEmptyBorder(Escala.BLOQUE, Escala.MARGEN, Escala.BLOQUE,
+                Escala.MARGEN));
         cabecera.add(Componentes.encabezado(titulo, descripcion), BorderLayout.CENTER);
         add(cabecera, BorderLayout.NORTH);
     }

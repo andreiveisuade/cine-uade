@@ -110,7 +110,7 @@ public final class BarraFiltros extends JPanel {
 
     // La etiqueta y su campo van juntos: si la barra salta de línea, «Hasta» no queda lejos de su fecha.
     private void agregar(JComponent... componentes) {
-        JPanel juntos = new JPanel(new FlowLayout(FlowLayout.LEFT, Componentes.PEGADO, 0));
+        JPanel juntos = new JPanel(new FlowLayout(FlowLayout.LEFT, Escala.PEGADO, 0));
         for (JComponent componente : componentes) juntos.add(componente);
         add(componentes.length == 1 ? componentes[0] : juntos);
     }

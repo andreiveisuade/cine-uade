@@ -7,6 +7,7 @@ import ar.uade.cine.swing.api.dto.informes.ArqueoCandy;
 import ar.uade.cine.swing.api.dto.ventas.Pago;
 import ar.uade.cine.swing.comun.CampoFecha;
 import ar.uade.cine.swing.comun.Componentes;
+import ar.uade.cine.swing.comun.Escala;
 import ar.uade.cine.swing.comun.FlujoConSalto;
 import ar.uade.cine.swing.comun.Pila;
 import ar.uade.cine.swing.comun.Tabla;
@@ -37,7 +38,7 @@ public final class PantallaCaja extends Pantalla {
 
     private final ApiInformes apiInformes;
     private final CampoFecha fecha = new CampoFecha(LocalDate.now());
-    private final JPanel cifras = new JPanel(new GridLayout(1, 4, Componentes.CERCA, 0));
+    private final JPanel cifras = new JPanel(new GridLayout(1, 4, Escala.CERCA, 0));
     private final JLabel tituloCandy = Componentes.subtitulo("Candy");
     private final Tabla<Pago> boleteria = new Tabla<>(
             Columna.<Pago>de("Hora", p -> hora(p.fecha())).ancho(60),
@@ -70,11 +71,11 @@ public final class PantallaCaja extends Pantalla {
 
         // Las tablas miden lo que tienen: un día flojo no deja medio pantalla vacía entre boletería y candy.
         Pila contenido = new Pila();
-        contenido.agregar(barra).espacio(Componentes.CERCA)
-                .agregar(cifras).espacio(Componentes.BLOQUE)
-                .agregar(Componentes.subtitulo("Boletería")).espacio(Componentes.JUNTO)
-                .agregar(boleteria.conScrollAjustado(MAX_FILAS)).espacio(Componentes.BLOQUE)
-                .agregar(tituloCandy).espacio(Componentes.JUNTO)
+        contenido.agregar(barra).espacio(Escala.CERCA)
+                .agregar(cifras).espacio(Escala.BLOQUE)
+                .agregar(Componentes.subtitulo("Boletería")).espacio(Escala.JUNTO)
+                .agregar(boleteria.conScrollAjustado(MAX_FILAS)).espacio(Escala.BLOQUE)
+                .agregar(tituloCandy).espacio(Escala.JUNTO)
                 .agregar(candy.conScrollAjustado(MAX_FILAS));
         JPanel arriba = new JPanel(new BorderLayout());
         arriba.add(contenido, BorderLayout.NORTH);

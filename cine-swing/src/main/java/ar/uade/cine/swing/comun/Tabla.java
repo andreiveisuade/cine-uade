@@ -206,10 +206,10 @@ public final class Tabla<T> {
             g2.setColor(getBackground());
             g2.fillRect(0, 0, getWidth(), getHeight());
             FontMetrics medida = g2.getFontMetrics(getFont());
-            int alto = medida.getHeight() + Componentes.PEGADO;
-            int ancho = medida.stringWidth(getText()) + 2 * Componentes.JUNTO;
-            int x = getHorizontalAlignment() == RIGHT ? getWidth() - getInsets().right - ancho + Componentes.JUNTO
-                    : getInsets().left - Componentes.JUNTO;
+            int alto = medida.getHeight() + Escala.PEGADO;
+            int ancho = medida.stringWidth(getText()) + 2 * Escala.JUNTO;
+            int x = getHorizontalAlignment() == RIGHT ? getWidth() - getInsets().right - ancho + Escala.JUNTO
+                    : getInsets().left - Escala.JUNTO;
             g2.setColor(new Color(pastilla.getRed(), pastilla.getGreen(), pastilla.getBlue(), 40));
             g2.fillRoundRect(x, (getHeight() - alto) / 2, ancho, alto, alto, alto);
             g2.dispose();

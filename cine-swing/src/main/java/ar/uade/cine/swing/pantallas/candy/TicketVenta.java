@@ -2,6 +2,7 @@ package ar.uade.cine.swing.pantallas.candy;
 
 import ar.uade.cine.swing.api.dto.candy.CompraCandy;
 import ar.uade.cine.swing.comun.Componentes;
+import ar.uade.cine.swing.comun.Escala;
 import ar.uade.cine.swing.informes.TicketCandy;
 
 import javax.swing.JLabel;
@@ -19,7 +20,7 @@ final class TicketVenta extends JPanel {
     private final JTextArea ticket = Componentes.areaDeLectura(16, 42);
 
     TicketVenta() {
-        super(new BorderLayout(0, Componentes.JUNTO));
+        super(new BorderLayout(0, Escala.JUNTO));
         ticket.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 11));
         // Es texto con columnas fijas: cortar la línea partía el renglón de "=" en dos. Si no entra, scroll.
         ticket.setLineWrap(false);

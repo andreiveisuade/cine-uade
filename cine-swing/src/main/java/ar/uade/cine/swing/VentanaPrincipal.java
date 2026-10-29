@@ -5,6 +5,7 @@ import ar.uade.cine.swing.api.Servidor;
 import ar.uade.cine.swing.api.dto.usuarios.Empleado;
 import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
+import ar.uade.cine.swing.comun.Escala;
 import ar.uade.cine.swing.comun.Etiquetas;
 import ar.uade.cine.swing.comun.Mensajes;
 import ar.uade.cine.swing.pantallas.Destino;
@@ -106,24 +107,24 @@ public final class VentanaPrincipal extends JFrame implements Navegacion {
         cabecera.setLayout(new BoxLayout(cabecera, BoxLayout.X_AXIS));
         cabecera.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createMatteBorder(0, 0, 1, 0, Colores.borde()),
-                BorderFactory.createEmptyBorder(Componentes.JUNTO, Componentes.APARTE, Componentes.JUNTO,
-                        Componentes.APARTE)));
+                BorderFactory.createEmptyBorder(Escala.JUNTO, Escala.APARTE, Escala.JUNTO,
+                        Escala.APARTE)));
         JLabel marca = new JLabel("CINE UADE");
-        marca.setFont(marca.getFont().deriveFont(Font.BOLD, Componentes.LETRA_TARJETA));
+        marca.setFont(marca.getFont().deriveFont(Font.BOLD, Escala.LETRA_TARJETA));
         cabecera.add(marca);
         cabecera.add(Box.createHorizontalGlue());
         cabecera.add(marca(servidor));
-        cabecera.add(Box.createHorizontalStrut(Componentes.CERCA));
+        cabecera.add(Box.createHorizontalStrut(Escala.CERCA));
         JLabel quien = new JLabel(empleado.nombre() + " · " + Etiquetas.etiqueta(empleado.rol()));
         quien.setForeground(Colores.secundario());
         cabecera.add(quien);
-        cabecera.add(Box.createHorizontalStrut(Componentes.CERCA));
+        cabecera.add(Box.createHorizontalStrut(Escala.CERCA));
         cabecera.add(interruptorDeTema());
-        cabecera.add(Box.createHorizontalStrut(Componentes.JUNTO));
+        cabecera.add(Box.createHorizontalStrut(Escala.JUNTO));
         JButton produccion = new JButton("Estado de producción");
         produccion.addActionListener(e -> VentanaProduccion.abrir(this, preferencias));
         cabecera.add(produccion);
-        cabecera.add(Box.createHorizontalStrut(Componentes.JUNTO));
+        cabecera.add(Box.createHorizontalStrut(Escala.JUNTO));
         JButton salir = new JButton("Salir");
         salir.addActionListener(e -> alSalir.run());
         cabecera.add(salir);
@@ -149,10 +150,10 @@ public final class VentanaPrincipal extends JFrame implements Navegacion {
         JPanel pie = new JPanel(new BorderLayout());
         pie.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, Colores.borde()));
         JLabel barra = Mensajes.barraDeEstado(getRootPane());
-        barra.setBorder(BorderFactory.createEmptyBorder(6, Componentes.APARTE, 6, Componentes.APARTE));
+        barra.setBorder(BorderFactory.createEmptyBorder(6, Escala.APARTE, 6, Escala.APARTE));
         JLabel donde = new JLabel(servidor.url());
         donde.setForeground(Colores.secundario());
-        donde.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, Componentes.APARTE));
+        donde.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, Escala.APARTE));
         pie.add(barra, BorderLayout.CENTER);
         pie.add(donde, BorderLayout.EAST);
         return pie;
@@ -163,7 +164,7 @@ public final class VentanaPrincipal extends JFrame implements Navegacion {
         JLabel marca = new JLabel(servidor.entorno() == Servidor.Entorno.PRODUCCION
                 ? servidor.marca() + " · lo que cambies lo ve el público" : servidor.marca());
         marca.setToolTipText(servidor.url() + " · para cambiarlo, salí y elegilo al ingresar");
-        marca.setBorder(BorderFactory.createEmptyBorder(2, Componentes.JUNTO, 2, Componentes.JUNTO));
+        marca.setBorder(BorderFactory.createEmptyBorder(2, Escala.JUNTO, 2, Escala.JUNTO));
         switch (servidor.entorno()) {
             case LOCAL -> marca.setForeground(Colores.secundario());
             case PRODUCCION -> {
@@ -171,7 +172,7 @@ public final class VentanaPrincipal extends JFrame implements Navegacion {
                 marca.setFont(marca.getFont().deriveFont(Font.BOLD));
                 marca.setBorder(BorderFactory.createCompoundBorder(
                         BorderFactory.createLineBorder(Colores.error(), 1, true),
-                        BorderFactory.createEmptyBorder(2, Componentes.JUNTO, 2, Componentes.JUNTO)));
+                        BorderFactory.createEmptyBorder(2, Escala.JUNTO, 2, Escala.JUNTO)));
             }
             case OTRO -> {
                 marca.setForeground(Colores.aviso());
@@ -185,14 +186,14 @@ public final class VentanaPrincipal extends JFrame implements Navegacion {
         JPanel menu = new JPanel();
         menu.setBackground(Colores.lateral());
         menu.setLayout(new BoxLayout(menu, BoxLayout.Y_AXIS));
-        menu.setBorder(BorderFactory.createEmptyBorder(Componentes.JUNTO, Componentes.JUNTO, Componentes.JUNTO,
-                Componentes.JUNTO));
+        menu.setBorder(BorderFactory.createEmptyBorder(Escala.JUNTO, Escala.JUNTO, Escala.JUNTO,
+                Escala.JUNTO));
         ButtonGroup grupo = new ButtonGroup();
         for (Grupo g : grupos) {
             JLabel titulo = new JLabel(g.titulo().toUpperCase());
-            titulo.setFont(titulo.getFont().deriveFont(Font.BOLD, Componentes.LETRA_ROTULO));
+            titulo.setFont(titulo.getFont().deriveFont(Font.BOLD, Escala.LETRA_ROTULO));
             titulo.setForeground(Colores.secundario());
-            titulo.setBorder(BorderFactory.createEmptyBorder(Componentes.CERCA, Componentes.JUNTO, Componentes.PEGADO,
+            titulo.setBorder(BorderFactory.createEmptyBorder(Escala.CERCA, Escala.JUNTO, Escala.PEGADO,
                     0));
             menu.add(Componentes.izquierda(titulo));
             for (Destino d : g.destinos()) {
@@ -201,7 +202,7 @@ public final class VentanaPrincipal extends JFrame implements Navegacion {
                 boton.putClientProperty(FlatClientProperties.BUTTON_TYPE, FlatClientProperties.BUTTON_TYPE_TAB);
                 boton.putClientProperty(FlatClientProperties.TAB_BUTTON_UNDERLINE_PLACEMENT, SwingConstants.LEFT);
                 boton.setHorizontalAlignment(SwingConstants.LEFT);
-                boton.setBorder(BorderFactory.createEmptyBorder(6, Componentes.CERCA, 6, Componentes.JUNTO));
+                boton.setBorder(BorderFactory.createEmptyBorder(6, Escala.CERCA, 6, Escala.JUNTO));
                 boton.setMaximumSize(new Dimension(Integer.MAX_VALUE, boton.getPreferredSize().height));
                 boton.addActionListener(e -> ir(d));
                 grupo.add(boton);
