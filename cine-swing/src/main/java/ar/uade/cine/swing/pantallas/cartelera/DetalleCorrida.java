@@ -27,15 +27,20 @@ final class DetalleCorrida extends JPanel {
     private final JLabel resumen = Componentes.texto(" ");
     private final JButton revisar = new JButton();
     private final Tabla<PeliculaDeCorrida> peliculas = new Tabla<>(
-            Columna.<PeliculaDeCorrida>de("Resultado", p -> etiqueta(p.resultado())).ancho(90),
+            Columna.<PeliculaDeCorrida>de("Resultado", p -> etiqueta(p.resultado())).ancho(100)
+                    .comoEstado(p -> switch (p.resultado()) {
+                        case "NUEVA" -> Colores.exito();
+                        case "YA_ESTABA" -> Colores.secundario();
+                        default -> Colores.error();
+                    }),
             Columna.<PeliculaDeCorrida>de("Película", PeliculaDeCorrida::titulo).ancho(280),
             Columna.<PeliculaDeCorrida>de("Qué pasó", DetalleCorrida::quePaso).ancho(300));
 
     DetalleCorrida(Runnable alRevisar) {
-        super(new BorderLayout(0, 6));
+        super(new BorderLayout(0, Componentes.JUNTO));
         revisar.setVisible(false);
         revisar.addActionListener(e -> alRevisar.run());
-        JPanel encabezado = new JPanel(new BorderLayout(12, 0));
+        JPanel encabezado = new JPanel(new BorderLayout(Componentes.CERCA, 0));
         encabezado.add(new Pila().agregar(titulo, resumen), BorderLayout.CENTER);
         encabezado.add(revisar, BorderLayout.EAST);
         add(encabezado, BorderLayout.NORTH);
@@ -46,7 +51,7 @@ final class DetalleCorrida extends JPanel {
     void mostrar(Importacion corrida) {
         if (corrida == null) {
             titulo.setText("Todavía no se trajo nada");
-            resumen.setText("Elegí cuántas películas y apretá Traer cartelera.");
+            resumen.setText("Elegí cuántas películas y apretá Traer cartelera");
             resumen.setForeground(Colores.secundario());
             revisar.setVisible(false);
             peliculas.mostrar(List.of());
@@ -55,7 +60,7 @@ final class DetalleCorrida extends JPanel {
         titulo.setText("Corrida del " + fechaHora(corrida.pedidaEn()));
         boolean fallo = corrida.fallo();
         resumen.setText(fallo ? "Falló: " + corrida.motivoDelFallo()
-                : "Pediste hasta " + corrida.paginas() * POR_PAGINA + ". " + resumen(corrida) + ".");
+                : "Pediste hasta " + corrida.paginas() * POR_PAGINA + ": " + resumen(corrida));
         resumen.setForeground(fallo ? Colores.error() : Colores.texto());
         long pendientes = corrida.peliculas().stream().filter(p -> "PENDIENTE".equals(p.estadoRevision())).count();
         revisar.setText("Revisar " + (pendientes == 1 ? "la pendiente" : "las " + pendientes + " pendientes"));

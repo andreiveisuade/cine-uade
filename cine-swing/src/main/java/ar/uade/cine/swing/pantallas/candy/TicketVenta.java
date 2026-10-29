@@ -14,17 +14,16 @@ import java.awt.Font;
 // El ticket de la última venta de mostrador, como lo escribe TicketCandy; antes de cobrar, de dónde sale.
 final class TicketVenta extends JPanel {
 
-    private final JLabel titulo = new JLabel(" ");
+    private final JLabel titulo = Componentes.subtitulo("Ticket");
     // El renglón del ticket mide 40 (TicketCandy); dos más por el margen del área, así no aparece el scroll.
-    private final JTextArea ticket = Componentes.areaDeLectura(18, 42);
+    private final JTextArea ticket = Componentes.areaDeLectura(16, 42);
 
     TicketVenta() {
-        super(new BorderLayout(0, 6));
-        ticket.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
+        super(new BorderLayout(0, Componentes.JUNTO));
+        ticket.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 11));
         // Es texto con columnas fijas: cortar la línea partía el renglón de "=" en dos. Si no entra, scroll.
         ticket.setLineWrap(false);
-        ticket.setText("El total lo calcula el backend con los precios de la carta: acá no se tipea.\n"
-                + "Al cobrar aparece el ticket.");
+        ticket.setText("El total sale de los precios de la carta.\nAl cobrar aparece acá el ticket.");
         add(titulo, BorderLayout.NORTH);
         add(new JScrollPane(ticket), BorderLayout.CENTER);
     }

@@ -17,7 +17,7 @@ public final class PantallaCandy extends Pantalla {
 
     public PantallaCandy(ApiCandy apiCandy, ApiCatalogos apiCatalogos, ApiClientes apiClientes,
                         ApiImagenes apiImagenes) {
-        super("Candy", "La otra caja del cine: se cobra en el mostrador y se entrega, sin reserva de por medio.");
+        super("Candy", "La otra caja del cine: la carta, la venta de mostrador y lo vendido en el día.");
         JTabbedPane pestanas = new JTabbedPane();
         pestanas.addTab("Carta", new Carta(apiCandy, apiCatalogos, apiImagenes));
         pestanas.addTab("Venta de mostrador", new VentaMostrador(apiCandy, apiCatalogos, apiClientes));

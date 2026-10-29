@@ -32,7 +32,8 @@ public final class Componentes {
     public static final int BLOQUE = 24;
     public static final int MARGEN = 32;
 
-    // La escala de letra: título de pantalla, de tarjeta, cuerpo es la del tema, nota y rótulo.
+    // La escala de letra: cifra de caja, título de pantalla, de tarjeta, cuerpo (la del tema), nota y rótulo.
+    public static final float LETRA_CIFRA = 28f;
     public static final float LETRA_TITULO = 22f;
     public static final float LETRA_TARJETA = 16f;
     public static final float LETRA_NOTA = 12f;
@@ -198,7 +199,7 @@ public final class Componentes {
         arriba.setForeground(Colores.secundario());
         arriba.setFont(arriba.getFont().deriveFont(LETRA_ROTULO));
         JLabel numero = new JLabel(valor);
-        numero.setFont(numero.getFont().deriveFont(Font.BOLD, LETRA_TITULO));
+        numero.setFont(numero.getFont().deriveFont(Font.BOLD, LETRA_CIFRA));
         panel.add(izquierda(arriba));
         panel.add(Box.createVerticalStrut(PEGADO));
         panel.add(izquierda(numero));

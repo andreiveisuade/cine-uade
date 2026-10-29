@@ -14,16 +14,16 @@ import ar.uade.cine.swing.comun.TablaCompras;
 import ar.uade.cine.swing.comun.Tabla.Columna;
 import ar.uade.cine.swing.pantallas.Pantalla;
 
-import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JSplitPane;
 import java.awt.BorderLayout;
+import java.awt.GridLayout;
 import java.time.LocalDate;
 import java.util.stream.Collectors;
 
 import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
+import static ar.uade.cine.swing.comun.Formato.cantidad;
 import static ar.uade.cine.swing.comun.Formato.hora;
 import static ar.uade.cine.swing.comun.Formato.precio;
 
@@ -33,10 +33,11 @@ public final class PantallaCaja extends Pantalla {
     private record Datos(Arqueo arqueo, ArqueoCandy candy) {
     }
 
+    private static final int MAX_FILAS = 8;
+
     private final ApiInformes apiInformes;
     private final CampoFecha fecha = new CampoFecha(LocalDate.now());
-    private final JPanel cifras = new JPanel(new FlujoConSalto());
-    private final JLabel porMedio = new JLabel(" ");
+    private final JPanel cifras = new JPanel(new GridLayout(1, 4, Componentes.CERCA, 0));
     private final JLabel tituloCandy = Componentes.subtitulo("Candy");
     private final Tabla<Pago> boleteria = new Tabla<>(
             Columna.<Pago>de("Hora", p -> hora(p.fecha())).ancho(60),
@@ -46,16 +47,19 @@ public final class PantallaCaja extends Pantalla {
             Columna.<Pago>de("Medio", p -> etiqueta(p.medio())),
             Columna.<Pago>de("Autorización", p -> p.codigoAutorizacion() == null ? "—" : p.codigoAutorizacion()),
             Columna.<Pago>numero("Descuento", p -> p.descuento() > 0 ? "−" + precio(p.descuento()) : "—"),
-            Columna.<Pago>numero("Monto", p -> precio(p.monto())));
-    private final Tabla<CompraCandy> candy = TablaCompras.crear();
+            Columna.<Pago>numero("Monto", p -> precio(p.monto())))
+            .vacia("No se cobró nada en boletería ese día");
+    private final Tabla<CompraCandy> candy = TablaCompras.crear().vacia("No se vendió candy ese día");
 
     public PantallaCaja(ApiInformes apiInformes) {
-        super("Arqueo", "Lo cobrado en el día, por medio de pago: boletería y candy, cada una con su caja.");
+        super("Caja", "El arqueo del día: lo cobrado en boletería y en candy, por medio de pago.");
         this.apiInformes = apiInformes;
 
         JPanel barra = new JPanel(new FlujoConSalto());
         JButton anterior = new JButton("◀");
+        anterior.setToolTipText("Día anterior");
         JButton siguiente = new JButton("▶");
+        siguiente.setToolTipText("Día siguiente");
         barra.add(new JLabel("Fecha"));
         barra.add(anterior);
         barra.add(fecha);
@@ -64,26 +68,17 @@ public final class PantallaCaja extends Pantalla {
         siguiente.addActionListener(e -> mover(1));
         fecha.alCambiar(this::recargar);
 
-        Pila resumen = new Pila();
-        resumen.agregar(barra);
-        resumen.agregar(cifras);
-        resumen.agregar(porMedio);
-        porMedio.setBorder(BorderFactory.createEmptyBorder(6, 4, 6, 0));
-
-        JPanel arriba = new JPanel(new BorderLayout(0, 4));
-        arriba.add(Componentes.subtitulo("Boletería"), BorderLayout.NORTH);
-        arriba.add(boleteria.conScroll());
-        JPanel abajo = new JPanel(new BorderLayout(0, 4));
-        abajo.add(tituloCandy, BorderLayout.NORTH);
-        abajo.add(candy.conScroll());
-        JSplitPane tablas = new JSplitPane(JSplitPane.VERTICAL_SPLIT, arriba, abajo);
-        tablas.setResizeWeight(0.6);
-        tablas.setBorder(null);
-
-        JPanel centro = new JPanel(new BorderLayout(0, 8));
-        centro.add(resumen, BorderLayout.NORTH);
-        centro.add(tablas, BorderLayout.CENTER);
-        add(centro, BorderLayout.CENTER);
+        // Las tablas miden lo que tienen: un día flojo no deja medio pantalla vacía entre boletería y candy.
+        Pila contenido = new Pila();
+        contenido.agregar(barra).espacio(Componentes.CERCA)
+                .agregar(cifras).espacio(Componentes.BLOQUE)
+                .agregar(Componentes.subtitulo("Boletería")).espacio(Componentes.JUNTO)
+                .agregar(boleteria.conScrollAjustado(MAX_FILAS)).espacio(Componentes.BLOQUE)
+                .agregar(tituloCandy).espacio(Componentes.JUNTO)
+                .agregar(candy.conScrollAjustado(MAX_FILAS));
+        JPanel arriba = new JPanel(new BorderLayout());
+        arriba.add(contenido, BorderLayout.NORTH);
+        add(arriba, BorderLayout.CENTER);
         recargar();
     }
 
@@ -100,17 +95,18 @@ public final class PantallaCaja extends Pantalla {
 
     private void pintar(Datos datos) {
         Arqueo arqueo = datos.arqueo();
-        Componentes.reemplazar(cifras,
-                Componentes.cifra("Boletería", precio(arqueo.total()), null, null),
-                Componentes.cifra("Candy", precio(datos.candy().total()), null, null),
-                Componentes.cifra("Operaciones", String.valueOf(arqueo.pagos().size()), null, null),
-                Componentes.cifra("Entradas", String.valueOf(arqueo.entradas()), null, null));
-        porMedio.setText(arqueo.porMedio().isEmpty() ? "No se cobró nada en boletería ese día."
+        // El desglose por medio va dentro de la cifra: es lo que se cuenta contra la caja física.
+        String porMedio = arqueo.porMedio().isEmpty() ? "Sin cobros"
                 : arqueo.porMedio().entrySet().stream()
-                .map(e -> etiqueta(e.getKey()) + " · " + e.getValue().cantidad() + "  " + precio(e.getValue().total()))
-                .collect(Collectors.joining("     ")));
+                .map(e -> etiqueta(e.getKey()) + " · " + precio(e.getValue().total()))
+                .collect(Collectors.joining("<br>"));
+        Componentes.reemplazar(cifras,
+                Componentes.cifra("Boletería", precio(arqueo.total()), porMedio, null),
+                Componentes.cifra("Candy", precio(datos.candy().total()), null, null),
+                Componentes.cifra("Cobros", String.valueOf(arqueo.pagos().size()), null, null),
+                Componentes.cifra("Entradas", String.valueOf(arqueo.entradas()), null, null));
         boleteria.mostrar(arqueo.pagos());
-        tituloCandy.setText("Candy · " + datos.candy().compras().size() + " ventas");
+        tituloCandy.setText("Candy · " + cantidad(datos.candy().compras().size(), "venta", "ventas"));
         candy.mostrar(datos.candy().compras());
     }
 }

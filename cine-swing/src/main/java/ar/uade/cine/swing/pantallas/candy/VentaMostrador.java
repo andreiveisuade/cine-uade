@@ -48,7 +48,7 @@ final class VentaMostrador extends Seccion {
     private final JLabel error = Componentes.texto(" ");
 
     VentaMostrador(ApiCandy apiCandy, ApiCatalogos apiCatalogos, ApiClientes apiClientes) {
-        super(new BorderLayout(12, 8));
+        super(new BorderLayout(Componentes.BLOQUE, 0));
         this.apiCandy = apiCandy;
         this.apiClientes = apiClientes;
         JButton cobrar = Componentes.primario(new JButton("Cobrar"));
@@ -57,22 +57,21 @@ final class VentaMostrador extends Seccion {
         codigo.setToolTipText("El que da el posnet o la app (R11). En efectivo no hace falta.");
         reserva.setToolTipText("Con reserva, el cliente sale de ella y la venta suma al informe de esa función.");
 
-        Formulario datos = new Formulario().obligatorio("Medio de pago", medio).campo(etiquetaCodigo, codigo)
-                .campo("Cliente (opcional)", email).campo("Reserva (opcional)", reserva);
-
-        Pila pie = new Pila();
-        pie.agregar(datos);
-        pie.agregar(Componentes.nota("Con reserva, el cliente sale de ella y la venta suma al "
-                + "informe de esa función."));
-        pie.agregar(cobrar);
-        pie.agregar(error);
-
-        JPanel izquierda = new JPanel(new BorderLayout(0, 8));
-        izquierda.add(productos, BorderLayout.CENTER);
-        izquierda.add(pie, BorderLayout.SOUTH);
-        add(izquierda, BorderLayout.CENTER);
-
-        add(ticket, BorderLayout.EAST);
+        // Lo que se elige a la izquierda; el cobro y su ticket al costado, como el formulario de las demás pantallas.
+        JPanel cobro = Componentes.conBorde(new Formulario()
+                .ancho(Componentes.subtitulo("Cobro"))
+                .obligatorio("Medio de pago", medio)
+                .campo(etiquetaCodigo, codigo)
+                .campo("Cliente (opcional)", email)
+                .campo("Reserva (opcional)", reserva)
+                .ancho(Componentes.nota("Con reserva, el cliente sale de ella, la venta suma al informe de esa "
+                        + "función y el candy se retira en la Puerta con el QR de la entrada."))
+                .ancho(Componentes.aLaDerecha(cobrar))
+                .ancho(error));
+        Pila costado = new Pila();
+        costado.agregar(cobro).espacio(Componentes.APARTE).agregar(Componentes.conBorde(ticket));
+        add(productos, BorderLayout.CENTER);
+        add(Componentes.lateral(costado), BorderLayout.EAST);
 
         cargar(() -> new Carga(apiCandy.obtenerProductosCandy(false), apiCatalogos.obtenerMediosPago()), carga -> {
             Campos.llenar(medio, Opciones.medios(carga.medios()));

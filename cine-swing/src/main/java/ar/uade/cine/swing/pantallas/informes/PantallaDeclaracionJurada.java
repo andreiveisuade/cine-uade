@@ -10,8 +10,10 @@ import ar.uade.cine.swing.api.dto.informes.Total;
 import ar.uade.cine.swing.api.dto.informes.TotalDeclarado;
 import ar.uade.cine.swing.comun.Archivos;
 import ar.uade.cine.swing.comun.CampoFecha;
+import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.FlujoConSalto;
+import ar.uade.cine.swing.comun.Pila;
 import ar.uade.cine.swing.comun.Tabla.Columna;
 import ar.uade.cine.swing.comun.Tabla;
 import ar.uade.cine.swing.comun.Tarea;
@@ -22,7 +24,6 @@ import ar.uade.cine.swing.pantallas.Pantalla;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JSplitPane;
 import java.awt.BorderLayout;
 import java.time.LocalDate;
 import java.util.List;
@@ -30,6 +31,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
+import static ar.uade.cine.swing.comun.Formato.cantidad;
 import static ar.uade.cine.swing.comun.Formato.fechaHora;
 import static ar.uade.cine.swing.comun.Formato.precio;
 
@@ -57,7 +59,8 @@ public final class PantallaDeclaracionJurada extends Pantalla {
             Columna.<FuncionDeclarada>numero("Espectadores", FuncionDeclarada::espectadores),
             Columna.<FuncionDeclarada>numero("Bruta", f -> precio(f.recaudacionBruta())),
             Columna.<FuncionDeclarada>numero("Descuentos", f -> precio(f.descuentos())),
-            Columna.<FuncionDeclarada>numero("Neta", f -> precio(f.recaudacionNeta())));
+            Columna.<FuncionDeclarada>numero("Neta", f -> precio(f.recaudacionNeta())))
+            .vacia("No hubo funciones con entradas cobradas en ese período");
     private final Tabla<PeliculaDeclarada> peliculas = new Tabla<>(
             Columna.<PeliculaDeclarada>de("Película", PeliculaDeclarada::titulo).ancho(220),
             Columna.<PeliculaDeclarada>de("Edad", p -> etiqueta(p.clasificacion())),
@@ -66,12 +69,14 @@ public final class PantallaDeclaracionJurada extends Pantalla {
             Columna.<PeliculaDeclarada>numero("Espectadores", PeliculaDeclarada::espectadores),
             Columna.<PeliculaDeclarada>numero("Bruta", p -> precio(p.recaudacionBruta())),
             Columna.<PeliculaDeclarada>numero("Descuentos", p -> precio(p.descuentos())),
-            Columna.<PeliculaDeclarada>numero("Neta", p -> precio(p.recaudacionNeta())));
+            Columna.<PeliculaDeclarada>numero("Neta", p -> precio(p.recaudacionNeta())))
+            .vacia("Sin películas para declarar en ese período");
     private Datos actual;
+    private static final int MAX_FILAS = 8;
 
     public PantallaDeclaracionJurada(ApiCatalogos apiCatalogos, ApiInformes apiInformes) {
-        super("Declaración jurada", "Lo cobrado en la semana cinematográfica, de jueves a miércoles, por función "
-                + "y por película. Sin fechas se muestra la última semana cerrada.");
+        super("Declaración jurada", "La semana cinematográfica, de jueves a miércoles, por función y por película. "
+                + "Sin fechas, la última semana cerrada.");
         this.apiCatalogos = apiCatalogos;
         this.apiInformes = apiInformes;
 
@@ -85,27 +90,19 @@ public final class PantallaDeclaracionJurada extends Pantalla {
         barra.add(new JLabel("Hasta"));
         barra.add(hasta);
         barra.add(consultar);
-        barra.add(exportar);
+        accionDeLaPantalla(exportar);
 
-        JPanel norte = new JPanel(new BorderLayout(0, 6));
-        norte.add(barra, BorderLayout.NORTH);
-        norte.add(error, BorderLayout.CENTER);
-        norte.add(encabezado, BorderLayout.SOUTH);
-        JPanel arriba = new JPanel(new BorderLayout(0, 4));
-        arriba.add(Componentes.subtitulo("Por función"), BorderLayout.NORTH);
-        arriba.add(funciones.conScroll());
-        JPanel abajo = new JPanel(new BorderLayout(0, 4));
-        abajo.add(Componentes.subtitulo("Por película"), BorderLayout.NORTH);
-        abajo.add(peliculas.conScroll());
-        JSplitPane tablas = new JSplitPane(JSplitPane.VERTICAL_SPLIT, arriba, abajo);
-        tablas.setResizeWeight(0.6);
-        tablas.setBorder(null);
-
-        JPanel centro = new JPanel(new BorderLayout(0, 8));
-        centro.add(norte, BorderLayout.NORTH);
-        centro.add(tablas, BorderLayout.CENTER);
-        centro.add(total, BorderLayout.SOUTH);
-        add(centro, BorderLayout.CENTER);
+        encabezado.setForeground(Colores.secundario());
+        Pila contenido = new Pila();
+        contenido.agregar(barra, error, encabezado).espacio(Componentes.APARTE)
+                .agregar(Componentes.subtitulo("Por función")).espacio(Componentes.JUNTO)
+                .agregar(funciones.conScrollAjustado(MAX_FILAS)).espacio(Componentes.BLOQUE)
+                .agregar(Componentes.subtitulo("Por película")).espacio(Componentes.JUNTO)
+                .agregar(peliculas.conScrollAjustado(MAX_FILAS)).espacio(Componentes.APARTE)
+                .agregar(total);
+        JPanel arriba = new JPanel(new BorderLayout());
+        arriba.add(contenido, BorderLayout.NORTH);
+        add(arriba, BorderLayout.CENTER);
         consultar();
     }
 
@@ -134,9 +131,12 @@ public final class PantallaDeclaracionJurada extends Pantalla {
         funciones.mostrar(d.funciones());
         peliculas.mostrar(d.peliculas());
         TotalDeclarado t = d.total();
-        total.setText("<html><b>Total:</b> " + t.funciones() + " funciones · " + t.espectadores() + " espectadores · "
-                + entradas(t.entradasPorTarifa()) + " · bruta " + precio(t.recaudacionBruta()) + " · descuentos "
-                + precio(t.descuentos()) + " · <b>neta " + precio(t.recaudacionNeta()) + "</b></html>");
+        // Sin entradas por tarifa no queda un «· ·» en el medio.
+        String porTarifa = entradas(t.entradasPorTarifa());
+        total.setText("<html><b>Total:</b> " + cantidad(t.funciones(), "función", "funciones") + " · "
+                + cantidad(t.espectadores(), "espectador", "espectadores") + (porTarifa.isEmpty() ? "" : " · " + porTarifa)
+                + " · bruta " + precio(t.recaudacionBruta()) + " · descuentos " + precio(t.descuentos())
+                + " · <b>neta " + precio(t.recaudacionNeta()) + "</b></html>");
         exportar.setEnabled(true);
     }
 

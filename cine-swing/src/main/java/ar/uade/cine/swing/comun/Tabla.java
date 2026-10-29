@@ -13,6 +13,7 @@ import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -69,6 +70,8 @@ public final class Tabla<T> {
     @Accessors(fluent = true)
     private final JTable tabla;
     private String vacia;
+    private JScrollPane ajustado;
+    private int maxFilas;
 
     @SafeVarargs
     public Tabla(Columna<T>... columnas) {
@@ -112,6 +115,7 @@ public final class Tabla<T> {
         filas.clear();
         filas.addAll(nuevas);
         modelo.fireTableDataChanged();
+        ajustar();
     }
 
     public Optional<T> seleccionada() {
@@ -132,6 +136,22 @@ public final class Tabla<T> {
         return new JScrollPane(tabla);
     }
 
+    /** Una tabla corta mide lo que tiene, hasta {@code maxFilas}: sin aire muerto debajo; con más, scrollea. */
+    public JScrollPane conScrollAjustado(int maxFilas) {
+        this.maxFilas = maxFilas;
+        ajustado = conScroll();
+        ajustar();
+        return ajustado;
+    }
+
+    // Vacía ocupa dos filas: lugar para el aviso de tabla vacía.
+    private void ajustar() {
+        if (ajustado == null) return;
+        int visibles = Math.max(2, Math.min(filas.size(), maxFilas));
+        ajustado.setPreferredSize(new Dimension(ajustado.getPreferredSize().width, altoPara(visibles)));
+        ajustado.revalidate();
+    }
+
     private void pintarVacia(Graphics g, JTable tabla) {
         Graphics2D g2 = (Graphics2D) g.create();
         FlatUIUtils.setRenderingHints(g2);
@@ -139,8 +159,10 @@ public final class Tabla<T> {
         g2.setFont(tabla.getFont());
         FontMetrics medida = g2.getFontMetrics();
         Rectangle visible = tabla.getVisibleRect();
+        // Centrado en las primeras filas: en una tabla ajustada de dos filas también se lee.
+        int alto = Math.min(visible.height, 3 * ALTO_FILA);
         g2.drawString(vacia, visible.x + (visible.width - medida.stringWidth(vacia)) / 2,
-                visible.y + Componentes.MARGEN + medida.getAscent());
+                visible.y + (alto - medida.getHeight()) / 2 + medida.getAscent());
         g2.dispose();
     }
 

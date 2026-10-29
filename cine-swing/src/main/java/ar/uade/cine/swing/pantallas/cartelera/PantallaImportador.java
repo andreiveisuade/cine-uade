@@ -80,16 +80,18 @@ public final class PantallaImportador extends Pantalla {
                         + "cargadas, aunque las hayas descartado, no se vuelven a traer."),
                 error, trayendo);
 
-        JPanel listado = new JPanel(new BorderLayout(0, 6));
+        JPanel listado = new JPanel(new BorderLayout(0, Componentes.JUNTO));
         listado.add(Componentes.subtitulo("Corridas"), BorderLayout.NORTH);
-        listado.add(corridas.conScroll());
+        listado.add(corridas.conScrollAjustado(12), BorderLayout.CENTER);
+        JPanel izquierda = new JPanel(new BorderLayout());
+        izquierda.add(listado, BorderLayout.NORTH);
 
-        JSplitPane partes = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, listado, detalle);
+        JSplitPane partes = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, izquierda, detalle);
         partes.setResizeWeight(0.3);
         partes.setDividerLocation(470);
         partes.setBorder(null);
 
-        JPanel centro = new JPanel(new BorderLayout(0, 12));
+        JPanel centro = new JPanel(new BorderLayout(0, Componentes.APARTE));
         centro.add(arriba, BorderLayout.NORTH);
         centro.add(partes, BorderLayout.CENTER);
         add(centro, BorderLayout.CENTER);
