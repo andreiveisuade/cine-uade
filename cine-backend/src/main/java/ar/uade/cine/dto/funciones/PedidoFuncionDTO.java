@@ -4,7 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
-// Lo que entra al programar una función (POST /api/funciones); Bean Validation exige los seis campos.
+// Lo que entra al programar o editar una función (POST y PUT); Bean Validation exige los seis campos.
 public record PedidoFuncionDTO(
         @Schema(example = "1")
         @NotNull(message = "Falta la película") Integer peliculaId,

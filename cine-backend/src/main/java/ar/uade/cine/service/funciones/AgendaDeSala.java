@@ -26,6 +26,11 @@ public final class AgendaDeSala {
         return new AgendaDeSala(0, List.of());
     }
 
+    // La función que se reprograma no choca con el horario que deja.
+    public AgendaDeSala sin(Funcion funcion) {
+        return new AgendaDeSala(minutosLimpieza, tomados.stream().filter(t -> t.funcion() != funcion).toList());
+    }
+
     public Optional<Funcion> chocaCon(LocalDateTime inicio, LocalDateTime fin) {
         LocalDateTime finConLimpieza = fin.plusMinutes(minutosLimpieza);
         return tomados.stream()

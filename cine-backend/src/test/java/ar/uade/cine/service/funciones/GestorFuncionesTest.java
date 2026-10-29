@@ -320,6 +320,108 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
         assertDoesNotThrow(() -> salas.eliminar(1));
     }
 
+    // R12 como el borrado: una reserva cancelada también es historial de la función.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            con una reserva activa,    false
+            con una reserva cancelada, true
+            """)
+    void noSeEditaUnaFuncionConReservas(String caso, boolean cancelarla) {
+        clientes.ingresarConGoogle("Andrei", "andrei@uade.edu.ar");
+        int reserva = reservas.reservar(1, 1, generales("A1"), null).getId();
+        if (cancelarla) {
+            reservas.cancelar(reserva);
+        }
+
+        rechaza("La función 1 tiene reservas: no se puede editar", () -> funciones.reprogramar(1, 1, 1,
+                LocalDateTime.of(2026, 8, 20, 21, 0),
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500))));
+        assertEquals(LocalDateTime.of(2026, 8, 20, 20, 0), funciones.obtener(1).getInicio());
+    }
+
+    @Test
+    void editarCambiaTodoLoQueElAltaRecibe() {
+        cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13);
+        salas.agregar("Sala 3D", TipoSala.TRES_D, List.of(10, 10));
+
+        funciones.reprogramar(1, 2, 2, LocalDateTime.of(2026, 8, 21, 18, 30),
+                new FormatoDeFuncion(Version.DOBLADA, Proyeccion.TRES_D, Dinero.de(6000)));
+
+        Funcion editada = funciones.obtener(1);
+        assertEquals(2, editada.getPeliculaId());
+        assertEquals(2, editada.getSalaId());
+        assertEquals(LocalDateTime.of(2026, 8, 21, 18, 30), editada.getInicio());
+        assertEquals(new FormatoDeFuncion(Version.DOBLADA, Proyeccion.TRES_D, Dinero.de(6000)), editada.getFormato());
+        assertEquals(1, funciones.listar().size(), "edita la misma, no crea otra");
+    }
+
+    // R3 sin la función misma: moverla media hora pisa su propio horario viejo, y eso no es un choque.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            sin cambiar el horario,     2026-08-20T20:00
+            media hora más tarde,       2026-08-20T20:30
+            media hora más temprano,    2026-08-20T19:30
+            """)
+    void editarNoChocaConElHorarioQueDeja(String caso, LocalDateTime inicio) {
+        assertDoesNotThrow(() -> funciones.reprogramar(1, 1, 1, inicio,
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000))));
+
+        assertEquals(inicio, funciones.obtener(1).getInicio());
+    }
+
+    // Mismas validaciones y mensajes que el alta, en el mismo orden; la otra función de la sala es la del 21 a las 20.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            película inexistente,          99, 1,  2026-08-20T20:00,    DOS_D,  No existe la película 99
+            sala inexistente,              1,  99, 2026-08-20T20:00,    DOS_D,  No existe la sala 99
+            R8: 3D en una sala 2D,         1,  1,  2026-08-20T20:00,    TRES_D, La sala Sala 1 no puede proyectar en 3D
+            con segundos,                  1,  1,  2026-08-20T20:00:30, DOS_D,  La hora de la función tiene que ir sin segundos
+            R20: en el pasado,             1,  1,  2026-08-14T09:00,    DOS_D,  La función no puede empezar en el pasado
+            a más de un año,               1,  1,  2027-08-15T20:00,    DOS_D,  La función tiene que empezar dentro del próximo año
+            R3: mientras corre otra,       1,  1,  2026-08-21T21:00,    DOS_D,  La sala ya tiene una función en ese horario
+            R3: a la misma hora que otra,  1,  1,  2026-08-21T20:00,    DOS_D,  La sala ya tiene una función en ese horario
+            R3: en la limpieza de otra,    1,  1,  2026-08-21T22:05,    DOS_D,  'La sala necesita 15 minutos de limpieza: la función anterior termina 22:00 y hasta 22:15 no se puede empezar'
+            """)
+    void editarValidaComoElAltaYSiRechazaNoCambiaNada(String caso, int pelicula, int sala, LocalDateTime inicio,
+            Proyeccion proyeccion, String mensaje) {
+        funciones.programar(1, 1, LocalDateTime.of(2026, 8, 21, 20, 0),
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500)));
+
+        rechaza(mensaje, () -> funciones.reprogramar(1, pelicula, sala, inicio,
+                new FormatoDeFuncion(Version.SUBTITULADA, proyeccion, Dinero.de(4500))));
+        assertEquals(LocalDateTime.of(2026, 8, 20, 20, 0), funciones.obtener(1).getInicio());
+    }
+
+    @Test
+    void noSeEditaUnaFuncionQueNoExiste() {
+        rechaza("No existe la función 99", () -> funciones.reprogramar(99, 1, 1, LocalDateTime.of(2026, 8, 21, 20, 0),
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500))));
+    }
+
+    @Test
+    void noSeEditaHaciaUnaPeliculaPendienteDeRevision() {
+        Pelicula importada = revision.importar(
+                DatosPelicula.deAlta("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13));
+
+        rechaza("La película Dune todavía no está confirmada: revisala antes de programarla",
+                () -> funciones.reprogramar(1, importada.getId(), 1, LocalDateTime.of(2026, 8, 20, 20, 0),
+                        new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500))));
+    }
+
+    // Dos pedidos a la vez pasan R3 juntos: el UNIQUE frena el segundo, también si es una edición.
+    @Test
+    void editarHaciaElHorarioQueOtroTomoALaVezEsUnConflicto() {
+        funciones.programar(1, 1, LocalDateTime.of(2026, 8, 21, 20, 0),
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500)));
+        GestorFunciones otroPedido = new GestorFuncionesQueNoVeLaCarrera(funcionRepository, peliculaRepository,
+                salaRepository, reservaRepository, reloj);
+
+        rechaza("Ya hay una función en esa sala a esa hora", () -> otroPedido.reprogramar(1, 1, 1,
+                LocalDateTime.of(2026, 8, 21, 20, 0),
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(4500))));
+        assertEquals(LocalDateTime.of(2026, 8, 20, 20, 0), funciones.obtener(1).getInicio());
+    }
+
 
     private static final int DURACION = 136;
 

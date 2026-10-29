@@ -56,13 +56,23 @@ public class Funcion {
     // R20 y R3 no son invariantes sino del alta: dependen del reloj y de las otras funciones de la sala.
     public Funcion(Pelicula pelicula, Sala sala, LocalDateTime inicio, FormatoDeFuncion formato,
                    Integer programacionId) {
+        asignar(pelicula, sala, inicio, formato);
+        this.programacionId = programacionId;
+    }
+
+    // Lo mismo que exige el alta. Se desprende de su grilla: ya no es el pase que ella generó.
+    public void reprogramar(Pelicula pelicula, Sala sala, LocalDateTime inicio, FormatoDeFuncion formato) {
+        asignar(pelicula, sala, inicio, formato);
+        this.programacionId = null;
+    }
+
+    private void asignar(Pelicula pelicula, Sala sala, LocalDateTime inicio, FormatoDeFuncion formato) {
         formato.exigirProyectableEn(sala);
         ValidadorFuncion.inicio(inicio);
         this.pelicula = pelicula;
         this.sala = sala;
         this.inicio = inicio;
         this.formato = formato;
-        this.programacionId = programacionId;
     }
 
     // R19 y R20 con un solo corte: la que empieza en este instante ya empezó. Estática para usarla antes de crearla.

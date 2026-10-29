@@ -25,7 +25,7 @@ import ar.uade.cine.repository.ventas.ReservaRepository;
 import ar.uade.cine.repository.salas.SalaRepository;
 import ar.uade.cine.infrastructure.reloj.Reloj;
 
-// Alta, baja y consulta de funciones; @Service que aplica lo que la función no ve sola: R3, R12 y R20.
+// Alta, edición, baja y consulta de funciones; @Service con lo que la función no ve sola: R3, R12 y R20.
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -48,16 +48,33 @@ public class GestorFunciones {
         Pelicula pelicula = peliculaConfirmada(peliculaId);
         Sala sala = salaRepository.exigir(salaId, "la sala");
         Funcion funcion = new Funcion(pelicula, sala, inicio, formato, programacionId);
-        funcion.exigirProgramableA(reloj.ahora());
+        guardarSiElHorarioEstaLibre(funcion, pelicula, sala);
+        return funcion;
+    }
 
-        // R3
+    // R12 como el borrado; lo demás, lo mismo que el alta. La de una grilla se desprende (ver Funcion).
+    public Funcion reprogramar(int id, int peliculaId, int salaId, LocalDateTime inicio, FormatoDeFuncion formato) {
+        Funcion funcion = funcionRepository.exigir(id, "la función");
+        if (reservaRepository.existsByFuncion_Id(id)) {
+            throw new ConflictoDeNegocio("La función " + id + " tiene reservas: no se puede editar");
+        }
+        Pelicula pelicula = peliculaConfirmada(peliculaId);
+        Sala sala = salaRepository.exigir(salaId, "la sala");
+        funcion.reprogramar(pelicula, sala, inicio, formato);
+        guardarSiElHorarioEstaLibre(funcion, pelicula, sala);
+        return funcion;
+    }
+
+    // R20 y R3. La función misma no choca: al editarla, su horario viejo todavía está en la agenda.
+    private void guardarSiElHorarioEstaLibre(Funcion funcion, Pelicula pelicula, Sala sala) {
+        funcion.exigirProgramableA(reloj.ahora());
+        LocalDateTime inicio = funcion.getInicio();
         LocalDateTime fin = funcion.getFin(pelicula.getDuracionMinutos());
-        Optional<Funcion> choque = superpuestaEn(salaId, inicio, fin);
+        Optional<Funcion> choque = agendaDe(sala.getId(), inicio, fin).sin(funcion).chocaCon(inicio, fin);
         if (choque.isPresent()) {
             throw new DatoInvalido(motivoDeLaSuperposicion(choque.get(), sala, inicio));
         }
         guardarCompitiendoPorElHorario(funcion);
-        return funcion;
     }
 
     // Dos pedidos a la vez pasan R3 juntos; el UNIQUE (sala_id, inicio) deja entrar a uno.
@@ -81,11 +98,6 @@ public class GestorFunciones {
         Pelicula pelicula = peliculaRepository.exigir(peliculaId, "la película");
         pelicula.exigirProgramable();
         return pelicula;
-    }
-
-    @Transactional(readOnly = true)
-    public Optional<Funcion> superpuestaEn(int salaId, LocalDateTime inicio, LocalDateTime fin) {
-        return agendaDe(salaId, inicio, fin).chocaCon(inicio, fin);
     }
 
     private String motivoDeLaSuperposicion(Funcion choque, Sala sala, LocalDateTime inicio) {

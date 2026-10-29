@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -33,7 +34,7 @@ import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-// Rutas de /api/funciones: busca, programa y borra vía GestorFunciones; responde con VistasCartelera.
+// Rutas de /api/funciones: busca, programa, edita y borra vía GestorFunciones; responde con VistasCartelera.
 @Tag(name = "Funciones", description = "La programación de una función y su mapa de butacas")
 @RestController
 @RequiredArgsConstructor
@@ -69,12 +70,17 @@ public class FuncionController {
     public ResponseEntity<FuncionVistaDTO> programar(@Valid @RequestBody PedidoFuncionDTO pedido) {
         Dinero precio = Dinero.importe(pedido.precio(), "precio");
         LocalDateTime inicio = Parseo.momento(pedido.inicio(), "la fecha y hora de la función");
-        FormatoDeFuncion formato = new FormatoDeFuncion(
-                Parseo.constante(Version.class, pedido.idioma(), "el idioma"),
-                Parseo.constante(Proyeccion.class, pedido.proyeccion(), "la proyección"),
-                precio);
-        Funcion funcion = funciones.programar(pedido.peliculaId(), pedido.salaId(), inicio, formato);
+        Funcion funcion = funciones.programar(pedido.peliculaId(), pedido.salaId(), inicio, formato(pedido, precio));
         return Creado.en("/api/funciones/" + funcion.getId(), vistas.funcionConPelicula(funcion));
+    }
+
+    @Operation(summary = "Editar una función sin reservas: mismo cuerpo que el alta")
+    @PutMapping("/api/funciones/{id}")
+    public FuncionVistaDTO editar(@PathVariable int id, @Valid @RequestBody PedidoFuncionDTO pedido) {
+        Dinero precio = Dinero.importe(pedido.precio(), "precio");
+        LocalDateTime inicio = Parseo.momento(pedido.inicio(), "la fecha y hora de la función");
+        return vistas.funcionConPelicula(funciones.reprogramar(id, pedido.peliculaId(), pedido.salaId(), inicio,
+                formato(pedido, precio)));
     }
 
     @Operation(summary = "Borrar una función")
@@ -82,5 +88,13 @@ public class FuncionController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void eliminar(@PathVariable int id) {
         funciones.eliminar(id);
+    }
+
+    // El precio llega ya convertido: se valida antes que el resto del pedido.
+    private static FormatoDeFuncion formato(PedidoFuncionDTO pedido, Dinero precio) {
+        return new FormatoDeFuncion(
+                Parseo.constante(Version.class, pedido.idioma(), "el idioma"),
+                Parseo.constante(Proyeccion.class, pedido.proyeccion(), "la proyección"),
+                precio);
     }
 }

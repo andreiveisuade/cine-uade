@@ -391,6 +391,26 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
                 "entre la última del alta y ahora no se rellenó nada");
     }
 
+    // Editada, la función se desprende y queda suelta. La grilla no rellena el hueco: avanza por fecha
+    // procesada (generadaHasta), no por función existente.
+    @Test
+    void editarUnaFuncionGeneradaLaDesprendeYLaGrillaNoVuelveAGenerarElPaseOriginal() {
+        int grilla = crearAbierta().programacion().getId();
+        LocalDateTime original = LocalDateTime.of(2026, 8, 16, 20, 30);
+        Funcion generada = funcionRepository.findAll().stream()
+                .filter(f -> f.getInicio().equals(original)).findFirst().orElseThrow();
+
+        funciones.reprogramar(generada.getId(), 1, 1, LocalDateTime.of(2026, 8, 16, 23, 0),
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
+        programaciones.extenderActivas(reloj.hoy().plusDays(3));
+
+        assertTrue(programaciones.funcionesDe(grilla).stream().noneMatch(f -> f.getId() == generada.getId()),
+                "la editada ya no es de la grilla");
+        assertTrue(funcionRepository.findAll().stream().noneMatch(f -> f.getInicio().equals(original)),
+                "el pase original no vuelve a aparecer");
+        assertEquals(LocalDateTime.of(2026, 8, 16, 23, 0), funciones.obtener(generada.getId()).getInicio());
+    }
+
     private void cargarGrillas() {
         crearSemana(Set.of());
         PlanProgramacion enSala2 = programaciones.crear(new DatosGrilla(1, 2, LUNES, DOMINGO, LocalTime.of(23, 0),

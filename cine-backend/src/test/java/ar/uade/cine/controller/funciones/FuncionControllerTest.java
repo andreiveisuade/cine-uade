@@ -3,6 +3,7 @@ package ar.uade.cine.controller.funciones;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,16 +16,23 @@ import ar.uade.cine.PruebaDeApi;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.salas.TipoSala;
+import ar.uade.cine.model.ventas.TipoTarifa;
 import ar.uade.cine.service.cartelera.GestorCartelera;
 import ar.uade.cine.service.salas.GestorSalas;
+import ar.uade.cine.service.usuarios.GestorClientes;
+import ar.uade.cine.service.ventas.GestorReservas;
 
-// R20 por HTTP: el reloj de test está en el 14/08/2026 a las 10:00.
+// R20 y R12 por HTTP: el reloj de test está en el 14/08/2026 a las 10:00.
 class FuncionControllerTest extends PruebaDeApi {
 
     @Autowired
     private GestorCartelera cartelera;
     @Autowired
     private GestorSalas salas;
+    @Autowired
+    private GestorClientes clientes;
+    @Autowired
+    private GestorReservas reservas;
 
     @BeforeEach
     void cargarPeliculaYSala() {
@@ -106,6 +114,60 @@ class FuncionControllerTest extends PruebaDeApi {
 
         assertEquals(400, respuesta.estado());
         assertEquals("El período tiene que empezar antes de terminar", respuesta.error());
+    }
+
+    private Respuesta editar(int id, String inicio, String precio) {
+        return put("/api/funciones/" + id, "{\"peliculaId\":1,\"salaId\":1,\"inicio\":\"" + inicio
+                + "\",\"idioma\":\"DOBLADA\",\"proyeccion\":\"DOS_D\",\"precio\":" + precio + "}");
+    }
+
+    @Test
+    void editarUnaFuncionEs200ConLaFuncionEditada() {
+        programar("2026-08-14T20:30:00");
+
+        Respuesta respuesta = editar(1, "2026-08-15T18:00:00", "5000");
+
+        assertEquals(200, respuesta.estado());
+        assertEquals("2026-08-15T18:00:00", respuesta.json().get("inicio").asText());
+        assertEquals("DOBLADA", respuesta.json().get("idioma").asText());
+        assertEquals("Interstellar", respuesta.json().get("pelicula").get("titulo").asText());
+        assertEquals(1, get("/api/funciones").json().size());
+    }
+
+    // Mismo cuerpo y mismas validaciones que el alta, con el mismo 400.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            precio cero,         2026-08-15T18:00:00, 0,    El precio tiene que ser mayor a cero
+            inicio con segundos, 2026-08-15T18:00:46, 4500, La hora de la función tiene que ir sin segundos
+            en el pasado,        2020-01-01T20:00:00, 4500, La función no puede empezar en el pasado
+            """)
+    void editarConUnDatoQueNoSirveEs400(String caso, String inicio, String precio, String mensaje) {
+        programar("2026-08-14T20:30:00");
+
+        Respuesta respuesta = editar(1, inicio, precio);
+
+        assertEquals(400, respuesta.estado());
+        assertEquals(mensaje, respuesta.error());
+    }
+
+    @Test
+    void editarUnaFuncionConReservasEs409() {
+        programar("2026-08-14T20:30:00");
+        int cliente = clientes.ingresarConGoogle("Andrei", "andrei@uade.edu.ar").getId();
+        reservas.reservar(1, cliente, Map.of("A1", TipoTarifa.GENERAL), null);
+
+        Respuesta respuesta = editar(1, "2026-08-15T18:00:00", "5000");
+
+        assertEquals(409, respuesta.estado());
+        assertEquals("La función 1 tiene reservas: no se puede editar", respuesta.error());
+    }
+
+    @Test
+    void editarUnaFuncionQueNoExisteEs404() {
+        Respuesta respuesta = editar(99, "2026-08-15T18:00:00", "5000");
+
+        assertEquals(404, respuesta.estado());
+        assertEquals("No existe la función 99", respuesta.error());
     }
 
     @Test

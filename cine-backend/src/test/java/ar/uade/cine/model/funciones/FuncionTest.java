@@ -85,6 +85,23 @@ class FuncionTest {
         assertDoesNotThrow(() -> deLas20().exigirProgramableA(ahora));
     }
 
+    // Valida todo antes de asignar: si rechaza, la función queda como estaba.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            sin fecha y hora,      ,                    DOS_D,  Falta la fecha y hora de la función
+            con segundos,          2026-08-21T20:30:46, DOS_D,  La hora de la función tiene que ir sin segundos
+            R8: 3D en una sala 2D, 2026-08-21T20:30,    TRES_D, La sala Sala 1 no puede proyectar en 3D
+            """)
+    void reprogramarValidaComoElAltaYSiRechazaNoCambiaNada(String caso, LocalDateTime inicio,
+            Proyeccion proyeccion, String mensaje) {
+        Funcion funcion = deLas20();
+
+        rechaza(mensaje, () -> funcion.reprogramar(MATRIX, new Sala("Sala 1", TipoSala.DOS_D, 15), inicio,
+                new FormatoDeFuncion(Version.DOBLADA, proyeccion, Dinero.de(6000))));
+        assertEquals(LAS_20, funcion.getInicio());
+        assertEquals(Version.SUBTITULADA, funcion.getVersion());
+    }
+
     private static Funcion deLas20() {
         return new Funcion(MATRIX, new Sala("Sala 1", TipoSala.DOS_D, 15), LAS_20,
                 new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));

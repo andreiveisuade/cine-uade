@@ -266,8 +266,8 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
         PropuestaGrilla propuesta = planificador.proponer(unDia(1));
 
         for (PaseSugerido pase : propuesta.pases()) {
-            assertTrue(funciones.superpuestaEn(pase.salaId(), pase.inicio(),
-                    pase.inicio().plusMinutes(pase.duracionMinutos())).isEmpty()
+            LocalDateTime fin = pase.inicio().plusMinutes(pase.duracionMinutos());
+            assertTrue(!funciones.agendaDe(pase.salaId(), pase.inicio(), fin).chocaEn(pase.inicio(), fin)
                     || pase.inicio().equals(LocalDateTime.of(2026, 9, 1, 16, 0)),
                     "el pase de las " + pase.inicio() + " choca con lo ya programado");
         }

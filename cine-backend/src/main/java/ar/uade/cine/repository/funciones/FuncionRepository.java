@@ -3,8 +3,12 @@ package ar.uade.cine.repository.funciones;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.hibernate.jpa.HibernateHints;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.QueryHints;
 import org.springframework.data.repository.query.Param;
+
+import jakarta.persistence.QueryHint;
 
 import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.repository.Repositorio;
@@ -14,6 +18,8 @@ public interface FuncionRepository extends Repositorio<Funcion> {
 
     List<Funcion> findByPelicula_IdOrderByInicioAsc(int peliculaId);
 
+    // Sin flush: la función ya editada chocaría contra el UNIQUE con un 500 antes del mensaje de R3.
+    @QueryHints(@QueryHint(name = HibernateHints.HINT_FLUSH_MODE, value = "COMMIT"))
     List<Funcion> findBySala_IdAndInicioBetween(int salaId, LocalDateTime desde, LocalDateTime hasta);
 
     List<Funcion> findByProgramacionId(int programacionId);
