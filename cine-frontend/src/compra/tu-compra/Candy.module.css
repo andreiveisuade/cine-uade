@@ -81,7 +81,8 @@
 .renglon > :nth-child(3) { grid-area: acciones; justify-self: end; }
 .renglon > :nth-child(4) { grid-area: subtotal; justify-self: end; }
 
-[data-mantine-color-scheme="light"] .ahorro { color: var(--mantine-color-green-9); }
+/* green-9 da 4,4:1 sobre la tarjeta: un quinto más oscuro llega a AA (6:1). */
+[data-mantine-color-scheme="light"] .ahorro { color: color-mix(in srgb, var(--mantine-color-green-9) 80%, black); }
 [data-mantine-color-scheme="dark"] .ahorro { color: var(--mantine-color-green-4); }
 
 /* Cada medio en una línea si entra; en la grilla de a dos, el total abajo del nombre, igual en los cuatro. */

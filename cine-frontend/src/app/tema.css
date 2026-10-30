@@ -22,6 +22,7 @@
   --cine-superficie: #ffffff;
   --cine-superficie-2: #ebe9e3;
   --cine-borde: #dcd9d1;
+  --cine-foco: var(--mantine-color-ambar-8);
   --cine-sombra: 0 14px 32px -18px rgb(30 25 10 / 0.28);
 }
 
@@ -29,6 +30,7 @@
   --cine-superficie: #15171d;
   --cine-superficie-2: #1e2129;
   --cine-borde: #2b2f39;
+  --cine-foco: var(--mantine-color-ambar-5);
   --mantine-color-default-border: #2b2f39;
 }
 
@@ -50,7 +52,8 @@ h1, h2, h3, .cine-display {
 
 ::selection { background: var(--mantine-color-ambar-4); color: #15171d; }
 
-:focus-visible { outline: 2px solid var(--mantine-color-ambar-5); outline-offset: 2px; }
+/* En claro el ámbar-5 da 1,7:1 sobre el hueso y el anillo pide 3:1: baja a ámbar-8. Pisa también el de Mantine. */
+:focus-visible, .mantine-focus-auto:focus-visible { outline: 2px solid var(--cine-foco); outline-offset: 2px; }
 
 a { text-underline-offset: 0.2em; }
 
