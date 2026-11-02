@@ -1,0 +1,173 @@
+{
+  "nombre": "cine-uade",
+  "principal": "cine-backend",
+  "capas": {
+    "dto": "dtos",
+    "infrastructure": "infraestructura",
+    "model.validacion": "validacion",
+    "model.candy.validacion": "validacion",
+    "model.cartelera.validacion": "validacion",
+    "model.funciones.validacion": "validacion",
+    "model.programaciones.validacion": "validacion",
+    "model.promociones.validacion": "validacion",
+    "model.salas.validacion": "validacion",
+    "model.usuarios.validacion": "validacion",
+    "model.ventas.validacion": "validacion"
+  },
+  "patrones": {
+    "State reserva": {
+      "color": "#b91c1c",
+      "roles": { "Reserva": "Context", "EstadoReserva": "State" },
+      "problema": "Cobrar, cancelar, expirar y entrar dependen del estado: cada constante decide la transición y rechaza lo que no permite."
+    },
+    "State revisión": {
+      "color": "#c2410c",
+      "roles": { "Pelicula": "Context", "EstadoRevision": "State" },
+      "problema": "Solo la película confirmada se ve al público: la entidad le delega la pregunta al estado."
+    },
+    "State importación": {
+      "color": "#d97706",
+      "roles": { "Importacion": "Context", "EstadoImportacion": "State", "GestorImportaciones": "Client" },
+      "problema": "Una importación en curso pasa a terminada o fallida; el estado decide la transición y rechaza el resto."
+    },
+    "Strategy promociones": {
+      "color": "#0f766e",
+      "capa": "servicios",
+      "roles": { "GestorPromociones": "Context", "Promocion": "Strategy", "PromocionPorcentaje": "ConcreteStrategy", "PromocionMontoFijo": "ConcreteStrategy", "PromocionNxM": "ConcreteStrategy" },
+      "problema": "Cada tipo de promoción calcula su descuento: una promo nueva es una subclase, no un case más en el gestor."
+    },
+    "Factory Method": {
+      "color": "#0d9488",
+      "capa": "servicios",
+      "roles": { "TipoPromocion": "Creator", "Promocion": "Product", "PromocionPorcentaje": "ConcreteProduct", "PromocionMontoFijo": "ConcreteProduct", "PromocionNxM": "ConcreteProduct", "GestorPromociones": "Client" },
+      "problema": "Cada constante de TipoPromocion decide qué subclase instancia: el gestor no elige con un switch."
+    },
+    "Composite": {
+      "color": "#7c3aed",
+      "roles": { "Producto": "Component", "ProductoSuelto": "Leaf", "Combo": "Composite", "ItemCombo": "Componente del combo" },
+      "problema": "Un producto suelto y un combo se venden igual; el combo suma los precios de sus componentes."
+    },
+    "Strategy pasarela": {
+      "color": "#0369a1",
+      "capa": "infraestructura",
+      "roles": { "GestorPagos": "Context", "PasarelaPagos": "Strategy", "MercadoPagoHttp": "ConcreteStrategy", "MercadoPagoEmulado": "ConcreteStrategy", "Adaptadores": "Elige" },
+      "problema": "El gestor cobra sin saber qué pasarela hay: Adaptadores elige Mercado Pago o la emulada según el token."
+    },
+    "Adapter pasarela": {
+      "color": "#1d4ed8",
+      "capa": "infraestructura",
+      "roles": { "GestorPagos": "Client", "PasarelaPagos": "Target", "MercadoPagoHttp": "Adapter", "ClienteMercadoPago": "Adaptee" },
+      "problema": "Traduce crear() a una preferencia de Checkout Pro, sin el SDK."
+    },
+    "Adapter TMDB": {
+      "color": "#4338ca",
+      "capa": "infraestructura",
+      "roles": { "GestorImportaciones": "Client", "CatalogoExterno": "Target", "TmdbHttp": "Adapter", "MapeoTmdb": "Traduce" },
+      "problema": "Traduce enCartelera() a pedidos HTTP y el JSON de TMDB a DatosPelicula."
+    },
+    "Observer": {
+      "color": "#be185d",
+      "capa": "infraestructura",
+      "roles": { "GestorReservas": "Subject", "GestorPagos": "Subject", "GestorCandy": "Subject", "ReservaCreada": "Event", "PagoRegistrado": "Event", "CompraCandyRegistrada": "Event", "ComprobantesDeVentas": "Observer", "ComprobantesDeCandy": "Observer" },
+      "problema": "Los comprobantes se emiten después del commit: sin commit no hay recibo de un cobro que no existió."
+    },
+    "Template Method": {
+      "color": "#a16207",
+      "capa": "infraestructura",
+      "roles": { "ComprobanteTxt": "AbstractClass", "GeneradorTicketTxt": "ConcreteClass", "GeneradorReciboTxt": "ConcreteClass", "GeneradorTicketCandyTxt": "ConcreteClass" },
+      "problema": "imprimir() fija el esqueleto del comprobante; cada subclase completa sus pasos."
+    },
+    "Chain of Responsibility": {
+      "color": "#15803d",
+      "capa": "controladores",
+      "roles": { "ManejadorErrores": "Client", "LecturaDelCuerpo": "Handler", "SinCuerpo": "ConcreteHandler", "CampoConValorInvalido": "ConcreteHandler", "RaizQueNoEsObjeto": "ConcreteHandler", "JsonMalFormado": "ConcreteHandler" },
+      "problema": "Un cuerpo ilegible sale como 400 con nombre: cada eslabón reconoce su caso y el último siempre contesta."
+    },
+    "Builder": {
+      "color": "#9333ea",
+      "capa": "controladores",
+      "roles": { "DatosPeliculaBuilder": "Builder", "DatosPelicula": "Product", "PeliculaController": "Director", "MapeoTmdb": "Director" },
+      "problema": "DatosPelicula tiene muchos componentes del mismo tipo: cada dato va con su nombre y lo no nombrado viaja null."
+    },
+    "Decorator": {
+      "color": "#db2777",
+      "capa": "seguridad",
+      "roles": { "SesionDeClientes": "Decorator" },
+      "problema": "Envuelve el repositorio de sesión de Spring y solo guarda sesión si el usuario es cliente."
+    },
+    "Null Object": {
+      "color": "#475569",
+      "capa": "servicios",
+      "roles": { "AgendaDeSala": "NullObject", "GestorProgramaciones": "Client" },
+      "problema": "AgendaDeSala.vacia() nunca choca: el cliente no pregunta si es null."
+    },
+    "Template Method listado": {
+      "color": "#ca8a04",
+      "capa": "mod:cine-swing",
+      "roles": { "PantallaListado": "AbstractClass", "PantallaFunciones": "ConcreteClass", "PantallaPeliculas": "ConcreteClass", "PantallaProgramaciones": "ConcreteClass", "PantallaReservas": "ConcreteClass" },
+      "problema": "recargar() fija el esqueleto de los listados con filtros; cada pantalla completa los pasos."
+    },
+    "Command": {
+      "color": "#0891b2",
+      "capa": "mod:cine-swing",
+      "roles": { "BotonesDeFila": "Invoker", "AccionDeFila": "Command", "PublicarPelicula": "ConcreteCommand", "BorrarPelicula": "ConcreteCommand", "CancelarReserva": "ConcreteCommand", "ApiCartelera": "Receiver", "ApiVentas": "Receiver", "PantallaPeliculas": "Client" },
+      "problema": "Cada botón de fila dispara una acción sin saber qué API llama."
+    },
+    "Strategy cobro": {
+      "color": "#0e7490",
+      "capa": "mod:cine-swing",
+      "roles": { "PanelCobro": "Context", "FormaDeCobro": "Strategy", "CobroEnCaja": "ConcreteStrategy", "CobroPorCheckout": "ConcreteStrategy" },
+      "problema": "El panel delega cómo cobrar en la forma elegida según el medio de pago."
+    },
+    "Facade Swing": {
+      "color": "#65a30d",
+      "capa": "mod:cine-swing",
+      "roles": { "ClienteHttp": "Facade", "Apis": "Facade", "ApiPromociones": "Facade", "ApiVentas": "Facade", "PantallaPromociones": "Client" },
+      "problema": "Las pantallas no ven HTTP, JSON ni errores: piden por lista() y post()."
+    },
+    "Adapter fecha": {
+      "color": "#6366f1",
+      "capa": "mod:cine-swing",
+      "roles": { "CampoFecha": "Adapter", "Calendario": "Adapter", "FormularioFuncion": "Client", "PantallaAgenda": "Client" },
+      "problema": "Traduce el Date de JCalendar a LocalDate: las pantallas no tocan java.util.Date."
+    }
+  },
+  "grasp": {
+    "Experto": {
+      "color": "#0369a1",
+      "relaciones": false,
+      "metodos": { "Reserva": ["getTotal"], "Entrada": [], "Funcion": ["precioDe"], "FormatoDeFuncion": [] },
+      "problema": "Responde quien tiene la información: la reserva conoce sus entradas y sabe el total; la función conoce su formato y su sala y sabe el precio de una butaca."
+    },
+    "Creador": {
+      "color": "#be185d",
+      "relaciones": true,
+      "metodos": { "Sala": ["generarAsientos"], "Combo": ["armar"], "Reserva": [] },
+      "problema": "Crea quien contiene al objeto y tiene los datos para inicializarlo: la sala sus asientos, el combo sus ítems, la reserva sus entradas."
+    },
+    "Polimorfismo": {
+      "color": "#4d7c0f",
+      "relaciones": true,
+      "metodos": { "TipoTarifa": ["aplicarA"], "TipoAsiento": ["aplicarA"], "TipoSala": ["aplicarA"] },
+      "problema": "Cada tipo aplica su multiplicador: sin if (tarifa == …) en quien calcula el precio."
+    },
+    "Fabricación pura": {
+      "color": "#7c2d12",
+      "relaciones": false,
+      "metodos": { "Ocupacion": ["asientosOcupados"], "BloqueoDeButacas": ["bloquear"], "AgendaDeSala": ["chocaCon"], "ValidadorReserva": ["validar"] },
+      "problema": "Clases que no son conceptos del cine: evitan duplicar «ocupado» en dos gestores y sacan las reglas de la entidad."
+    },
+    "Controlador": {
+      "color": "#334155",
+      "relaciones": true,
+      "metodos": { "ReservaController": ["reservar", "cancelar"], "GestorReservas": ["reservar", "cancelar"] },
+      "problema": "El controller recibe el pedido, traduce y delega; el gestor orquesta el caso de uso."
+    },
+    "Indirección": {
+      "color": "#0f766e",
+      "relaciones": true,
+      "metodos": { "ReservaRepository": ["findByCodigo"] },
+      "problema": "El repositorio es el intermediario entre el gestor y la base: el gestor no conoce SQL ni el motor."
+    }
+  }
+}
