@@ -23,6 +23,7 @@ import ar.uade.cine.swing.pantallas.ventas.PantallaPuerta;
 import ar.uade.cine.swing.pantallas.ventas.PantallaReservas;
 
 import javax.swing.JComponent;
+import java.util.prefs.Preferences;
 
 // Crea cada pantalla con solo las Api que usa; Creador (GRASP): es la única clase que las tiene todas a mano.
 // Cada llamada crea una pantalla nueva, así muestra datos frescos; aparte de VentanaPrincipal para probarlas sin ventana.
@@ -30,10 +31,12 @@ final class Pantallas {
 
     private final Apis apis;
     private final Navegacion navegacion;
+    private final Preferences preferencias;
 
-    Pantallas(Apis apis, Navegacion navegacion) {
+    Pantallas(Apis apis, Navegacion navegacion, Preferences preferencias) {
         this.apis = apis;
         this.navegacion = navegacion;
+        this.preferencias = preferencias;
     }
 
     // Sin default a propósito: un destino nuevo sin pantalla no compila.
@@ -55,7 +58,7 @@ final class Pantallas {
             case CAJA -> new PantallaCaja(apis.informes());
             case DECLARACION_JURADA -> new PantallaDeclaracionJurada(apis.catalogos(), apis.informes());
             case CLIENTES -> new PantallaClientes(apis.clientes());
-            case PUERTA -> new PantallaPuerta(apis.ventas(), apis.candy());
+            case PUERTA -> new PantallaPuerta(apis.ventas(), apis.candy(), preferencias);
         };
     }
 

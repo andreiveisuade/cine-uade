@@ -63,7 +63,7 @@ public final class VentanaPrincipal extends JFrame implements Navegacion {
     public VentanaPrincipal(Apis apis, Servidor servidor, Empleado empleado, Preferences preferencias,
                             Runnable alSalir) {
         super("Cine UADE · " + servidor.marca() + " · " + empleado.nombre());
-        this.pantallas = new Pantallas(apis, this);
+        this.pantallas = new Pantallas(apis, this, preferencias);
         this.servidor = servidor;
         this.empleado = empleado;
         this.preferencias = preferencias;

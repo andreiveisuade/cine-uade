@@ -16,8 +16,11 @@ import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
+import java.util.prefs.BackingStoreException;
+import java.util.prefs.Preferences;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -55,6 +58,7 @@ class PantallasTest {
     private final List<Throwable> errores = new ArrayList<>();
     private Thread.UncaughtExceptionHandler anterior;
     private Pantallas pantallas;
+    private Preferences preferencias;
 
     @BeforeEach
     void levantar() throws IOException {
@@ -77,13 +81,15 @@ class PantallasTest {
             }
         });
         ClienteHttp http = new ClienteHttp("http://127.0.0.1:" + servidor.getAddress().getPort());
-        pantallas = new Pantallas(Apis.sobre(http), QUIETA);
+        preferencias = Preferences.userRoot().node("/ar/uade/cine/swing/test-" + UUID.randomUUID());
+        pantallas = new Pantallas(Apis.sobre(http), QUIETA, preferencias);
     }
 
     @AfterEach
-    void bajar() {
+    void bajar() throws BackingStoreException {
         Thread.setDefaultUncaughtExceptionHandler(anterior);
         servidor.stop(0);
+        preferencias.removeNode();
     }
 
     @Test
