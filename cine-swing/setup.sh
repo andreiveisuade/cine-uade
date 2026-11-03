@@ -41,25 +41,10 @@ else
   ok "$JAR al día, no hace falta recompilar"
 fi
 
-# Las de local son de demo y ya están en el repo (seed/02-admin.sql). Las de prod nunca se imprimen: viven en el
-# llavero de macOS y van al portapapeles un rato, así no quedan en el historial ni en el scroll de la terminal.
-LLAVERO=cine-uade-prod
-ENCARGADO=encargado@cine.uade.ar
+# Las de local son de demo y ya están en el repo (seed/02-admin.sql). La de prod no va en ningún archivo.
 credenciales() {
-  printf '\n  \033[1mLocal\033[0m        %s / cine2026   (Puerta: puerta@cine.uade.ar / cine2026)\n' "$ENCARGADO"
-  if ! command -v security >/dev/null 2>&1; then
-    printf '  \033[1mProducción\033[0m   %s / la clave que pusiste al cargar Aiven\n\n' "$ENCARGADO"
-    return
-  fi
-  if clave=$(security find-generic-password -s "$LLAVERO" -a "$ENCARGADO" -w 2>/dev/null); then
-    printf '%s' "$clave" | pbcopy
-    printf '  \033[1mProducción\033[0m   %s / clave copiada al portapapeles (se borra en 60 s)\n\n' "$ENCARGADO"
-    # Solo la borra si sigue siendo ella: si copiaste otra cosa en el medio, no la pisa.
-    ( sleep 60; [ "$(pbpaste)" = "$clave" ] && printf '' | pbcopy ) >/dev/null 2>&1 &
-  else
-    printf '  \033[1mProducción\033[0m   %s / sin clave en el llavero. Guardala una vez (la pide sin eco):\n' "$ENCARGADO"
-    printf '               security add-generic-password -s %s -a %s -w\n\n' "$LLAVERO" "$ENCARGADO"
-  fi
+  printf '\n  \033[1mLocal\033[0m        encargado@cine.uade.ar / cine2026   (Puerta: puerta@cine.uade.ar / cine2026)\n'
+  printf '  \033[1mProducción\033[0m   encargado@cine.uade.ar / la clave que pusiste al cargar Aiven\n\n'
 }
 
 if $abrir; then
