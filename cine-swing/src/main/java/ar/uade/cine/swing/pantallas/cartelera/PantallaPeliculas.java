@@ -33,7 +33,7 @@ import static ar.uade.cine.swing.comun.Formato.duracion;
 // El catálogo completo, aun lo que no está en cartelera: publicar y borrar acá, alta y edición al costado.
 public final class PantallaPeliculas extends PantallaListado<Pelicula> {
 
-    private record Catalogos(List<String> generos, List<Clasificacion> clasificaciones) {
+    private record Catalogos(List<String> generos, List<Clasificacion> clasificaciones, List<String> proyecciones) {
     }
 
     private static final int ALTO_POSTER = 40;
@@ -74,9 +74,10 @@ public final class PantallaPeliculas extends PantallaListado<Pelicula> {
         add(formulario, BorderLayout.EAST);
         tabla.alDobleClic(formulario::editar);
 
-        cargar(() -> new Catalogos(apiCatalogos.obtenerGeneros(), apiCatalogos.obtenerClasificaciones()), c -> {
+        cargar(() -> new Catalogos(apiCatalogos.obtenerGeneros(), apiCatalogos.obtenerClasificaciones(),
+                apiCatalogos.obtenerProyecciones()), c -> {
             filtros.enSilencio(() -> Campos.llenarConTodas(filtroGenero, "Todos", Opciones.etiquetadas(c.generos())));
-            formulario.llenar(c.generos(), c.clasificaciones());
+            formulario.llenar(c.generos(), c.clasificaciones(), c.proyecciones());
             recargar();
         });
     }

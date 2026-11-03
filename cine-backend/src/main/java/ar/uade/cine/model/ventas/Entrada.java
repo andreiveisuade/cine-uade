@@ -3,6 +3,7 @@ package ar.uade.cine.model.ventas;
 import java.util.Objects;
 
 import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.salas.Asiento;
 import ar.uade.cine.model.ventas.validacion.ValidadorEntrada;
 import jakarta.persistence.Column;
@@ -57,12 +58,18 @@ public class Entrada {
 
     // El precio queda fijo al vender; llega el de la butaca con tarifa general y la entrada le aplica la suya.
     // Sin tarifa va a la general: es el default del modelo.
-    public Entrada(Asiento asiento, TipoTarifa tarifa, Dinero precioDeLaButaca) {
+    public Entrada(Asiento asiento, TipoTarifa tarifa, Dinero precioDeLaButaca, Proyeccion proyeccion) {
         ValidadorEntrada.validar(asiento);
         TipoTarifa vendida = Objects.requireNonNullElse(tarifa, TipoTarifa.GENERAL);
         this.asiento = asiento;
         this.tarifa = vendida;
-        this.precio = vendida.aplicarA(precioDeLaButaca);
+        this.precio = precioDe(vendida, precioDeLaButaca, proyeccion);
+    }
+
+    // Experto en el precio de la entrada: base × sala × butaca × tarifa, y el recargo 3D fijo encima.
+    // Pública porque el mapa y la cartelera muestran la misma cuenta antes de vender.
+    public static Dinero precioDe(TipoTarifa tarifa, Dinero precioDeLaButaca, Proyeccion proyeccion) {
+        return proyeccion.conRecargo(tarifa.aplicarA(precioDeLaButaca));
     }
 
     public int asientoId() {

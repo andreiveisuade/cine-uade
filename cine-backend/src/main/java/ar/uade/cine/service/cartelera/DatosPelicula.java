@@ -4,14 +4,15 @@ import java.util.List;
 
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
+import ar.uade.cine.model.funciones.Proyeccion;
 
-// Datos de una película para alta o edición, de la API o de TMDB; un record en vez de trece parámetros.
+// Datos de una película para alta o edición, de la API o de TMDB; un record en vez de catorce parámetros.
 // Campos objeto: en una edición null es "no lo mandé", distinto de cero o false.
 public record DatosPelicula(String titulo, Integer duracionMinutos, List<Genero> generos,
                             Clasificacion clasificacion, String director, String sinopsis,
                             Integer anio, String idiomaOriginal, String posterUrl,
                             Boolean enCartelera, Double puntaje, Integer votos,
-                            String trailerYoutube) {
+                            String trailerYoutube, List<Proyeccion> formatos) {
 
     public static DatosPelicula deAlta(String titulo, int duracionMinutos, List<Genero> generos,
                                        Clasificacion clasificacion) {

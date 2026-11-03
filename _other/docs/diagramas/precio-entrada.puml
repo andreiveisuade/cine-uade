@@ -10,6 +10,7 @@ participant "Funcion" as F <<Entity>>
 participant "TipoSala /\nTipoAsiento" as TS <<enum>>
 participant "Entrada" as E <<Entity>>
 participant "TipoTarifa" as TT <<enum>>
+participant "Proyeccion" as PY <<enum>>
 participant "GestorPagos" as GP
 participant "GestorPromociones" as PR
 participant "Promocion" as P <<Entity>>
@@ -21,9 +22,10 @@ F -> TS : sala.aplicarA(base)\n(precioEn: el "desde" de la cartelera)
 F -> TS : asiento.aplicarA(...)\n(lo que muestra el mapa)
 F --> GR : precio de la butaca
 deactivate F
-GR -> E : new Entrada(asiento, tarifa, precio)
+GR -> E : new Entrada(asiento, tarifa, precio, proyeccion)
 activate E
 E -> TT : aplicarA(precio)
+E -> PY : conRecargo(...)\n(los anteojos: + $ 1.000 fijo en 3D,\nsin tarifa ni multiplicadores)
 E --> GR : precio de la entrada (por persona)
 deactivate E
 

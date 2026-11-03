@@ -374,7 +374,7 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
     void extenderDosVecesALaVezNoDuplicaFuncionesYSigueConLasOtrasGrillas() {
         Programacion atrasada = crearAbierta().programacion();
         programaciones.crear(new DatosGrilla(1, 2, reloj.hoy(), null, LocalTime.of(23, 0), Set.of(),
-                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.TRES_D, Dinero.de(5000))));
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000))));
         int despuesDelAlta = funcionRepository.findAll().size();
         // El segundo pedido leyó la grilla antes de que el primero guardara su avance.
         atrasada.marcarGeneradaHasta(reloj.hoy());

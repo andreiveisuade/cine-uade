@@ -20,7 +20,7 @@ import jakarta.persistence.ManyToOne;
 import lombok.AccessLevel;
 import lombok.Getter;
 
-// Pase de una película en una sala a una hora; Experto: nace con formato, R8 y precio válidos, y decide R19.
+// Pase de una película en una sala a una hora; Experto: nace válida (formato, R8, R31, precio) y decide R19.
 @Entity
 @Getter
 public class Funcion {
@@ -68,6 +68,7 @@ public class Funcion {
 
     private void asignar(Pelicula pelicula, Sala sala, LocalDateTime inicio, FormatoDeFuncion formato) {
         formato.exigirProyectableEn(sala);
+        pelicula.exigirFormato(formato.proyeccion());
         ValidadorFuncion.inicio(inicio);
         this.pelicula = pelicula;
         this.sala = sala;

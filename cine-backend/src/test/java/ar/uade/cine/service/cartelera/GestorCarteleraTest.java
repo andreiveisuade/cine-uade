@@ -89,6 +89,62 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
                 inicio, new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000))));
     }
 
+    private Pelicula en2DY3D(String titulo) {
+        return gestor.agregar(DatosPelicula.con().titulo(titulo).duracion(120).generos(List.of(Genero.DRAMA))
+                .clasificacion(Clasificacion.ATP).formatos(List.of(Proyeccion.DOS_D, Proyeccion.TRES_D)).armar());
+    }
+
+    @Test
+    void elAltaSinFormatosLaEstrenaEn2D() {
+        Pelicula dune = gestor.agregar(DatosPelicula.deAlta("Dune", 155, List.of(Genero.DRAMA), Clasificacion.ATP));
+
+        assertEquals(Set.of(Proyeccion.DOS_D), gestor.obtener(dune.getId()).getFormatos());
+    }
+
+    // Dos colecciones EAGER: leerla no puede multiplicar los géneros por los formatos.
+    @Test
+    void conDosGenerosYDosFormatosSeLeeTalCual() {
+        Pelicula avatar = gestor.agregar(DatosPelicula.con().titulo("Avatar").duracion(162)
+                .generos(List.of(Genero.ACCION, Genero.CIENCIA_FICCION)).clasificacion(Clasificacion.ATP)
+                .formatos(List.of(Proyeccion.DOS_D, Proyeccion.TRES_D)).armar());
+
+        Pelicula leida = gestor.obtener(avatar.getId());
+        assertEquals(List.of(Genero.ACCION, Genero.CIENCIA_FICCION), leida.getGeneros());
+        assertEquals(Set.of(Proyeccion.DOS_D, Proyeccion.TRES_D), leida.getFormatos());
+    }
+
+    // R31: sacarle un formato en uso dejaría funciones o una grilla en un formato que la película ya no tiene.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            con una función en 3D por delante, 7,  false, La película Avatar tiene funciones en 3D por delante: borralas o cambiales el formato antes de sacarle el 3D
+            con una grilla activa en 3D,       0,  true,  La película Avatar tiene una grilla activa en 3D: dala de baja antes de sacarle el 3D
+            con una función en 3D que pasó,    -1, false, ''
+            sin nada en 3D,                    0,  false, ''
+            """)
+    void sacarleUnFormatoEnUsoEsUnConflicto(String caso, int enDias, boolean conGrilla, String mensaje) {
+        Pelicula avatar = en2DY3D("Avatar");
+        Sala imax = salaRepository.save(new Sala("Sala IMAX", TipoSala.IMAX, 15));
+        FormatoDeFuncion en3D = new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.TRES_D, Dinero.de(5000));
+        if (enDias != 0) {
+            funcionRepository.save(new Funcion(avatar, imax, reloj.ahora().plusDays(enDias), en3D));
+        }
+        if (conGrilla) {
+            programacionRepository.save(new Programacion(avatar, imax, reloj.hoy().plusDays(1), null,
+                    LocalTime.of(20, 0), Set.of(), en3D));
+        }
+        DatosPelicula solo2D = DatosPelicula.con().formatos(List.of(Proyeccion.DOS_D)).armar();
+
+        if (mensaje.isEmpty()) {
+            gestor.editar(avatar.getId(), solo2D);
+            assertEquals(Set.of(Proyeccion.DOS_D), gestor.obtener(avatar.getId()).getFormatos(), caso);
+        } else {
+            assertEquals(ConflictoDeNegocio.class, rechaza(mensaje, () -> gestor.editar(avatar.getId(), solo2D))
+                    .getClass(), caso);
+            assertEquals(Set.of(Proyeccion.DOS_D, Proyeccion.TRES_D), gestor.obtener(avatar.getId()).getFormatos(),
+                    "el rechazo deshace el cambio");
+        }
+    }
+
     @Test
     void agregaYLista() {
         gestor.agregar("El Padrino", 175, List.of(Genero.DRAMA), Clasificacion.ATP);

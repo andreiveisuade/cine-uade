@@ -40,6 +40,9 @@ class FuncionTest {
             sin idioma y sin precio,      ,            DOS_D,  DOS_D, 0,    Falta el idioma
             # El formato se valida al construirse, antes de que la función mire su sala para R8.
             R8 y precio cero gana el precio, SUBTITULADA, TRES_D, DOS_D, 0, El precio tiene que ser mayor a cero
+            R31: 3D de una película sin versión 3D, SUBTITULADA, TRES_D, IMAX, 5000, La película Matrix no tiene versión en 3D
+            # R8 primero: la sala se mira antes que la película.
+            R8 y R31 gana R8,             SUBTITULADA, TRES_D, DOS_D, 5000, La sala Sala 1 no puede proyectar en 3D
             """)
     void unaFuncionSinFormatoSinPrecioOEn3DSinSoporteNoSeConstruye(String caso, Version version,
             Proyeccion proyeccion, TipoSala tipo, double precio, String mensaje) {
@@ -111,8 +114,10 @@ class FuncionTest {
     @Test
     void unaFuncionEnElPasadoEsValidaY3DEnUnaSalaQueLoSoportaTambien() {
         Sala imax = new Sala("Sala IMAX", TipoSala.IMAX, 15);
+        Pelicula avatar = new Pelicula("Avatar", 162, List.of(Genero.CIENCIA_FICCION), Clasificacion.ATP);
+        avatar.cambiarFormatos(List.of(Proyeccion.DOS_D, Proyeccion.TRES_D));
 
-        assertDoesNotThrow(() -> new Funcion(MATRIX, imax, LocalDateTime.of(2020, 1, 1, 20, 0),
+        assertDoesNotThrow(() -> new Funcion(avatar, imax, LocalDateTime.of(2020, 1, 1, 20, 0),
                 new FormatoDeFuncion(Version.DOBLADA, Proyeccion.TRES_D, Dinero.de(5000))));
     }
 }

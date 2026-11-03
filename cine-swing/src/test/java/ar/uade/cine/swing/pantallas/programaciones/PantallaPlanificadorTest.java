@@ -9,6 +9,9 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import javax.swing.JEditorPane;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.Document;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -23,12 +26,12 @@ class PantallaPlanificadorTest {
     private static final String PROPUESTA = "{\"elenco\":[{\"id\":7,\"titulo\":\"Matrix\",\"puntaje\":8.7,"
             + "\"duracionMinutos\":136,\"generos\":[\"ACCION\"],\"pases\":2}],"
             + "\"pases\":[{\"peliculaId\":7,\"titulo\":\"Matrix\",\"salaId\":1,\"sala\":\"Sala 1\","
-            + "\"inicio\":\"2026-11-02T14:00:00\",\"duracionMinutos\":136},"
+            + "\"inicio\":\"2026-11-02T14:00:00\",\"duracionMinutos\":136,\"proyeccion\":\"DOS_D\"},"
             + "{\"peliculaId\":7,\"titulo\":\"Matrix\",\"salaId\":1,\"sala\":\"Sala 1\","
-            + "\"inicio\":\"2026-11-02T17:00:00\",\"duracionMinutos\":136}],"
+            + "\"inicio\":\"2026-11-02T17:00:00\",\"duracionMinutos\":136,\"proyeccion\":\"TRES_D\"}],"
             + "\"indicadores\":{\"minutosProgramados\":272,\"minutosDisponibles\":600,\"ocupacion\":0.45,"
             + "\"puntajePromedio\":8.7,\"generosCubiertos\":1,\"generosTotales\":9,"
-            + "\"pasesPorGenero\":{\"ACCION\":2}},\"funcionesCreadas\":%d}";
+            + "\"pasesPorGenero\":{\"ACCION\":2},\"facturacionEsperada\":1360000.0},\"funcionesCreadas\":%d}";
 
     private ServidorFalso servidor;
     private Operador encargado;
@@ -37,7 +40,6 @@ class PantallaPlanificadorTest {
     void levantar() throws IOException {
         servidor = new ServidorFalso();
         servidor.responder("GET /api/idiomas", 200, "[\"DOBLADA\",\"SUBTITULADA\"]");
-        servidor.responder("GET /api/proyecciones", 200, "[\"DOS_D\"]");
         ClienteHttp http = new ClienteHttp(servidor.url());
         encargado = Operador.en(() -> new PantallaPlanificador(new ApiCatalogos(http), new ApiProgramaciones(http)));
         encargado.esperar(() -> encargado.opciones("Idioma").size() == 2);
@@ -65,7 +67,7 @@ class PantallaPlanificadorTest {
         encargado.esperarTexto("Pediste 3 películas y hay 1 confirmadas: confirmá más en Por revisar.");
         encargado.esperarTexto("Elenco (1)");
         assertEquals("{\"desde\":\"2026-11-02\",\"dias\":1,\"apertura\":\"14:00\",\"cierre\":\"23:00\","
-                        + "\"cuantasPeliculas\":3,\"precio\":5000.0,\"idioma\":\"SUBTITULADA\",\"proyeccion\":\"DOS_D\"}",
+                        + "\"cuantasPeliculas\":3,\"precio\":5000.0,\"idioma\":\"SUBTITULADA\"}",
                 servidor.ultimo("POST /api/grilla/propuesta").cuerpo());
 
         encargado.clic("Crear 2 funciones");
@@ -95,8 +97,19 @@ class PantallaPlanificadorTest {
         encargado.fecha("Desde", null).tipear("Días", "").tipear("Películas", "").clic("Previsualizar");
 
         encargado.esperarTexto("Así quedaría la semana");
-        assertEquals("{\"apertura\":\"14:00\",\"cierre\":\"00:00\",\"precio\":5000.0,\"idioma\":\"DOBLADA\","
-                + "\"proyeccion\":\"DOS_D\"}", servidor.ultimo("POST /api/grilla/propuesta").cuerpo());
+        assertEquals("{\"apertura\":\"14:00\",\"cierre\":\"00:00\",\"precio\":5000.0,\"idioma\":\"DOBLADA\"}",
+                servidor.ultimo("POST /api/grilla/propuesta").cuerpo());
+    }
+
+    // El formato lo elige el backend según sala y película: no se pide, se muestra en cada pase.
+    @Test
+    void muestraElFormatoDeCadaPaseYLaFacturacionEstimada() {
+        servidor.responder("POST /api/grilla/propuesta", 200, PROPUESTA.formatted(0));
+        encargado.clic("Previsualizar");
+
+        encargado.esperarTexto("FACTURACIÓN ESPERADA");
+        encargado.esperarTexto("$ 1.360.000");
+        encargado.esperar(() -> semana().contains("14:00 Matrix 2D") && semana().contains("17:00 Matrix 3D"));
     }
 
     @Test
@@ -121,5 +134,15 @@ class PantallaPlanificadorTest {
 
         encargado.esperarTexto("No hay películas confirmadas para armar la semana");
         assertTrue(encargado.habilitado("Previsualizar"));
+    }
+
+    // Lo que se lee en la pestaña del día: el HTML de SemanaPorSala sin las etiquetas.
+    private String semana() {
+        Document documento = encargado.buscar(JEditorPane.class).getDocument();
+        try {
+            return documento.getText(0, documento.getLength());
+        } catch (BadLocationException e) {
+            throw new IllegalStateException(e);
+        }
     }
 }

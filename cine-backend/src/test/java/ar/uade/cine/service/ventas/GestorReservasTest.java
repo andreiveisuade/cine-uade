@@ -277,7 +277,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
     void elPrecioDependeDelTipoDeSalaYDeButaca() {
         salas.agregar("Sala 2", TipoSala.IMAX, List.of(4), Map.of("A1", TipoAsiento.VIP));
         funciones.programar(1, 2, LocalDateTime.of(2026, 8, 21, 20, 0),
-                new FormatoDeFuncion(Version.DOBLADA, Proyeccion.TRES_D, Dinero.de(5000)));
+                new FormatoDeFuncion(Version.DOBLADA, Proyeccion.DOS_D, Dinero.de(5000)));
 
         Reserva vip = reservas.reservar(2, 1, generales("A1"), null);
         assertEquals(Dinero.de(12000.0), vip.getTotal());
@@ -299,7 +299,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
     void elPrecioSeRedondeaADosDecimales() {
         salas.agregar("Sala 3D", TipoSala.TRES_D, List.of(3));
         funciones.programar(1, 2, LocalDateTime.of(2026, 8, 23, 20, 0),
-                new FormatoDeFuncion(Version.DOBLADA, Proyeccion.TRES_D, Dinero.de(5250.50)));
+                new FormatoDeFuncion(Version.DOBLADA, Proyeccion.DOS_D, Dinero.de(5250.50)));
 
         assertEquals(Dinero.de(6825.65), reservas.reservar(2, 1, generales("A1"), null).getTotal());
     }

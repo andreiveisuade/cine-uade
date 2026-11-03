@@ -115,6 +115,20 @@ class PeliculaControllerTest extends PruebaDeApi {
         }
     }
 
+    // R31: los formatos viajan con el nombre de la constante, en orden, y al menos uno.
+    @Test
+    void losFormatosViajanConElNombreDeLaConstante() {
+        Respuesta alta = post("/api/peliculas", "{\"titulo\":\"Avatar\",\"duracionMinutos\":162,"
+                + "\"generos\":[\"ACCION\"],\"clasificacion\":\"ATP\",\"formatos\":[\"TRES_D\",\"DOS_D\"]}");
+        int id = alta.json().get("id").asInt();
+
+        assertEquals(201, alta.estado());
+        assertEquals("[\"DOS_D\",\"TRES_D\"]", get("/api/peliculas/" + id).json().get("formatos").toString());
+        Respuesta sinFormatos = put("/api/peliculas/" + id, "{\"formatos\":[]}");
+        assertEquals(400, sinFormatos.estado());
+        assertEquals("La película tiene que tener al menos un formato", sinFormatos.error());
+    }
+
     // Se manda la URL que se copia del navegador y se guarda el id, que es lo que embebe la web.
     @Test
     void elAltaConLaUrlDelTrailerGuardaElIdDelVideo() {

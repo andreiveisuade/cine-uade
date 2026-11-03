@@ -34,5 +34,8 @@ public record PedidoPeliculaDTO(
         @Schema(description = "De 0 a 10", example = "8.2") Double puntaje,
         @Schema(description = "De 0 a 100.000.000", example = "26000") Integer votos,
         @Schema(description = "Id del video de YouTube o su URL (watch?v=, youtu.be/, /embed/); se guarda el id",
-                example = "https://www.youtube.com/watch?v=vKQi3bBA1y8") String trailerYoutube) {
+                example = "https://www.youtube.com/watch?v=vKQi3bBA1y8") String trailerYoutube,
+        @Schema(description = "En qué formatos se estrena, al menos uno (R31); sin el campo, solo 2D",
+                allowableValues = {"DOS_D", "TRES_D"}, example = "[\"DOS_D\", \"TRES_D\"]")
+        List<String> formatos) {
 }

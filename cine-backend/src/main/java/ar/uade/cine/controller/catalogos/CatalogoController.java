@@ -21,6 +21,7 @@ import ar.uade.cine.dto.catalogos.TarifaVistaDTO;
 import ar.uade.cine.dto.catalogos.TipoProductoVistaDTO;
 import ar.uade.cine.dto.catalogos.TipoPromocionVistaDTO;
 import ar.uade.cine.dto.catalogos.TipoSalaVistaDTO;
+import ar.uade.cine.service.programaciones.PapelEnLaGrilla;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -44,11 +45,12 @@ public class CatalogoController {
                 .toList();
     }
 
-    @Operation(summary = "Los tipos de sala y su recargo")
+    @Operation(summary = "Los tipos de sala: multiplicador, 3D, premium y qué les toca en la grilla")
     @GetMapping("/api/tipos-sala")
     public List<TipoSalaVistaDTO> tiposDeSala() {
         return Arrays.stream(TipoSala.values())
-                .map(t -> new TipoSalaVistaDTO(t.name(), t.getMultiplicadorPrecio(), t.soportaTresD()))
+                .map(t -> new TipoSalaVistaDTO(t.name(), t.getMultiplicadorPrecio(), t.soportaTresD(), t.premium(),
+                        PapelEnLaGrilla.de(t).getDescripcion()))
                 .toList();
     }
 

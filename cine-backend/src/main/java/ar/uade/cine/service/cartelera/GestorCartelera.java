@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -15,6 +16,7 @@ import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.model.cartelera.TrailerYoutube;
+import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.repository.funciones.FuncionRepository;
 import ar.uade.cine.repository.cartelera.PeliculaRepository;
@@ -24,7 +26,7 @@ import ar.uade.cine.infrastructure.reloj.Reloj;
 import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
 import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
 
-// Catálogo de películas (R1, R12); coordina: la película valida sus datos, el gestor lo que pide la base.
+// Catálogo de películas (R1, R12, R31); coordina: la película valida sus datos y el gestor consulta la base.
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -46,6 +48,9 @@ public class GestorCartelera {
     public Pelicula agregar(DatosPelicula datos) {
         Pelicula pelicula = new Pelicula(datos.titulo(), datos.duracionMinutos(), datos.generos(),
                 datos.clasificacion());
+        if (datos.formatos() != null) {
+            pelicula.cambiarFormatos(datos.formatos());
+        }
         exigirTituloLibre(pelicula);
         aplicarCatalogo(pelicula, datos);
         peliculaRepository.save(pelicula);
@@ -62,8 +67,13 @@ public class GestorCartelera {
         Clasificacion clasificacion = cambios.clasificacion() == null
                 ? actual.getClasificacion() : cambios.clasificacion();
         actual.actualizar(titulo, duracion, generos, clasificacion);
+        Set<Proyeccion> antes = actual.getFormatos();
+        if (cambios.formatos() != null) {
+            actual.cambiarFormatos(cambios.formatos());
+        }
         // Mismo orden que el alta: la consulta se excluye a sí misma y el rechazo deshace la transacción.
         exigirTituloLibre(actual);
+        exigirSinUso(actual, antes);
         aplicarCatalogo(actual, cambios);
         return actual;
     }
@@ -73,6 +83,26 @@ public class GestorCartelera {
     private void exigirTituloLibre(Pelicula pelicula) {
         if (peliculaRepository.existsByTituloIgnoreCaseAndIdNot(pelicula.getTitulo(), pelicula.getId())) {
             throw new ConflictoDeNegocio("Ya existe una película con ese título");
+        }
+    }
+
+    // R31: el formato que se saca no puede quedar en funciones por delante ni en una grilla que las sigue generando.
+    private void exigirSinUso(Pelicula pelicula, Set<Proyeccion> antes) {
+        for (Proyeccion formato : antes) {
+            if (pelicula.seEstrenaEn(formato)) {
+                continue;
+            }
+            String quitar = " antes de sacarle el " + formato.getEtiqueta();
+            if (funcionRepository.existsByPelicula_IdAndFormato_ProyeccionAndInicioAfter(
+                    pelicula.getId(), formato, reloj.ahora())) {
+                throw new ConflictoDeNegocio("La película " + pelicula.getTitulo() + " tiene funciones en "
+                        + formato.getEtiqueta() + " por delante: borralas o cambiales el formato" + quitar);
+            }
+            if (programacionRepository.existsByPelicula_IdAndFormato_ProyeccionAndActivaTrue(
+                    pelicula.getId(), formato)) {
+                throw new ConflictoDeNegocio("La película " + pelicula.getTitulo() + " tiene una grilla activa en "
+                        + formato.getEtiqueta() + ": dala de baja" + quitar);
+            }
         }
     }
 

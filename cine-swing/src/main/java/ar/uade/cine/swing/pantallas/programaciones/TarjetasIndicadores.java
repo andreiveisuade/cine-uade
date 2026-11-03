@@ -12,12 +12,14 @@ import java.util.function.Function;
 
 import static ar.uade.cine.swing.comun.Formato.conDecimal;
 import static ar.uade.cine.swing.comun.Formato.porcentaje;
+import static ar.uade.cine.swing.comun.Formato.precio;
 
-// Las tres cifras de una propuesta de grilla, cada una comparada con la corrida anterior.
+// Las cuatro cifras de una propuesta de grilla, cada una comparada con la corrida anterior.
 final class TarjetasIndicadores extends JPanel {
 
     TarjetasIndicadores(IndicadoresGrilla i, IndicadoresGrilla anterior) {
-        super(new GridLayout(1, 3, Escala.JUNTO, 0));
+        // Dos por fila: cuatro en una, junto a los criterios, cortan la facturación de una semana entera.
+        super(new GridLayout(2, 2, Escala.JUNTO, Escala.JUNTO));
         add(Componentes.cifra("Ocupación de las salas", porcentaje(i.ocupacion()),
                 String.format(Locale.ROOT, "%,d de %,d minutos con función", i.minutosProgramados(),
                         i.minutosDisponibles()).replace(',', '.'),
@@ -26,6 +28,8 @@ final class TarjetasIndicadores extends JPanel {
                 variacion(i, anterior, IndicadoresGrilla::puntajePromedio, d -> conDecimal(d))));
         add(Componentes.cifra("Géneros", i.generosCubiertos() + " de " + i.generosTotales(), "del catálogo",
                 variacion(i, anterior, x -> (double) x.generosCubiertos(), d -> String.valueOf(Math.round(d)))));
+        add(Componentes.cifra("Facturación esperada", precio(i.facturacionEsperada()), "estimación",
+                variacion(i, anterior, IndicadoresGrilla::facturacionEsperada, d -> precio(d))));
         setMaximumSize(new Dimension(Integer.MAX_VALUE, getPreferredSize().height));
     }
 

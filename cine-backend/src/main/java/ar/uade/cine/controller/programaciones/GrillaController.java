@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import ar.uade.cine.controller.http.Parseo;
 import ar.uade.cine.model.dinero.Dinero;
-import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
 import ar.uade.cine.dto.programaciones.PedidoGrillaDTO;
 import ar.uade.cine.dto.programaciones.PropuestaGrillaVistaDTO;
@@ -52,15 +51,14 @@ public class GrillaController {
     }
 
     // El precio no tiene default (decisión comercial) y se valida primero; lo que falte lo completa CriteriosGrilla
-    // Un idioma o una proyección vacíos cuentan como no enviados, igual que fechas y horas
+    // Un idioma vacío cuenta como no enviado, igual que fechas y horas
     private CriteriosGrilla criterios(PedidoGrillaDTO pedido) {
         Dinero precio = Dinero.importe(pedido.precio(), "precio");
         LocalDate desde = Parseo.diaOpcional(pedido.desde(), "la fecha de inicio");
         LocalTime apertura = Parseo.horaOpcional(pedido.apertura(), "la hora de apertura");
         LocalTime cierre = Parseo.horaOpcional(pedido.cierre(), "la hora de cierre");
         Version version = Parseo.constanteOpcional(Version.class, pedido.idioma(), "el idioma");
-        Proyeccion proyeccion = Parseo.constanteOpcional(Proyeccion.class, pedido.proyeccion(), "la proyección");
         return CriteriosGrilla.completando(reloj.hoy(), desde, pedido.dias(), apertura, cierre,
-                pedido.cuantasPeliculas(), precio, version, proyeccion);
+                pedido.cuantasPeliculas(), precio, version);
     }
 }

@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalDate;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.List;
 
 import org.junit.jupiter.api.DisplayName;
@@ -17,6 +18,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.rechazos.Rechazo;
 
 class PeliculaTest {
@@ -200,6 +202,48 @@ class PeliculaTest {
             """)
     void alPublicoSoloSeLeMuestraLaConfirmada(String caso, EstadoRevision estado, boolean seMuestra) {
         assertEquals(seMuestra, en(estado).seMuestraAlPublico());
+    }
+
+    // TMDB no informa el formato: la que no dice otra cosa se estrena en 2D.
+    @Test
+    void sinDecirOtraCosaSeEstrenaSoloEn2D() {
+        assertEquals(EnumSet.of(Proyeccion.DOS_D), dune().getFormatos());
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            sin formatos,       '',           La película tiene que tener al menos un formato
+            con un formato nulo, DOS_D;null, Falta el formato
+            """)
+    @DisplayName("R31: la película se estrena en al menos un formato")
+    void unaPeliculaSinFormatosNoSeAcepta(String caso, String formatos, String mensaje) {
+        rechaza(mensaje, () -> dune().cambiarFormatos(formatos(formatos)));
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            2D de una que solo está en 2D,  DOS_D,        DOS_D,  ''
+            3D de una que solo está en 2D,  DOS_D,        TRES_D, La película Dune no tiene versión en 3D
+            2D de una que solo está en 3D,  TRES_D,       DOS_D,  La película Dune no tiene versión en 2D
+            3D de una que está en los dos,  DOS_D;TRES_D, TRES_D, ''
+            los repetidos se juntan,        TRES_D;TRES_D, TRES_D, ''
+            """)
+    @DisplayName("R31: una función solo en un formato en que la película se estrena")
+    void soloSeProgramaEnLosFormatosEnQueSeEstrena(String caso, String formatos, Proyeccion pedido,
+                                                   String mensaje) {
+        Pelicula dune = dune();
+        dune.cambiarFormatos(formatos(formatos));
+
+        if (mensaje.isEmpty()) {
+            assertDoesNotThrow(() -> dune.exigirFormato(pedido));
+        } else {
+            rechaza(mensaje, () -> dune.exigirFormato(pedido));
+        }
+    }
+
+    private static List<Proyeccion> formatos(String texto) {
+        return texto.isEmpty() ? List.of() : Arrays.stream(texto.split(";"))
+                .map(f -> f.equals("null") ? null : Proyeccion.valueOf(f)).toList();
     }
 
     // Por las transiciones de la película, que es la que cambia de estado.

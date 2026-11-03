@@ -51,7 +51,8 @@ ZONES = {
     "imagenes": ("Imágenes", "#5a5a5a"),
 }
 ZONE_OF = {
-    "pelicula": "cartelera", "pelicula_genero": "cartelera", "importacion": "cartelera",
+    "pelicula": "cartelera", "pelicula_genero": "cartelera", "pelicula_formato": "cartelera",
+    "importacion": "cartelera",
     "programacion": "funciones", "programacion_dia": "funciones", "funcion": "funciones",
     "sala": "salas", "asiento": "salas",
     "bloqueo_butaca": "ventas", "reserva": "ventas", "entrada": "ventas", "pago": "ventas",
@@ -61,7 +62,7 @@ ZONE_OF = {
     "imagen": "imagenes",
 }
 COLUMNS = [
-    ["pelicula", "pelicula_genero", "importacion", "imagen"],
+    ["pelicula", "pelicula_genero", "pelicula_formato", "importacion", "imagen"],
     ["programacion", "programacion_dia", "funcion"],
     ["sala", "asiento", "bloqueo_butaca"],
     ["reserva", "entrada", "pago"],
@@ -72,6 +73,7 @@ COLUMNS = [
 # (child, fkcol): (child side gutter, parent side gutter)  -- same gutter = direct route, else corridor
 ROUTES = {
     ("pelicula_genero", "pelicula_id"): (0, 0),
+    ("pelicula_formato", "pelicula_id"): (0, 0),
     ("asiento", "sala_id"): (3, 3),
     ("programacion", "pelicula_id"): (1, 1),
     ("programacion", "sala_id"): (2, 2),
@@ -380,9 +382,9 @@ html = f'''<!DOCTYPE html>
   <div class="diagram-container">
     <svg viewBox="0 0 {W} {H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="der-design-title der-design-desc">
       <title id="der-design-title">Modelo de datos del cine</title>
-      <desc id="der-design-desc">Las 21 tablas de schema.sql agrupadas en ocho subdominios, con todas sus columnas, tipos, claves, restricciones y las 25 claves foraneas con su cardinalidad.</desc>
+      <desc id="der-design-desc">Las 22 tablas de schema.sql agrupadas en ocho subdominios, con todas sus columnas, tipos, claves, restricciones y las 26 claves foraneas con su cardinalidad.</desc>
       <rect width="{W}" height="{H}" fill="{PAPER}"/>
-      <text x="{X0}" y="50" class="eb">SCHEMA.SQL · MYSQL 8.4 · 21 TABLAS · 25 FK</text>
+      <text x="{X0}" y="50" class="eb">SCHEMA.SQL · MYSQL 8.4 · 22 TABLAS · 26 FK</text>
       <text x="{X0}" y="92" class="h1">Modelo de datos del cine</text>
 {svg}
     </svg>
