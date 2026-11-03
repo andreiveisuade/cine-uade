@@ -12,6 +12,8 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.border.Border;
+import java.awt.Color;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Container;
@@ -169,10 +171,16 @@ public final class Componentes {
     /** Una tarjeta: borde redondeado y aire adentro. Formularios, cifras, informes. */
     public static JPanel conBorde(JComponent contenido) {
         JPanel panel = new JPanel(new BorderLayout());
-        panel.setBorder(new FlatLineBorder(new Insets(Escala.APARTE, Escala.APARTE, Escala.APARTE, Escala.APARTE),
+        panel.setBorder(redondeado(new Insets(Escala.APARTE, Escala.APARTE, Escala.APARTE, Escala.APARTE),
                 Colores.borde(), 1, Escala.ARCO));
         panel.add(contenido);
         return panel;
+    }
+
+    // FlatLineBorder es un UIResource: al cambiar el tema, updateUI lo cambiaba por el del tema y se perdía el
+    // margen. Envuelto en un CompoundBorder deja de serlo y se queda.
+    public static Border redondeado(Insets margen, Color color, int grosor, int arco) {
+        return BorderFactory.createCompoundBorder(new FlatLineBorder(margen, color, grosor, arco), null);
     }
 
     /** Cifra grande con título arriba (arqueo, indicadores); {@code detalle} y {@code variacion} opcionales. */

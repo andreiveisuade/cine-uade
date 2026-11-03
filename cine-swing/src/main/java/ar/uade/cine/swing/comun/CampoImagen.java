@@ -1,7 +1,6 @@
 package ar.uade.cine.swing.comun;
 
 import ar.uade.cine.swing.api.ApiImagenes;
-import com.formdev.flatlaf.ui.FlatLineBorder;
 
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -36,7 +35,7 @@ public final class CampoImagen extends JPanel {
         this.api = api;
         vista.setPreferredSize(new Dimension(ANCHO, ALTO));
         vista.setForeground(Colores.secundario());
-        vista.setBorder(new FlatLineBorder(new Insets(0, 0, 0, 0), Colores.borde(), 1, Escala.JUNTO));
+        vista.setBorder(Componentes.redondeado(new Insets(0, 0, 0, 0), Colores.borde(), 1, Escala.JUNTO));
         JButton elegir = new JButton("Elegir imagen…");
         elegir.addActionListener(e -> elegir());
         quitar.addActionListener(e -> poner(null));

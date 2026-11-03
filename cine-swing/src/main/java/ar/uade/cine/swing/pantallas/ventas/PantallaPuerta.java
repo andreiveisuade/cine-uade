@@ -16,7 +16,6 @@ import ar.uade.cine.swing.comun.Pila;
 import ar.uade.cine.swing.comun.Tarea;
 import ar.uade.cine.swing.comun.Validacion;
 import ar.uade.cine.swing.pantallas.Pantalla;
-import com.formdev.flatlaf.ui.FlatLineBorder;
 
 import javax.swing.JButton;
 import javax.swing.JLabel;
@@ -158,7 +157,7 @@ public final class PantallaPuerta extends Pantalla {
     private void mostrar(Color color, String titulo, String cuerpo) {
         resultado.setText("<html><div style='width:460px'><h1 style='color:" + Colores.hex(color) + "'>" + titulo
                 + "</h1>" + cuerpo + "</div></html>");
-        resultado.setBorder(new FlatLineBorder(new Insets(Escala.CERCA, Escala.APARTE, Escala.CERCA,
+        resultado.setBorder(Componentes.redondeado(new Insets(Escala.CERCA, Escala.APARTE, Escala.CERCA,
                 Escala.APARTE), color, 2, Escala.ARCO));
     }
 }

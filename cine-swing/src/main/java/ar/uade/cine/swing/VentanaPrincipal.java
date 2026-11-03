@@ -32,7 +32,6 @@ import java.awt.Font;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Supplier;
 import java.util.prefs.Preferences;
 
 // El marco del panel: cabecera, menú según el rol, la pantalla elegida y la barra de estado.
@@ -61,8 +60,6 @@ public final class VentanaPrincipal extends JFrame implements Navegacion {
     private final JPanel contenido = new JPanel(new BorderLayout());
     private final Map<Destino, JToggleButton> botones = new EnumMap<>(Destino.class);
     private Destino destino;
-    private Supplier<JComponent> actual;
-
     public VentanaPrincipal(Apis apis, Servidor servidor, Empleado empleado, Preferences preferencias,
                             Runnable alSalir) {
         super("Cine UADE · " + servidor.marca() + " · " + empleado.nombre());
@@ -79,7 +76,7 @@ public final class VentanaPrincipal extends JFrame implements Navegacion {
         ir(empleado.esAdministrador() ? Destino.PELICULAS : Destino.PUERTA);
     }
 
-    // Los bordes y fondos leen Colores al crearse: con otro tema hay que volver a crearlos, no solo redibujarlos.
+    // El marco se arma de nuevo con otro tema (sus botones de menú son propios); la pantalla del centro no.
     private void armar() {
         botones.clear();
         JPanel raiz = new JPanel(new BorderLayout());
@@ -139,9 +136,11 @@ public final class VentanaPrincipal extends JFrame implements Navegacion {
         tema.addActionListener(e -> {
             Colores.usarTema(!oscuro);
             preferencias.put(CLAVE_TEMA, oscuro ? "claro" : "oscuro");
+            // La pantalla abierta se queda con sus datos: solo se rearma el marco, sin volver a pedirle nada al backend.
             armar();
             botones.get(destino).setSelected(true);
-            mostrar(actual);
+            revalidate();
+            repaint();
         });
         return tema;
     }
@@ -220,7 +219,7 @@ public final class VentanaPrincipal extends JFrame implements Navegacion {
         if (boton == null) return;
         boton.setSelected(true);
         this.destino = destino;
-        mostrar(() -> pantallas.de(destino));
+        mostrar(pantallas.de(destino));
     }
 
     @Override
@@ -230,21 +229,20 @@ public final class VentanaPrincipal extends JFrame implements Navegacion {
 
     @Override
     public void abrirInforme(int funcionId) {
-        mostrar(() -> pantallas.informe(funcionId));
+        mostrar(pantallas.informe(funcionId));
     }
 
     @Override
     public void abrirCobro(int reservaId) {
-        mostrar(() -> pantallas.cobro(reservaId));
+        mostrar(pantallas.cobro(reservaId));
     }
 
     @Override
     public void abrirMapa(int salaId) {
-        mostrar(() -> pantallas.mapa(salaId));
+        mostrar(pantallas.mapa(salaId));
     }
 
-    private void mostrar(Supplier<JComponent> pantalla) {
-        actual = pantalla;
-        Componentes.reemplazar(contenido, pantalla.get());
+    private void mostrar(JComponent pantalla) {
+        Componentes.reemplazar(contenido, pantalla);
     }
 }
