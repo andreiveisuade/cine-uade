@@ -556,10 +556,10 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td>CU-13</td><td>Admin</td><td>Gestionar la carta del candy</td><td>—</td></tr>
             <tr><td>CU-14</td><td>Admin</td><td>Armar un combo</td><td>R14</td></tr>
             <tr><td>CU-15</td><td>Cliente</td><td>Comprar en el candy y recibir el ticket</td><td>R11</td></tr>
-            <tr><td>CU-15b</td><td>Cliente</td><td>Sumar candy a una reserva pagada, en el mostrador o en la web, y retirarlo con el QR</td><td>R11, R30</td></tr>
+            <tr><td>CU-15b</td><td>Cliente</td><td>Sumar candy a una reserva pagada, en el mostrador o en la web, y retirarlo con el QR en la Puerta, modo Candy</td><td>R11, R30</td></tr>
             <tr><td>CU-16</td><td>Cliente</td><td>Ver sus compras del candy (<code>GET /candy/compras/mias</code>)</td><td>R21</td></tr>
             <tr><td>CU-17</td><td>Admin</td><td>Alta, baja y vigencia de promociones</td><td>R15, R16</td></tr>
-            <tr><td>CU-18</td><td>Acomodador</td><td>Validar una entrada con el código</td><td>R18</td></tr>
+            <tr><td>CU-18</td><td>Acomodador</td><td>Validar una entrada con el código en la Puerta, modo Entrada</td><td>R18</td></tr>
             <tr><td>CU-18b</td><td>Acomodador</td><td>Validar una entrada desde el celular: escanea el QR o tipea el código (extiende CU-18)</td><td>R18</td></tr>
             <tr><td>CU-19</td><td>Admin</td><td>Emitir el <a href="#informes">borderó</a> de una función y la declaración jurada del período (INCAA)</td><td>—</td></tr>
             <tr><td>CU-20</td><td>Admin</td><td>Recaudación de una función, boletería y candy</td><td>—</td></tr>
@@ -583,6 +583,7 @@ body.lightbox-locked { overflow: hidden; }
         <li><strong>CU-07b:</strong> el candy se arma como un carrito: cada tarjeta lleva «Agregar» y, con algo, el contador «− N +» en el mismo lugar (tope 20 por producto, el «+» dice por qué no suma); «Tu pedido», con la forma de la entrada, lista las entradas y el candy en renglones con cantidad, subtotal, sacar y vaciar, y en su talón el pago. El total cambia en el acto y «Pagar» espera a que el backend guarde; si rechaza, vuelve a lo guardado y lo dice. Si MP rechaza el pago, la vuelta llega al ticket con el motivo y «Terminar la compra» lleva de nuevo a Tu compra para probar otro medio; las butacas siguen guardadas hasta <code>venceEn</code>. Cambiar el candy después de abrir un pago invalida ese checkout (409 al cobrar), por eso cada «Pagar» abre uno nuevo.</li>
         <li><strong>CU-08:</strong> una reserva vencida no se cancela (la API ya la muestra <code>EXPIRADA</code>, aunque en la base siga <code>RESERVADA</code>): 409 «La reserva N venció: sus butacas volvieron a estar disponibles». Las butacas ya están libres (R17).</li>
         <li><strong>CU-09:</strong> el QR, «Descargar entrada» y «Mostrar en la puerta» aparecen solo con la reserva pagada y sin usar en la puerta: sin pagar, el ticket dice hasta qué hora se paga (<code>venceEn</code>) y en la puerta no serviría (R18). Si el PDF no se puede armar: «No pudimos armar el PDF. Probá de nuevo». El candy va en un bloque «Candy a retirar» dentro de la entrada, cada compra con su estado (sin pagar, a retirar, retirado), y se retira con el mismo QR; el PDF lleva solo lo cobrado.</li>
+        <li><strong>CU-18 y CU-15b, la Puerta:</strong> el mismo QR tiene dos canjes independientes, entrar a la sala (<code>POST /api/acceso</code>) y retirar el candy (<code>POST /api/candy/retiros</code>), y la Puerta los separa en dos modos, «Entrada» y «Candy», en Swing y en Android. Un solo botón dice cuál dispara («Validar entrada» o «Entregar candy»), y el Enter del lector dispara el mismo; el modo elegido se recuerda en el equipo. En Entrada, si la reserva tiene candy cobrado sin retirar, avisa «Tiene candy para retirar: pasá a modo Candy» y no lo entrega. En Candy, «CANDY ENTREGADO» con lo que se entrega, o «CANDY NO ENTREGADO» con el motivo del backend tal cual (ya retirado, sin candy, código inexistente), sin registrar el ingreso.</li>
         <li><strong>CU-10:</strong> contra Producción dormida, el ingreso avisa «Despertando el servidor de producción: puede tardar un minuto» y espera hasta 120 s (contra el resto, 30 s). Con Otro…, una URL mal escrita no deja ingresar.</li>
         <li><strong>CU-10b:</strong> sin token de Aiven, la base sale «Desconocido» y ofrece abrir la consola de Aiven; con el token rechazado, «Aiven rechazó el token: revisá que esté vigente y tenga acceso al proyecto». Sin token, Despertar solo espera a Render.</li>
       </ul>
@@ -1078,7 +1079,7 @@ docker compose up -d --build
           </tbody>
         </table>
       </div>
-      <p>Los clientes deciden por status: Android trata todo 4xx como «no pasa»; Swing muestra el 409 sin campo en un pop-up y en la Puerta como NO PASA.</p>
+      <p>Los clientes deciden por status: Android trata todo 4xx como rechazo; Swing muestra el 409 sin campo en un pop-up y en la Puerta como ENTRADA NO VÁLIDA o CANDY NO ENTREGADO.</p>
 
       <h3 id="swagger">Swagger</h3>
       <p><code>/swagger-ui.html</code> para probar, <code>/v3/api-docs</code> para Postman. Lo genera springdoc; <code>ContratoOpenApiTest</code> falla si un <code>$ref</code> no resuelve.</p>
@@ -1297,9 +1298,9 @@ docker compose up -d --build
     <section class="doc-section" id="android">
       <h2>Puerta en el celular (Android)</h2>
       <ul>
-        <li><code>cine-android/</code>: Kotlin + Jetpack Compose, tercer cliente de la misma API. Solo la Puerta (CU-18): login, escáner a pantalla completa y resultado.</li>
-        <li>CameraX + ML Kit (en el teléfono, solo QR) lee el código; <code>POST /api/acceso</code> con Basic decide. Tres resultados: verde <strong>ADELANTE</strong> con película, sala, hora, butacas y tarifas («pedir carnet» si la entrada lo dice); rojo <strong>NO PASA</strong> con el <code>{error}</code> tal cual, solo ante un 4xx; y gris <strong>No se pudo verificar</strong> sin red, por timeout o con un 5xx, sin vibrar y con «Reintentar».</li>
-        <li>Vibración distinta para ADELANTE y NO PASA, vuelta sola al escáner a los 4 s, ingreso a mano si la cámara no enfoca. No reenvía el mismo código mientras se ve su resultado.</li>
+        <li><code>cine-android/</code>: Kotlin + Jetpack Compose, tercer cliente de la misma API. Solo la Puerta (CU-18, CU-15b): login, escáner a pantalla completa con el selector de modo arriba (Entrada / Candy, recordado en el teléfono) y resultado.</li>
+        <li>CameraX + ML Kit (en el teléfono, solo QR) lee el código; en modo Entrada decide <code>POST /api/acceso</code> y en modo Candy <code>POST /api/candy/retiros</code>, los dos con Basic. Verde <strong>ENTRADA VÁLIDA</strong> con película, sala, hora, butacas y tarifas («pedir carnet» si la entrada lo dice, y el aviso si tiene candy para retirar), o <strong>CANDY ENTREGADO</strong> con cada producto y su cantidad; rojo <strong>ENTRADA NO VÁLIDA</strong> o <strong>CANDY NO ENTREGADO</strong> con el <code>{error}</code> tal cual, solo ante un 4xx; y gris <strong>No se pudo verificar</strong> sin red, por timeout o con un 5xx, sin vibrar y con «Reintentar».</li>
+        <li>Vibración distinta para el canje hecho y el rechazado, vuelta sola al escáner a los 4 s, ingreso a mano si la cámara no enfoca. No reenvía el mismo código mientras se ve su resultado.</li>
         <li>Seguridad: clave solo en memoria; por <code>http</code> solo a la red propia (docker local), a internet solo <code>https</code>; no sigue redirecciones; <code>FLAG_SECURE</code>.</li>
         <li>Tests JVM contra MockWebServer, como Swing con su servidor falso: <code>cd cine-android &amp;&amp; ./gradlew test</code>.</li>
       </ul>
@@ -1382,7 +1383,7 @@ docker compose up -d --build
             <tr><td>Público</td><td>La venta web: cartelera, catálogos, bloquear y reservar, reserva <em>por código</em>, el ingreso con Google (<code>/oauth2/**</code>, <code>/login/oauth2/**</code>, <code>GET /api/sesion/google</code>), retorno de MP, carta del candy (con precio suelto y ahorro), promociones vigentes (<code>GET /api/promociones/vigentes</code>: activas y sin terminar, sin id ni estado). Película no aprobada por el buzón: 404</td></tr>
             <tr><td>Público (front)</td><td>Solo <code>GET</code> del array <code>FRONT</code>: <code>/</code>, <code>/index.html</code>, <code>/privacidad.html</code>, <code>/assets/**</code> y los íconos de <code>public/</code> (<code>favicon.*</code>, <code>icon-*.png</code>, <code>apple-touch-icon.png</code>, <code>og.jpg</code>, <code>site.webmanifest</code>). Hace falta porque en <a href="#despliegue">Render</a> el backend sirve el build de React</td></tr>
             <tr><td>Cliente (cookie)</td><td>Sus reservas (<code>/reservas/mias</code>), cancelar y abrir checkout, solo propias (R21): ajena da 404 como un código inexistente. Su cuenta (<code>PUT</code>/<code>DELETE /api/cuenta</code>)</td></tr>
-            <tr><td><code>ACOMODADOR</code></td><td>El login y el ingreso por la Puerta</td></tr>
+            <tr><td><code>ACOMODADOR</code></td><td>El login y los dos canjes de la Puerta: el ingreso y el retiro del candy</td></tr>
             <tr><td><code>ADMINISTRADOR</code></td><td>Todo lo demás, incluida la Puerta</td></tr>
           </tbody>
         </table>
@@ -2003,7 +2004,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
             <tr><td>CP-13</td><td>Promo del 30% y cobrar</td><td>Descuento informado; la caja lo suma</td></tr>
             <tr><td>CP-14</td><td>Dar de baja la promoción</td><td>Gris con «Reactivar»</td></tr>
             <tr><td>CP-15</td><td>Acomodador entra al panel Swing</td><td>Solo ve Puerta; otra ruta da 403</td></tr>
-            <tr><td>CP-16</td><td>Validar un código dos veces</td><td><strong>ADELANTE</strong> y después rechazo</td></tr>
+            <tr><td>CP-16</td><td>Validar un código dos veces; después, en modo Candy, entregar su candy dos veces</td><td><strong>ENTRADA VÁLIDA</strong> y después rechazo; <strong>CANDY ENTREGADO</strong> y después «ya se retiró»</td></tr>
             <tr><td>CP-17</td><td>Dejar vencer una reserva</td><td><code>EXPIRADA</code>, butacas libres (R17)</td></tr>
             <tr><td>CP-18</td><td>Elegir en dos pestañas</td><td>La segunda las ve tomadas</td></tr>
             <tr><td>CP-19</td><td>Función en 2020, después a futuro</td><td>400, después 201 (R20)</td></tr>
