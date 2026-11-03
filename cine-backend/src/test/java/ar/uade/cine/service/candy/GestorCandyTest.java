@@ -1,6 +1,7 @@
 package ar.uade.cine.service.candy;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -47,6 +48,7 @@ import ar.uade.cine.service.informes.GestorCaja;
 import ar.uade.cine.service.informes.GestorInformes;
 import ar.uade.cine.service.salas.GestorSalas;
 import ar.uade.cine.service.usuarios.GestorClientes;
+import ar.uade.cine.service.ventas.GestorAcceso;
 import ar.uade.cine.service.ventas.GestorPagos;
 import ar.uade.cine.service.ventas.GestorReservas;
 import ar.uade.cine.service.ventas.Ocupacion;
@@ -57,6 +59,8 @@ class GestorCandyTest extends PruebaDeIntegracion {
 
     @Autowired
     private GestorCandy candy;
+    @Autowired
+    private GestorAcceso acceso;
     @Autowired
     private GestorCaja caja;
     @Autowired
@@ -527,6 +531,30 @@ class GestorCandyTest extends PruebaDeIntegracion {
         }
 
         rechaza("La entrada no tiene candy para retirar", () -> candy.retirar(reserva.getCodigo()));
+    }
+
+    // Mismo QR, dos canjes: entrar a la sala no gasta el candy y retirar el candy no gasta la entrada.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            entra y despues retira, true
+            retira y despues entra, false
+            """)
+    void laEntradaYElCandySeCanjeanPorSeparadoConElMismoQr(String caso, boolean primeroEntra) {
+        Reserva reserva = reservar();
+        candy.pedirParaReserva(reserva.getId(), pedido(pochoclos, 1));
+        pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
+        reloj.mover(reloj.ahora().plusDays(1).minusMinutes(20));
+
+        if (primeroEntra) {
+            assertNotNull(acceso.registrarIngreso(reserva.getCodigo()).getIngresadaEn());
+            assertEquals(1, candy.retirar(reserva.getCodigo()).size());
+        } else {
+            assertEquals(1, candy.retirar(reserva.getCodigo()).size());
+            assertNotNull(acceso.registrarIngreso(reserva.getCodigo()).getIngresadaEn());
+        }
+        // Y cada canje sigue siendo de una sola vez.
+        assertThrows(ConflictoDeNegocio.class, () -> acceso.registrarIngreso(reserva.getCodigo()));
+        assertThrows(ConflictoDeNegocio.class, () -> candy.retirar(reserva.getCodigo()));
     }
 
     @Test
