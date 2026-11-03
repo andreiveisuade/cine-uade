@@ -26,16 +26,12 @@ import javax.swing.JTextField;
 import java.awt.BorderLayout;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.List;
 
 import static ar.uade.cine.swing.comun.Formato.hora;
 
 // El planificador de la semana: el backend elige elenco y pases; acá solo se piden, se comparan y se aplican.
 // Determinista: lo que muestra Previsualizar es lo que crea Aplicar.
 public final class PantallaPlanificador extends Pantalla {
-
-    private record Idiomas(List<String> idiomas, List<String> proyecciones) {
-    }
 
     // Estático y no de la pantalla: comparar corridas es el uso normal y sobrevive a salir y volver.
     private static IndicadoresGrilla corridaAnterior;
@@ -50,7 +46,6 @@ public final class PantallaPlanificador extends Pantalla {
     private final JTextField precioBase = Campos.soloDecimal(new JTextField("5000"));
     private final JLabel error = Componentes.texto(" ");
     private final JComboBox<Opcion<String>> idioma = new JComboBox<>();
-    private final JComboBox<Opcion<String>> proyeccion = new JComboBox<>();
     private final JButton previsualizar = new JButton("Previsualizar");
     private final JButton aplicar = Componentes.primario(new JButton("Aplicar"));
     private final ResultadoGrilla resultado = new ResultadoGrilla();
@@ -66,9 +61,8 @@ public final class PantallaPlanificador extends Pantalla {
 
         add(criterios(), BorderLayout.WEST);
         add(resultado, BorderLayout.CENTER);
-        cargar(() -> new Idiomas(apiCatalogos.obtenerIdiomas(), apiCatalogos.obtenerProyecciones()), c -> {
-            Campos.llenar(idioma, Opciones.etiquetadas(c.idiomas()));
-            Campos.llenar(proyeccion, Opciones.etiquetadas(c.proyecciones()));
+        cargar(apiCatalogos::obtenerIdiomas, idiomas -> {
+            Campos.llenar(idioma, Opciones.etiquetadas(idiomas));
             version++;
         });
     }
@@ -89,14 +83,13 @@ public final class PantallaPlanificador extends Pantalla {
                 .campo("Películas", cuantasPeliculas)
                 .obligatorio("Precio base", precioBase)
                 .campo("Idioma", idioma)
-                .campo("Proyección", proyeccion)
                 .ancho(Componentes.aLaDerecha(previsualizar, aplicar))
                 .ancho(error)
                 .ancho(Componentes.nota("Previsualizar no crea nada"))
                 .cerrar();
 
-        Campos.alCambiar(this::criteriosCambiados, desde, apertura, cierre, idioma, proyeccion, dias,
-                cuantasPeliculas, precioBase);
+        Campos.alCambiar(this::criteriosCambiados, desde, apertura, cierre, idioma, dias, cuantasPeliculas,
+                precioBase);
 
         return Componentes.lateral(Componentes.conBorde(formulario));
     }
@@ -119,8 +112,7 @@ public final class PantallaPlanificador extends Pantalla {
         v.alMencionar("películas", cuantasPeliculas);
         if (!v.ok()) return null;
         return new PedidoGrilla(inicio, cuantosDias, Fechas.leerHora(apertura).toString(),
-                Fechas.leerHora(cierre).toString(), cuantas, precio, Campos.elegido(idioma),
-                Campos.elegido(proyeccion));
+                Fechas.leerHora(cierre).toString(), cuantas, precio, Campos.elegido(idioma));
     }
 
     private void correr(boolean aplicando) {

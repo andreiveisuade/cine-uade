@@ -21,9 +21,10 @@ class PantallaPeliculasTest {
     private static final String MATRIX = "{\"id\":7,\"titulo\":\"Matrix\",\"duracionMinutos\":136,"
             + "\"generos\":[\"ACCION\",\"CIENCIA_FICCION\"],\"clasificacion\":\"MAS_13\",\"director\":\"Wachowski\","
             + "\"anio\":1999,\"idiomaOriginal\":\"Inglés\",\"sinopsis\":\"Neo\",\"enCartelera\":true,"
-            + "\"trailerYoutube\":\"abc\"}";
+            + "\"trailerYoutube\":\"abc\",\"formatos\":[\"DOS_D\",\"TRES_D\"]}";
     private static final String COCO = "{\"id\":8,\"titulo\":\"Coco\",\"duracionMinutos\":105,"
-            + "\"generos\":[\"ANIMACION\"],\"clasificacion\":\"ATP\",\"anio\":0,\"enCartelera\":false}";
+            + "\"generos\":[\"ANIMACION\"],\"clasificacion\":\"ATP\",\"anio\":0,\"enCartelera\":false,"
+            + "\"formatos\":[\"DOS_D\"]}";
 
     private ServidorFalso servidor;
     private Operador encargado;
@@ -34,6 +35,7 @@ class PantallaPeliculasTest {
         servidor.responder("GET /api/generos", 200, "[\"ACCION\",\"ANIMACION\",\"CIENCIA_FICCION\"]");
         servidor.responder("GET /api/clasificaciones", 200,
                 "[{\"nombre\":\"ATP\",\"edadMinima\":0},{\"nombre\":\"MAS_13\",\"edadMinima\":13}]");
+        servidor.responder("GET /api/proyecciones", 200, "[\"DOS_D\",\"TRES_D\"]");
         servidor.responder("GET /api/peliculas", 200, "[" + MATRIX + "," + COCO + "]");
         ClienteHttp http = new ClienteHttp(servidor.url());
         encargado = Operador.en(() -> new PantallaPeliculas(new ApiCartelera(http), new ApiCatalogos(http),
@@ -82,7 +84,8 @@ class PantallaPeliculasTest {
         encargado.esperarTexto("Película agregada");
         assertEquals("{\"titulo\":\"Coco\",\"duracionMinutos\":105,\"generos\":[\"ANIMACION\"],"
                         + "\"clasificacion\":\"ATP\",\"director\":\"\",\"sinopsis\":\"\",\"idiomaOriginal\":\"\","
-                        + "\"posterUrl\":\"\",\"enCartelera\":false,\"trailerYoutube\":\"xyz\"}",
+                        + "\"posterUrl\":\"\",\"enCartelera\":false,\"trailerYoutube\":\"xyz\","
+                        + "\"formatos\":[\"DOS_D\"]}",
                 servidor.ultimo("POST /api/peliculas").cuerpo());
     }
 
@@ -93,6 +96,15 @@ class PantallaPeliculasTest {
         encargado.esperarTexto("Falta completar «Título»");
         encargado.esperarTexto("Falta completar «Duración»");
         encargado.esperarTexto("Falta completar «Géneros»");
+        assertEquals(0, servidor.veces("POST /api/peliculas"));
+    }
+
+    @Test
+    void sinNingunFormatoNoSeManda() {
+        encargado.tipear("Título", "Coco").tipear("Duración (min)", "105").tildar("Animación").tildar("2D")
+                .clic("Agregar");
+
+        encargado.esperarTexto("Falta completar «Formatos»");
         assertEquals(0, servidor.veces("POST /api/peliculas"));
     }
 
@@ -114,6 +126,7 @@ class PantallaPeliculasTest {
         assertTrue(cuerpo.contains("\"generos\":[\"ACCION\",\"CIENCIA_FICCION\"],\"clasificacion\":\"MAS_13\","
                 + "\"director\":\"\""), "un director borrado viaja vacío para borrarlo: " + cuerpo);
         assertTrue(cuerpo.contains("\"anio\":1999"), cuerpo);
+        assertTrue(cuerpo.endsWith("\"formatos\":[\"DOS_D\",\"TRES_D\"]}"), cuerpo);
     }
 
     @Test

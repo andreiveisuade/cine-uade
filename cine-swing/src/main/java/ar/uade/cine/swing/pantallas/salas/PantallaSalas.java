@@ -7,6 +7,7 @@ import ar.uade.cine.swing.api.dto.salas.PedidoSala;
 import ar.uade.cine.swing.api.dto.salas.Sala;
 import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Componentes;
+import ar.uade.cine.swing.comun.Escala;
 import ar.uade.cine.swing.comun.Formulario;
 import ar.uade.cine.swing.comun.Lecturas;
 import ar.uade.cine.swing.comun.Opcion;
@@ -26,11 +27,15 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import java.awt.BorderLayout;
 import java.awt.Font;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
 import static ar.uade.cine.swing.comun.Formato.cantidad;
+import static ar.uade.cine.swing.comun.Formato.conDecimal;
+import static ar.uade.cine.swing.comun.Formato.escapar;
 
 // Las salas: listado, alta con su distribución de butacas y baja; doble clic abre el mapa de butacas.
 public final class PantallaSalas extends Pantalla {
@@ -41,15 +46,22 @@ public final class PantallaSalas extends Pantalla {
     private final ApiCatalogos apiCatalogos;
     private final ApiSalas apiSalas;
     private final Navegacion navegacion;
+    // Lo del tipo sale del catálogo, cruzado por nombre: Swing no sabe qué tipo es premium ni qué hace en la grilla.
+    private final Map<String, TipoSala> tipos = new HashMap<>();
     private final Tabla<Sala> tabla = new Tabla<>(
             Columna.<Sala>de("Sala", Sala::nombre).ancho(160),
             Columna.<Sala>de("Tipo", s -> etiqueta(s.tipo())),
+            Columna.<Sala>numero("Precio", s -> "×" + conDecimal(tipos.get(s.tipo()).multiplicador())).ancho(70),
+            Columna.<Sala>de("3D", s -> tipos.get(s.tipo()).soportaTresD() ? "Sí" : "No").ancho(45),
+            Columna.<Sala>de("Premium", s -> tipos.get(s.tipo()).premium() ? "Sí" : "No").ancho(70),
             Columna.<Sala>de("Distribución", s -> s.butacasPorFila().stream().map(String::valueOf)
                     .collect(Collectors.joining(","))).ancho(180),
             Columna.<Sala>numero("Butacas", Sala::capacidadSala),
             Columna.<Sala>numero("Limpieza", s -> s.minutosLimpieza() + " min"))
             .vacia("Todavía no hay salas: creá la primera con el formulario de la derecha");
     private final JLabel resumen = new JLabel(" ");
+    private static final String SIN_ELEGIR = "Elegí una sala para ver qué le toca en la grilla automática";
+    private final JLabel enLaGrilla = Componentes.nota(SIN_ELEGIR);
 
     private final JTextField nombre = new JTextField();
     private final JComboBox<Opcion<String>> tipo = new JComboBox<>();
@@ -77,7 +89,13 @@ public final class PantallaSalas extends Pantalla {
         // Command: ver AccionDeFila.
         new BotonesDeFila<>(this, tabla, this::recargar, new BorrarSala(apiSalas)).agregarA(acciones);
 
-        add(Componentes.listado(null, resumen, acciones, tabla.conScroll()), BorderLayout.CENTER);
+        JPanel tablaConGrilla = new JPanel(new BorderLayout(0, Escala.JUNTO));
+        tablaConGrilla.add(tabla.conScroll(), BorderLayout.CENTER);
+        tablaConGrilla.add(enLaGrilla, BorderLayout.SOUTH);
+        tabla.tabla().getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) mostrarEnLaGrilla();
+        });
+        add(Componentes.listado(null, resumen, acciones, tablaConGrilla), BorderLayout.CENTER);
         add(formulario(), BorderLayout.EAST);
         recargar();
     }
@@ -126,6 +144,7 @@ public final class PantallaSalas extends Pantalla {
 
     private void recargar() {
         cargar(() -> new Datos(apiSalas.obtenerSalas(), apiCatalogos.obtenerTiposSala()), datos -> {
+            datos.tipos().forEach(t -> tipos.put(t.nombre(), t));
             tabla.mostrar(datos.salas());
             resumen.setText(cantidad(datos.salas().size(), "sala", "salas") + " · "
                     + datos.salas().stream().mapToInt(Sala::capacidadSala).sum() + " butacas");
@@ -156,6 +175,13 @@ public final class PantallaSalas extends Pantalla {
             limpieza.setText("15");
             recargar();
         }, v::mostrarError);
+    }
+
+    // Abajo y no en una columna: el texto del catálogo no entra a lo ancho junto a las demás.
+    private void mostrarEnLaGrilla() {
+        enLaGrilla.setText("<html>" + tabla.seleccionada().map(s -> "<b>" + escapar(s.nombre())
+                + "</b> en la grilla automática: " + escapar(tipos.get(s.tipo()).enLaGrilla())).orElse(SIN_ELEGIR)
+                + "</html>");
     }
 
     private void abrirMapa(Sala sala) {

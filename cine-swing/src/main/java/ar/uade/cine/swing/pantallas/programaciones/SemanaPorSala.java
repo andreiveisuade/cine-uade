@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
 import static ar.uade.cine.swing.comun.Formato.dia;
 import static ar.uade.cine.swing.comun.Formato.escapar;
 import static ar.uade.cine.swing.comun.Formato.hora;
@@ -58,7 +59,8 @@ final class SemanaPorSala extends JPanel {
         salas.forEach((sala, deLaSala) -> html.append("<tr><td valign='top' nowrap><font color='")
                 .append(gris).append("'>").append(escapar(sala)).append("</font></td><td>")
                 .append(deLaSala.stream()
-                        .map(p -> "<b>" + hora(p.inicio()) + "</b> " + escapar(p.titulo()))
+                        .map(p -> "<b>" + hora(p.inicio()) + "</b> " + escapar(p.titulo()) + " <font color='"
+                                + gris + "'>" + etiqueta(p.proyeccion()) + "</font>")
                         .collect(Collectors.joining(" &nbsp;·&nbsp; "))).append("</td></tr>"));
         return html.append("</table></html>").toString();
     }

@@ -45,6 +45,8 @@ final class FormularioPelicula extends Seccion {
     private final CampoTrailer trailer = new CampoTrailer();
     private final JPanel panelGeneros = new JPanel(new GridLayout(0, 2));
     private final List<JCheckBox> generos = new ArrayList<>();
+    private final JPanel panelFormatos = new JPanel(new GridLayout(0, 2));
+    private final List<JCheckBox> formatos = new ArrayList<>();
     private final JCheckBox publicada = new JCheckBox("Publicada", true);
     private final JButton guardar = Componentes.primario(new JButton("Agregar"));
     private final JButton cancelar = new JButton("Cancelar");
@@ -74,13 +76,15 @@ final class FormularioPelicula extends Seccion {
                 .campo("Trailer (YouTube)", trailer)
                 .ancho(new JLabel("Géneros (al menos uno) *"))
                 .ancho(panelGeneros)
+                .ancho(new JLabel("Formatos (al menos uno) *"))
+                .ancho(panelFormatos)
                 .ancho(publicada)
                 .ancho(Componentes.aLaDerecha(cancelar, guardar))
                 .ancho(error)
                 .cerrar())));
     }
 
-    void llenar(List<String> catalogoGeneros, List<Clasificacion> clasificaciones) {
+    void llenar(List<String> catalogoGeneros, List<Clasificacion> clasificaciones, List<String> proyecciones) {
         for (Clasificacion c : clasificaciones) {
             clasificacion.addItem(new Opcion<>(c.nombre(), etiqueta(c.nombre())
                     + (c.edadMinima() > 0 ? " — desde " + c.edadMinima() + " años" : " — todo público")));
@@ -91,7 +95,15 @@ final class FormularioPelicula extends Seccion {
             generos.add(caja);
             panelGeneros.add(caja);
         }
+        for (String f : proyecciones) {
+            JCheckBox caja = new JCheckBox(etiqueta(f));
+            caja.putClientProperty("formato", f);
+            formatos.add(caja);
+            panelFormatos.add(caja);
+        }
+        marcarFormatoPorDefecto();
         panelGeneros.revalidate();
+        panelFormatos.revalidate();
     }
 
     void editar(Pelicula pelicula) {
@@ -107,6 +119,7 @@ final class FormularioPelicula extends Seccion {
         posterUrl.setText(texto(pelicula.posterUrl()));
         trailer.poner(texto(pelicula.trailerYoutube()));
         generos.forEach(c -> c.setSelected(pelicula.generos().contains((String) c.getClientProperty("genero"))));
+        formatos.forEach(c -> c.setSelected(pelicula.formatos().contains((String) c.getClientProperty("formato"))));
         publicada.setSelected(pelicula.enCartelera());
         // Al principio y no al final: en el formulario angosto, un título largo se tiene que leer desde el comienzo.
         for (JTextComponent campo : List.of(titulo, sinopsis, posterUrl)) campo.setCaretPosition(0);
@@ -124,6 +137,7 @@ final class FormularioPelicula extends Seccion {
         sinopsis.setText("");
         if (clasificacion.getItemCount() > 0) clasificacion.setSelectedIndex(0);
         generos.forEach(c -> c.setSelected(false));
+        marcarFormatoPorDefecto();
         publicada.setSelected(true);
         guardar.setText("Agregar");
         cancelar.setVisible(false);
@@ -133,17 +147,21 @@ final class FormularioPelicula extends Seccion {
     private void guardar() {
         List<String> elegidos = generos.stream().filter(JCheckBox::isSelected)
                 .map(c -> (String) c.getClientProperty("genero")).toList();
+        List<String> formatosElegidos = formatos.stream().filter(JCheckBox::isSelected)
+                .map(c -> (String) c.getClientProperty("formato")).toList();
         Validacion v = new Validacion(error);
         String tituloLeido = v.texto(titulo, "Título", true);
         Integer duracion = v.entero(duracionMinutos, "Duración", true);
         Integer anioLeido = v.entero(anio, "Año", false);
         String clasificacionElegida = v.elegido(clasificacion, "Clasificación");
         v.exigir(!elegidos.isEmpty(), panelGeneros, "Géneros");
+        v.exigir(!formatosElegidos.isEmpty(), panelFormatos, "Formatos");
+        v.alMencionar("formato", panelFormatos);
         if (!v.ok()) return;
         // Los textos opcionales viajan aunque estén vacíos, para poder borrar un director al editar.
         PedidoPelicula pedido = new PedidoPelicula(tituloLeido, duracion, elegidos, clasificacionElegida,
                 director.getText().trim(), sinopsis.getText().trim(), anioLeido, idiomaOriginal.getText().trim(),
-                posterUrl.getText().trim(), publicada.isSelected(), trailer.texto());
+                posterUrl.getText().trim(), publicada.isSelected(), trailer.texto(), formatosElegidos);
         Pelicula actual = editando;
         guardar.setEnabled(false);
         Tarea.ejecutar(this, () -> actual == null ? apiCartelera.crearPelicula(pedido)
@@ -156,6 +174,11 @@ final class FormularioPelicula extends Seccion {
             guardar.setEnabled(true);
             v.mostrarError(e);
         });
+    }
+
+    // El catálogo llega en orden y el primero es 2D: el mismo formato que el backend le da al alta sin formatos.
+    private void marcarFormatoPorDefecto() {
+        formatos.forEach(c -> c.setSelected(formatos.indexOf(c) == 0));
     }
 
     private static String texto(String valor) {
