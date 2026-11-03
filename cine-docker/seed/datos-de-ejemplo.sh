@@ -78,11 +78,11 @@ else
     alta peliculas "{\"titulo\":\"Toy Story\",\"duracionMinutos\":81,\"generos\":[\"ANIMACION\",\"COMEDIA\"],
       \"clasificacion\":\"ATP\",\"director\":\"John Lasseter\",\"anio\":1995,\"idiomaOriginal\":\"Inglés\",
       \"sinopsis\":\"Woody, el vaquero preferido de Andy, ve peligrar su lugar cuando llega Buzz Lightyear, un guardián espacial que no sabe que es un juguete.\",
-      \"posterUrl\":\"$POSTER/uXDfjJbdP4ijW5hWSBrPrlKpxab.jpg\",\"puntaje\":8.0,\"trailerYoutube\":\"v-PjgYDrg70\",\"enCartelera\":true}" "Toy Story"
+      \"posterUrl\":\"$POSTER/uXDfjJbdP4ijW5hWSBrPrlKpxab.jpg\",\"puntaje\":8.0,\"trailerYoutube\":\"v-PjgYDrg70\",\"enCartelera\":true,\"formatos\":[\"DOS_D\",\"TRES_D\"]}" "Toy Story, en 2D y 3D"
     alta peliculas "{\"titulo\":\"Interestelar\",\"duracionMinutos\":169,\"generos\":[\"CIENCIA_FICCION\",\"DRAMA\"],
       \"clasificacion\":\"MAS_13\",\"director\":\"Christopher Nolan\",\"anio\":2014,\"idiomaOriginal\":\"Inglés\",
       \"sinopsis\":\"Con la Tierra al borde de la extinción, un grupo de astronautas cruza un agujero de gusano en busca de un planeta habitable.\",
-      \"posterUrl\":\"$POSTER/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg\",\"puntaje\":8.4,\"trailerYoutube\":\"zSWdZVtXT7E\",\"enCartelera\":true}" "Interestelar"
+      \"posterUrl\":\"$POSTER/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg\",\"puntaje\":8.4,\"trailerYoutube\":\"zSWdZVtXT7E\",\"enCartelera\":true,\"formatos\":[\"DOS_D\",\"TRES_D\"]}" "Interestelar, en 2D y 3D"
     alta peliculas "{\"titulo\":\"La La Land\",\"duracionMinutos\":128,\"generos\":[\"ROMANCE\",\"COMEDIA\",\"DRAMA\"],
       \"clasificacion\":\"ATP\",\"director\":\"Damien Chazelle\",\"anio\":2016,\"idiomaOriginal\":\"Inglés\",
       \"sinopsis\":\"Una aspirante a actriz y un pianista de jazz se enamoran en Los Ángeles mientras persiguen sueños que los llevan por caminos distintos.\",
@@ -97,10 +97,9 @@ else
       \"posterUrl\":\"$POSTER/d5iIlFn5s0ImszYzBPb8JPIfbXD.jpg\",\"puntaje\":8.5,\"trailerYoutube\":\"s7EdQ4FqbhY\",\"enCartelera\":true}" "Tiempos violentos"
 
     echo "Funciones"
-    # La grilla automática: una semana desde hoy, de 14 a 24, en 2D subtitulada. Necesita las salas de arriba.
+    # La grilla automática: una semana desde hoy, de 14 a 24, subtitulada, con todas las salas llenas.
+    # El formato de cada pase sale de la sala y la película: Interestelar y Toy Story van en 3D donde se puede.
     alta grilla '{"dias":7,"cuantasPeliculas":6,"precio":5000}' "Una semana de grilla"
-    # El 2D llena primero las salas 2D; las 3D, IMAX y 4D quedan para el 3D.
-    alta grilla '{"dias":7,"cuantasPeliculas":3,"precio":5000,"proyeccion":"TRES_D"}' "Una semana de grilla en 3D"
 fi
 
 echo "Promociones"
