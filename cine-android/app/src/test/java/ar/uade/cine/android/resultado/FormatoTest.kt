@@ -1,5 +1,9 @@
 package ar.uade.cine.android.resultado
 
+import ar.uade.cine.android.api.CompraCandy
+import ar.uade.cine.android.api.ItemCompra
+import org.junit.jupiter.api.Test
+
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
@@ -19,5 +23,14 @@ class FormatoTest {
     @CsvSource("una, 1, 1 persona", "varias, 3, 3 personas")
     fun personas(caso: String, cantidad: Int, esperado: String) {
         assertEquals(esperado, Formato.personas(cantidad))
+    }
+
+    @Test
+    fun losItemsDeVariasComprasVanUnoPorRenglon() {
+        val compras = listOf(
+            CompraCandy(items = listOf(ItemCompra("Agua", 2))),
+            CompraCandy(items = listOf(ItemCompra("Combo clásico", 1))),
+        )
+        assertEquals(listOf("2 × Agua", "1 × Combo clásico"), Formato.items(compras))
     }
 }

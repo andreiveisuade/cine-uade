@@ -1,6 +1,7 @@
 package ar.uade.cine.android.escaner
 
 import android.Manifest
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -13,18 +14,26 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -41,6 +50,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -54,9 +64,18 @@ import ar.uade.cine.android.resultado.PantallaResultado
 // La cámara queda prendida debajo del resultado para no tardar en volver a leer.
 @Composable
 fun PantallaPuerta(sesion: Sesion, alSalir: () -> Unit) {
-    val vm: PuertaViewModel = viewModel(factory = viewModelFactory { initializer { PuertaViewModel(sesion.api) } })
-    val estado by vm.estado.collectAsStateWithLifecycle()
     val contexto = LocalContext.current
+    // Cada puesto (la sala o el candy) usa casi siempre un modo: se recuerda en el teléfono.
+    val preferencias = remember { contexto.getSharedPreferences("puerta", Context.MODE_PRIVATE) }
+    val vm: PuertaViewModel = viewModel(factory = viewModelFactory {
+        initializer {
+            PuertaViewModel(sesion.api, Modo.de(preferencias.getString(CLAVE_MODO, null)), guardarModo = {
+                preferencias.edit().putString(CLAVE_MODO, it.name).apply()
+            })
+        }
+    })
+    val estado by vm.estado.collectAsStateWithLifecycle()
+    val modo by vm.modo.collectAsStateWithLifecycle()
     var permitida by remember {
         mutableStateOf(ContextCompat.checkSelfPermission(contexto, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED)
     }
@@ -85,14 +104,16 @@ fun PantallaPuerta(sesion: Sesion, alSalir: () -> Unit) {
                 },
             )
         }
-        Barra(sesion, vm::codigoLeido, alSalir, Modifier.align(Alignment.BottomCenter))
+        Selector(modo, vm::elegirModo, Modifier.align(Alignment.TopCenter))
+        Barra(sesion, modo, vm::codigoLeido, alSalir, Modifier.align(Alignment.BottomCenter))
 
         when (val actual = estado) {
             EstadoPuerta.Validando -> Box(
                 Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.7f)),
                 contentAlignment = Alignment.Center,
             ) { EsperandoServidor() }
-            is EstadoPuerta.Adelante, is EstadoPuerta.NoPasa, is EstadoPuerta.SinVerificar -> PantallaResultado(actual, vm::escanearOtra)
+            is EstadoPuerta.EntradaValida, is EstadoPuerta.CandyEntregado, is EstadoPuerta.Rechazado,
+            is EstadoPuerta.SinVerificar -> PantallaResultado(actual, vm::escanearOtra)
             EstadoPuerta.Escaneando -> Unit
         }
     }
@@ -110,9 +131,28 @@ private fun PermisoNegado(modifier: Modifier, alReintentar: () -> Unit, alAbrirA
     }
 }
 
+private const val CLAVE_MODO = "modo"
+
+// Arriba del escáner y grande: se cambia con el pulgar sin tapar el QR.
+@Composable
+private fun Selector(modo: Modo, alElegir: (Modo) -> Unit, modifier: Modifier) {
+    SingleChoiceSegmentedButtonRow(
+        modifier.fillMaxWidth().background(Colores.fondo.copy(alpha = 0.85f))
+            .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))
+            .padding(16.dp),
+    ) {
+        Modo.entries.forEachIndexed { i, m ->
+            SegmentedButton(
+                selected = m == modo, onClick = { alElegir(m) },
+                shape = SegmentedButtonDefaults.itemShape(i, Modo.entries.size),
+            ) { Text(m.titulo, fontSize = 18.sp) }
+        }
+    }
+}
+
 // Ingreso a mano por si la cámara no enfoca o el ticket está gastado.
 @Composable
-private fun Barra(sesion: Sesion, alIngresar: (String) -> Unit, alSalir: () -> Unit, modifier: Modifier) {
+private fun Barra(sesion: Sesion, modo: Modo, alIngresar: (String) -> Unit, alSalir: () -> Unit, modifier: Modifier) {
     var codigo by remember { mutableStateOf("") }
     val enviar = {
         alIngresar(codigo)
@@ -129,7 +169,7 @@ private fun Barra(sesion: Sesion, alIngresar: (String) -> Unit, alSalir: () -> U
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters, imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(onDone = { enviar() }),
             )
-            Button(enviar, enabled = codigo.isNotBlank()) { Text("Validar") }
+            Button(enviar, enabled = codigo.isNotBlank()) { Text(modo.accion) }
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(sesion.usuario.nombre, Modifier.weight(1f), style = MaterialTheme.typography.bodySmall)

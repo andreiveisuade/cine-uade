@@ -1,9 +1,10 @@
 # cine-android
 
-Puerta del acomodador en el celular: escanea el QR del ticket con la cámara y muestra **ADELANTE** o **NO PASA**.
+Puerta del acomodador en el celular: escanea el QR del ticket con la cámara y lo canjea en uno de dos modos,
+**Entrada** (entrar a la sala) o **Candy** (retirar lo comprado), con el mismo QR.
 Kotlin, Jetpack Compose (Material 3), CameraX y ML Kit Barcode Scanning (en el teléfono, solo QR), OkHttp y
 kotlinx.serialization. Es un tercer cliente de la misma API que la web y Swing: manda el código a
-`POST /api/acceso` con HTTP Basic y muestra lo que decide el backend; no tiene reglas de negocio.
+`POST /api/acceso` o a `POST /api/candy/retiros` con HTTP Basic y muestra lo que decide el backend; no tiene reglas de negocio.
 
 ## Compilar
 
@@ -28,6 +29,9 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 - Login con servidor, email y contraseña de un `ACOMODADOR` o `ADMINISTRADOR`. Por defecto
   `https://cine-uade.onrender.com/api`; para el docker local, `http://<IP:puerto>/api` de la PC en la misma red.
 - Render free puede tardar hasta un minuto en despertar: la app avisa mientras espera.
+- El modo se elige arriba del escáner y se recuerda en el teléfono. Resultado: **ENTRADA VÁLIDA** (avisa si además
+  tiene candy para retirar, sin entregarlo) o **ENTRADA NO VÁLIDA**; **CANDY ENTREGADO** con cada producto o
+  **CANDY NO ENTREGADO**, con el motivo del backend tal cual.
 - El resultado vuelve solo al escáner a los 4 s, o con **Escanear otra**. El código se puede escribir a mano.
 
 ## Seguridad

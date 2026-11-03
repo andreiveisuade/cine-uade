@@ -12,6 +12,7 @@ data class Reserva(
     val funcion: Funcion? = null,
     val pelicula: Pelicula? = null,
     val sala: Sala? = null,
+    val candy: List<CompraCandy> = emptyList(),
 )
 
 @Serializable
@@ -26,8 +27,17 @@ data class Pelicula(val titulo: String)
 @Serializable
 data class Sala(val nombre: String)
 
+// Cobrada y sin retiradaEn es lo que falta entregar, como lo lee Swing.
+@Serializable
+data class CompraCandy(val estado: String? = null, val retiradaEn: String? = null, val items: List<ItemCompra> = emptyList()) {
+    val aRetirar: Boolean get() = estado == "COBRADA" && retiradaEn == null
+}
+
+@Serializable
+data class ItemCompra(val nombre: String, val cantidad: Int)
+
 @Serializable
 internal data class CuerpoError(val error: String)
 
 @Serializable
-internal data class PedidoAcceso(val codigo: String)
+internal data class PedidoCodigo(val codigo: String)
