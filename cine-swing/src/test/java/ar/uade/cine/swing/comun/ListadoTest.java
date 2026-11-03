@@ -7,6 +7,7 @@ import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTable;
+import javax.swing.SwingUtilities;
 import java.awt.BorderLayout;
 import java.awt.Container;
 
@@ -20,14 +21,16 @@ class ListadoTest {
             "ancha: conteo y botones en una fila, 1200, West, East",
             "angosta: los botones bajan debajo del conteo, 200, North, South",
     })
-    void losBotonesBajanSiNoEntranAlLadoDelConteo(String caso, int ancho, String resumen, String acciones) {
+    void losBotonesBajanSiNoEntranAlLadoDelConteo(String caso, int ancho, String resumen, String acciones)
+            throws Exception {
         JLabel conteo = new JLabel("20 cargadas · 2 publicadas");
         JPanel botones = Componentes.aLaDerecha(new JButton("Editar"), new JButton("Publicar / despublicar"));
         JPanel listado = Componentes.listado(null, conteo, botones, new JTable());
         Container barra = conteo.getParent();
 
         barra.setSize(ancho, 40);
-        barra.getComponentListeners()[0].componentResized(null);
+        // setSize avisa por el EDT: leer el layout sin esperarlo es una carrera con el listener que lo reacomoda.
+        SwingUtilities.invokeAndWait(() -> { });
 
         BorderLayout layout = (BorderLayout) barra.getLayout();
         assertEquals(resumen, layout.getConstraints(conteo));
