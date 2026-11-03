@@ -12,6 +12,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import ar.uade.cine.PruebaDeIntegracion;
@@ -399,6 +401,73 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
         salas.agregar("Sala 2D", TipoSala.DOS_D, List.of(10));
 
         rechaza("No hay salas que puedan proyectar en 3D", () -> planificador.proponer(unDiaEn3D()));
+    }
+
+    // Se cargan de la más cara a la más barata para que el orden del id no ayude. Cuatro pases por sala.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            si el elenco entra en la 2D no abre otra sala,     DOS_D,  3, Sala 2D
+            si no entra en la 2D abre la 3D antes que la IMAX, DOS_D,  6, Sala 2D;Sala 3D
+            una grilla 3D arranca por la 3D y no por la IMAX,  TRES_D, 3, Sala 3D
+            """)
+    void llenaPrimeroLaSalaMasBarataQueProyectaElFormato(String caso, Proyeccion proyeccion, int peliculas,
+                                                         String salasUsadas) {
+        for (int i = 1; i <= peliculas; i++) {
+            cargar("Pelicula " + i, 8.0, Genero.DRAMA);
+        }
+        salas.agregar("Sala 4D", TipoSala.CUATRO_D, List.of(10));
+        salas.agregar("Sala IMAX", TipoSala.IMAX, List.of(10));
+        salas.agregar("Sala 3D", TipoSala.TRES_D, List.of(10));
+        salas.agregar("Sala 2D", TipoSala.DOS_D, List.of(10));
+        CriteriosGrilla criterios = new CriteriosGrilla(LocalDate.of(2026, 9, 1), 1, LocalTime.of(14, 0),
+                LocalTime.of(23, 0), peliculas, new FormatoDeFuncion(Version.SUBTITULADA, proyeccion, Dinero.de(5000)));
+
+        PropuestaGrilla propuesta = planificador.proponer(criterios);
+
+        assertEquals(List.of(salasUsadas.split(";")),
+                propuesta.pases().stream().map(PaseSugerido::sala).distinct().toList(), caso);
+    }
+
+    // A las 22:00 la Larga terminaría a las 00:30: se descarta y entra la Corta, que termina justo a las 23:00.
+    @Test
+    void siLaDeMasDeudaNoEntraAntesDelCierreVaLaSiguiente() {
+        cargar("Larga", 9.0, 150, Genero.DRAMA);
+        cargar("Corta", 8.0, 60, Genero.COMEDIA);
+        salas.agregar("Sala 1", TipoSala.DOS_D, List.of(10));
+
+        PropuestaGrilla propuesta = planificador.proponer(unDia(2));
+
+        assertEquals(List.of("14:00 Corta", "15:15 Larga", "18:00 Larga", "20:45 Corta", "22:00 Corta"),
+                propuesta.pases().stream().map(p -> p.inicio().toLocalTime() + " " + p.titulo()).toList());
+    }
+
+    // Por deuda sola, el segundo día la 2D repetiría las dos buenas y las flojas abrirían la IMAX.
+    @Test
+    void primeroVanLasQueTodaviaNoTienenPaseEseDia() {
+        cargar("Muy buena", 9.0, Genero.ACCION);
+        cargar("Buena", 8.0, Genero.COMEDIA);
+        cargar("Floja", 3.0, Genero.DRAMA);
+        cargar("Muy floja", 3.0, Genero.TERROR);
+        salas.agregar("Sala 2D", TipoSala.DOS_D, List.of(10));
+        salas.agregar("Sala IMAX", TipoSala.IMAX, List.of(10));
+        CriteriosGrilla dosDias = new CriteriosGrilla(LocalDate.of(2026, 9, 1), 2, LocalTime.of(14, 0),
+                LocalTime.of(23, 0), 4, new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
+
+        PropuestaGrilla propuesta = planificador.proponer(dosDias);
+
+        assertTrue(propuesta.pases().stream().allMatch(pase -> pase.sala().equals("Sala 2D")));
+    }
+
+    // La sala que la grilla deja libre a propósito no cuenta como tiempo sin usar.
+    @Test
+    void laOcupacionSeMideSobreLasSalasQueUsa() {
+        cargar("Una", 8.0, Genero.ACCION);
+        salas.agregar("Sala 2D", TipoSala.DOS_D, List.of(10));
+        salas.agregar("Sala IMAX", TipoSala.IMAX, List.of(10));
+
+        IndicadoresGrilla indicadores = planificador.proponer(unDia(1)).indicadores();
+
+        assertEquals(540, indicadores.minutosDisponibles(), "de 14 a 23, solo en la sala 2D");
     }
 
     @Test
