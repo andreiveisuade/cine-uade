@@ -16,8 +16,8 @@ import { BarraDelPedido } from "./BarraDelPedido.jsx";
 import { EntradasDeLaCompra } from "./EntradasDeLaCompra.jsx";
 import { PagoDeLaCompra } from "./PagoDeLaCompra.jsx";
 import { TuPedido } from "./TuPedido.jsx";
-import { useCandyDeLaCompra } from "./useCandyDeLaCompra.js";
 import { usePagar, useVueltaDelPago } from "./usePagar.js";
+import { usePedidoDeLaCompra } from "./usePedidoDeLaCompra.js";
 
 // Una sola pantalla después del mapa: lo elegido a modo de confirmación, el candy para sumar y el pago. Con la entrada
 // ya paga es la misma, solo para el candy (R30).
@@ -43,42 +43,15 @@ export function TuCompra() {
   return <Compra reserva={reserva} productos={productos} sumar={sumar} />;
 }
 
-// Nombre y precio de cada producto del pedido: de la carta, o del pedido guardado si ya no está a la venta.
-function catalogoDe(productos, reserva) {
-  const pendiente = (reserva.candy ?? []).find((c) => c.estado === "PENDIENTE");
-  const guardados = (pendiente?.items ?? []).map((i) => [i.productoId, { nombre: i.nombre, precio: i.precioUnitario, ahorro: 0 }]);
-  return new Map([...guardados, ...productos.map((p) => [p.id, p])]);
-}
-
 function Compra({ reserva, productos, sumar }) {
   const navegar = useNavigate();
   const avisar = useAvisar();
-  const [guardados, setGuardados] = useState(0);
-  const candy = useCandyDeLaCompra(reserva, () => setGuardados((n) => n + 1), (mensaje) => avisar(mensaje, "error"));
-  // Paga y sin pedido no hay nada que cotizar: el backend daría 409.
-  const cotiza = !sumar || candy.hayPedido;
-  const cotizacion = useCargar(() => (cotiza ? api.obtenerCotizacion(reserva.codigo) : Promise.resolve([])),
-    [reserva.codigo, cotiza, guardados]);
+  const { candy, pedido, cotiza, cotizacion, aPagar, actualizando, total } =
+    usePedidoDeLaCompra(reserva, productos, sumar, (mensaje) => avisar(mensaje, "error"));
   const { pagar, pagando, error } = usePagar(reserva.codigo);
   const [abandonando, setAbandonando] = useState(false);
   const { ref: mirarPedido, inViewport: pedidoALaVista } = useInViewport();
   const pedidoRef = useRef(null);
-
-  const catalogo = catalogoDe(productos, reserva);
-  const items = Object.entries(candy.cantidades).map(([id, cantidad]) => ({ id: Number(id), cantidad, ...catalogo.get(Number(id)) }));
-  const pedido = {
-    items,
-    total: items.reduce((t, i) => t + i.precio * i.cantidad, 0),
-    ahorro: items.reduce((t, i) => t + (i.ahorro ?? 0) * i.cantidad, 0),
-  };
-
-  // La web cobra con un solo medio, Mercado Pago, y el backend cotiza solo ese. Mientras el pedido viaja y hasta que
-  // llega la cotización nueva, muestra ya el candy nuevo (la promo no lo toca).
-  const cotizada = (cotizacion.datos ?? cotizacion.previos ?? [])[0];
-  const aPagar = cotizada && (candy.actualizando || cotizacion.cargando)
-    ? { ...cotizada, candy: pedido.total, total: cotizada.entradas - cotizada.descuento + pedido.total }
-    : cotizada;
-  const total = aPagar?.total ?? pedido.total;
 
   async function abandonar() {
     setAbandonando(true);
@@ -96,7 +69,7 @@ function Compra({ reserva, productos, sumar }) {
   const talon = !cotiza ? (
     <Text size="sm">Elegí algo del candy y pagalo acá: lo retirás con el QR de tu entrada.</Text>
   ) : aPagar ? (
-    <PagoDeLaCompra cotizacion={aPagar} actualizando={candy.actualizando || cotizacion.cargando} pagando={pagando}
+    <PagoDeLaCompra cotizacion={aPagar} actualizando={actualizando} pagando={pagando}
       error={error} alPagar={() => pagar(aPagar.medio)} />
   ) : <EsperaOError carga={cotizacion} />;
 

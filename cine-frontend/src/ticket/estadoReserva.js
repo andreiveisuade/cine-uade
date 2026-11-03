@@ -1,4 +1,4 @@
-import { hora } from "@/compartido/formato.js";
+import { cantidad, hora } from "@/compartido/formato.js";
 
 // Presentación del estado que manda el backend; el front no decide vencimientos: la hora límite viene en venceEn.
 export const COLOR_ESTADO = { RESERVADA: "ambar", PAGADA: "green", EXPIRADA: "gray", CANCELADA: "gray" };
@@ -37,6 +37,21 @@ export const estadoDelCandy = (compra) => {
 // Cada producto con el estado de su compra: la entrada en pantalla y la del PDF lo listan igual.
 export const renglonesDelCandy = (reserva) => (reserva.candy ?? []).flatMap((c) => c.items.map((i) =>
   ({ ...i, clave: `${c.id}-${i.productoId}`, estado: estadoDelCandy(c), cobrado: c.estado !== "PENDIENTE" })));
+
+// El pedido de candy que se paga con la reserva (R30): hay uno solo por vez.
+export const pedidoPendiente = (reserva) => (reserva.candy ?? []).find((c) => c.estado === "PENDIENTE");
+
+export const comprasCobradas = (reserva) => (reserva.candy ?? []).filter((c) => c.estado === "COBRADA");
+
+// Antes de pagar suma el candy pendiente, que se cobra con la reserva; ya paga, solo lo cobrado: lo pendiente se
+// paga aparte y figura «sin pagar». La pantalla y el PDF lo cuentan igual.
+export function totalDeLaEntrada(reserva) {
+  const candy = renglonesDelCandy(reserva).filter((r) => r.cobrado || reserva.estado !== "PAGADA");
+  return {
+    texto: `Total · ${cantidad(reserva.entradas.length, "entrada")}${candy.length ? " y candy" : ""}`,
+    importe: reserva.total + candy.reduce((suma, r) => suma + r.subtotal, 0),
+  };
+}
 
 // En dos bloques de cuatro se dicta y se lee mejor en la puerta.
 export const codigoLegible = (codigo) => `${codigo.slice(0, 4)} ${codigo.slice(4)}`;

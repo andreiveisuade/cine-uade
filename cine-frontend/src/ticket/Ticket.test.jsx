@@ -266,8 +266,9 @@ describe("venta cruzada en el ticket", () => {
     expect(screen.getByText("retirado")).toBeInTheDocument();
     expect(screen.getByText("a retirar")).toBeInTheDocument();
     expect(screen.getByText("sin pagar")).toBeInTheDocument();
+    // Ya paga, el total es lo cobrado: la gaseosa pendiente se paga aparte.
     expect(screen.getByText("Total · 2 entradas y candy")).toBeInTheDocument();
-    expect(screen.getByText("$ 16.700")).toBeInTheDocument();
+    expect(screen.getByText("$ 14.500")).toBeInTheDocument();
   });
 
   it("sin candy la entrada no muestra el bloque", async () => {

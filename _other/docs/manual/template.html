@@ -1110,12 +1110,13 @@ docker compose up -d --build
         <table>
           <thead><tr><th>Pieza</th><th>Qué hace</th></tr></thead>
           <tbody>
-            <tr><td><code>src/api/api-http.js</code></td><td>Único acceso a la API; convierte el <code>{"error"}</code> en el mensaje que se muestra</td></tr>
+            <tr><td><code>src/api/api-http.js</code></td><td>Fachada: único acceso a la API, reexporta un módulo por subdominio (<a href="#it-v15">V15</a>)</td></tr>
+            <tr><td><code>src/api/http/clienteHttp.js</code></td><td>Transporte: <code>fetch</code>, JSON y el <code>{"error"}</code> convertido en un <code>ErrorApi</code> con el mensaje que se muestra</td></tr>
             <tr><td><code>useCargar</code></td><td>Carga los datos de una pantalla y descarta respuestas viejas</td></tr>
             <tr><td><code>compra/CompraEnCurso.jsx</code>, <code>useRenovarBloqueo</code></td><td>Selección en curso y renovación del bloqueo</td></tr>
             <tr><td><code>app/Rutas.jsx</code></td><td>Las rutas de las pantallas</td></tr>
             <tr><td><code>cuenta/SesionDelCliente.jsx</code></td><td>Quién tiene la sesión, preguntándoselo al backend; la verdadera es la cookie</td></tr>
-            <tr><td><code>compra/tu-compra/</code></td><td><code>TuCompra</code>: lo elegido (<code>EntradasDeLaCompra</code>), el candy para sumar (<code>AlgoDulce</code> con filtro por tipo y <code>Contador</code> en cada tarjeta, un PUT por vez en <code>useCandyDeLaCompra</code>), el carrito (<code>TuPedido</code> sobre la forma de <code>Entrada</code>; en el celular, <code>BarraDelPedido</code> abajo con el detalle en un drawer) y el pago en su talón (<code>PagoDeLaCompra</code> con la cotización; un checkout nuevo por «Pagar» y la vuelta de MP en <code>usePagar</code>)</td></tr>
+            <tr><td><code>compra/tu-compra/</code></td><td><code>TuCompra</code>: lo elegido (<code>EntradasDeLaCompra</code>), el candy para sumar (<code>AlgoDulce</code> con filtro por tipo y <code>Contador</code> en cada tarjeta, un PUT por vez en <code>useCandyDeLaCompra</code>; pedido, cotización y total en <code>usePedidoDeLaCompra</code>), el carrito (<code>TuPedido</code> sobre la forma de <code>Entrada</code>; en el celular, <code>BarraDelPedido</code> abajo con el detalle en un drawer) y el pago en su talón (<code>PagoDeLaCompra</code> con la cotización; un checkout nuevo por «Pagar» y la vuelta de MP en <code>usePagar</code>)</td></tr>
             <tr><td><code>ticket/pago/</code></td><td>La espera del pago en <code>useEsperarPago</code> y el festejo en <code>useFestejarPago</code></td></tr>
             <tr><td><code>compartido/hooks/useEnviar</code></td><td>Mandar un formulario: <code>{ enviar, enviando, error }</code>, usado por los de <code>cuenta/</code></td></tr>
             <tr><td><code>compartido/formato.js</code></td><td>Plata, fechas y cantidades como se leen; <code>api/</code> queda solo para hablar con el backend</td></tr>
@@ -1933,7 +1934,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
           <tbody>
             <tr><td>Backend</td><td>1591</td><td>97,5 %</td><td>92,9 %</td><td><code>cd cine-backend &amp;&amp; mvn test</code></td><td><code>target/site/jacoco/</code> (html, xml, csv)</td></tr>
             <tr><td>Swing</td><td>216</td><td>78,4 %</td><td>63,6 %</td><td><code>cd cine-swing &amp;&amp; ./mvnw test</code></td><td><code>target/site/jacoco/</code></td></tr>
-            <tr><td>Front</td><td>180</td><td>91,5 %</td><td>86,1 %</td><td><code>cd cine-frontend &amp;&amp; npm run coverage</code></td><td><code>coverage/</code></td></tr>
+            <tr><td>Front</td><td>184</td><td>91,7 %</td><td>86,5 %</td><td><code>cd cine-frontend &amp;&amp; npm run coverage</code></td><td><code>coverage/</code></td></tr>
             <tr><td>Android</td><td>—</td><td>37,0 % (134 de 362)</td><td>—</td><td><code>cd cine-android &amp;&amp; ./gradlew test createDebugUnitTestCoverageReport</code></td><td><code>app/build/reports/coverage/test/debug/</code> (html y <code>report.xml</code>)</td></tr>
           </tbody>
         </table>
@@ -2150,7 +2151,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
             <tr><td><strong>Factory Method</strong> <a href="#d-factory-method">(diagrama)</a></td><td><code>TipoPromocion.crear</code>: cada tipo crea su subclase; antes había tres lugares que tocar por tipo (<a href="#promociones-factory">promociones</a>)</td></tr>
             <tr><td><strong>Decorator</strong> <a href="#decorator">(abajo)</a></td><td><code>SesionDeClientes</code></td></tr>
             <tr><td><strong>Adapter</strong> <a href="#d-adapter-tmdb">(TMDB)</a> · <a href="#d-adapter-pasarela">(Mercado Pago)</a> · <a href="#it-v10">V10</a></td><td>Adapter <code>TmdbHttp</code> (Target <code>CatalogoExterno</code>, Adaptee la API REST de TMDB); <code>MercadoPagoHttp</code> (Target <code>PasarelaPagos</code>, el HTTP en <code>ClienteMercadoPago</code>); <code>CampoFecha</code> y <code>Calendario</code> sobre <code>JCalendar</code>; <code>DineroConverter</code> entre <code>Dinero</code> y la columna</td></tr>
-            <tr><td><strong>Facade</strong> <a href="#d-facade">(diagrama)</a></td><td><code>ClienteHttp</code> en Swing esconde <code>HttpClient</code>, Jackson y Basic (el texto del error lo arma <code>MensajeDeError</code>); las <code>Api&lt;Subdominio&gt;</code> son fachadas más chicas. Los <code>Gestor*</code> son Controlador (GRASP), no Facade</td></tr>
+            <tr><td><strong>Facade</strong> <a href="#d-facade">(diagrama)</a></td><td><code>ClienteHttp</code> en Swing esconde <code>HttpClient</code>, Jackson y Basic (el texto del error lo arma <code>MensajeDeError</code>); las <code>Api&lt;Subdominio&gt;</code> son fachadas más chicas. En el front, <code>api-http.js</code> con un módulo por subdominio sobre <code>http/clienteHttp.js</code> (<a href="#it-v15">V15</a>). Los <code>Gestor*</code> son Controlador (GRASP), no Facade</td></tr>
             <tr><td><strong>Template Method</strong> <a href="#d-template-method-listado">(listado)</a> · <a href="#it-v5">V5</a></td><td><code>PantallaListado&lt;T&gt;</code> (Swing) fija cuándo se pide y filtra; <code>ComprobanteTxt&lt;T&gt;.imprimir</code> fija el orden de los <code>.txt</code></td></tr>
             <tr><td><strong>Null Object</strong> <a href="#it-v3">V3</a></td><td><code>AgendaDeSala.vacia()</code>; también <code>PoliticaPromociones.Descuento.ninguno()</code> y <code>Promocion.TODO_EL_DIA</code></td></tr>
             <tr><td><strong>Chain of Responsibility</strong> <a href="#it-v4">V4</a></td><td><code>LecturaDelCuerpo</code> y sus cuatro eslabones en <code>ManejadorErrores</code></td></tr>
@@ -2327,6 +2328,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
         <tr><td><a href="#it-v12">V12</a></td><td>Command en las acciones de fila (Swing)</td><td>Comportamiento</td><td>Molde repetido 14 veces → Command</td><td><code>AccionDeFila</code>, <code>BotonesDeFila</code>, <code>Pregunta</code> y 8 comandos</td></tr>
         <tr><td><a href="#it-v13">V13</a></td><td>Experto: cada entrada dice si pide carnet</td><td>GRASP</td><td>Cliente que decide por el nombre de una constante → Experto</td><td><code>EntradaVistaDTO.requiereAcreditacion</code> (campo)</td></tr>
         <tr><td><a href="#it-v14">V14</a></td><td>State en la compra del candy</td><td>Comportamiento</td><td>Estados como nulos y flags → State</td><td><code>EstadoCompraCandy</code></td></tr>
+        <tr><td><a href="#it-v15">V15</a></td><td>Facade en el acceso del front a la API</td><td>Estructural / SRP</td><td>Un archivo con transporte y 27 operaciones → fachada + módulos</td><td><code>clienteHttp</code>, <code>ErrorApi</code>, <code>rutas</code> y 8 módulos por subdominio</td></tr>
       </tbody></table></div>
       <h3 id="it-v1">V1 · Composite en los combos del candy</h3>
       <p><strong>V0</strong> (antes):</p>
@@ -2577,6 +2579,35 @@ public void cobrar(MedioPago medio, String codigo, LocalDateTime cuando) {
         <li><strong>Mejora:</strong> nadie compara estados afuera del enum: el arqueo y el informe cuentan <code>estaCobrada()</code> y la vista de la reserva oculta lo anulado. El retiro con el QR entró después sin tocar a nadie más: <code>COBRADA</code> sobrescribe <code>retirar()</code> y <code>retiradaEn</code> es fecha, como <code>ingresadaEn</code> (migración 20). Migración <code>19-candy-de-la-web.sql</code> (lo ya vendido queda <code>COBRADA</code>).</li>
         <li><strong>Lo protege:</strong> <code>CompraCandyTest.loQueYaNoEstaPendienteNoSeCobraNiSeAnula</code> (<code>@CsvSource</code> por transición), <code>GestorCandyTest.cancelarOVencerLaReservaAnulaElPedido</code>, <code>GestorPagosTest.cobrarEnCajaCobraTambienElCandyPendiente</code>, <code>MapeoContraSchemaTest</code>.</li>
       </ul>
+      <h3 id="it-v15">V15 · Facade en el acceso del front a la API</h3>
+      <p><strong>V0</strong> (antes):</p>
+      <pre><code>// api-http.js: transporte y las 27 operaciones de todos los subdominios en un archivo
+async function pedir(ruta, opciones = {}) { /* fetch, JSON, 204, errores, status */ }
+const get = (ruta) =&gt; pedir(ruta);
+const post = (ruta, cuerpo) =&gt; pedir(ruta, { metodo: "POST", cuerpo });
+export const pedirCandy = (codigo, cantidades) =&gt;
+  pedir(`/reservas/codigo/${encodeURIComponent(codigo)}/candy`, { metodo: "PUT", cuerpo: { cantidades } });
+export const avisarVueltaDelPago = (checkoutId) =&gt;
+  fetch(`${BASE}/checkouts/${encodeURIComponent(checkoutId)}/retorno`, { redirect: "manual" }).then(…);</code></pre>
+      <p><strong>Vn</strong> (después):</p>
+      <pre><code>// api-http.js: la fachada, igual que Apis en Swing
+export * from "./ventas.js";
+export * from "./candy.js"; // … un módulo por subdominio
+// ventas.js: solo rutas y cuerpos
+const reserva = (codigo) =&gt; ruta`/reservas/codigo/${codigo}`;
+export const pedirCandy = (codigo, cantidades) =&gt; put(reserva(codigo) + "/candy", { cantidades });
+// http/clienteHttp.js: fetch, JSON y ErrorApi(mensaje, status)
+export const put = (ruta, cuerpo) =&gt; pedir("PUT", ruta, cuerpo);</code></pre>
+      <ul>
+        <li><strong>Diagnóstico:</strong> <strong>SRP:</strong> el archivo cambiaba por el transporte (cómo se lee un error) y por cualquier ruta de cualquier subdominio. Tres estilos para pedir (<code>get</code>/<code>post</code>, <code>pedir</code> con <code>metodo</code>, <code>fetch</code> suelto), <code>encodeURIComponent</code> repetido nueve veces y las queries armadas a mano. El <code>status</code> se le pegaba a un <code>Error</code> después de crearlo.</li>
+        <li><strong>Patrón:</strong> Facade en dos niveles, como en Swing: <code>http/clienteHttp.js</code> esconde <code>fetch</code> y JSON detrás de <code>get</code>, <code>post</code>, <code>put</code> y <code>borrar</code> (y <code>navegar</code>/<code>avisar</code> para lo que sigue con un redirect); cada módulo de subdominio (<code>catalogos</code>, <code>cartelera</code>, <code>funciones</code>, <code>sesion</code>, <code>clientes</code>, <code>ventas</code>, <code>promociones</code>, <code>candy</code>) solo dice rutas y cuerpos, y <code>api-http.js</code> los reexporta. <code>rutas.js</code> codifica cada valor interpolado; <code>ErrorApi</code> nombra el rechazo con su código. <em>(<code>cine-frontend/src/api</code>)</em></li>
+        <li><strong>Mejora:</strong> las pantallas no cambiaron: siguen importando de <code>api-http.js</code> y los tests siguen mockeando un solo módulo. Una operación nueva va en su subdominio con el nombre de <code>API.md</code>; los nombres de los módulos son los de <code>ApiCandy</code>, <code>ApiVentas</code>… de Swing.</li>
+        <li><strong>Lo protege:</strong> <code>api-http.test.js</code> (cada pedido armado y cada forma de respuesta, sin cambios) y los tests de pantallas con <code>vi.mock("@/api/api-http.js")</code>.</li>
+      </ul>
+      <figure class="diagram">
+        {{SVG_PATRON_FACADE_FRONT}}
+        <figcaption>V15: las pantallas ven una fachada; los módulos de subdominio hablan con <code>clienteHttp</code>, que esconde <code>fetch</code> y JSON</figcaption>
+      </figure>
     </section>
 
     <section class="doc-section" id="decisiones">

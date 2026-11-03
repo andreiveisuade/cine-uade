@@ -28,7 +28,8 @@ Una carpeta por funcionalidad. `app/` arma el marco; `compartido/` y `api/` no c
 src/
   app/            main.jsx, Proveedores (tema, Motion, avisos), AppCliente (marco), Rutas, ErrorDePantalla
     layout/       Barra, Pie, Marca, BotonTema
-  api/            api-http.js (único acceso al backend) y etiquetas del contrato
+  api/            api-http.js (fachada: único acceso al backend), un módulo por subdominio y etiquetas del contrato
+    http/         clienteHttp (fetch, JSON y errores), ErrorApi, mensajeDeError, rutas
   compartido/     lo que usa más de una pantalla; formato (precio, hora, día) e iconos
     hooks/        useCargar, useEnviar, useTitulo
     layout/       Contenedor, Banda, Grilla, Destacados, Seccion, Encabezado, Volver
@@ -56,7 +57,7 @@ Un componente por archivo, con el nombre del archivo. Tests al lado de su compon
 Pelicula.jsx → useCargar(() => api.obtenerPelicula(id), [id]) → api-http.js → GET /api/peliculas/7 → backend
 ```
 
-La pantalla nunca hace `fetch`. Si el backend rechaza, `api-http.js` tira un `Error` con su `{error}` y la
+La pantalla nunca hace `fetch`. Si el backend rechaza, `clienteHttp` tira un `ErrorApi` con su `{error}` y el `status` y la
 pantalla lo muestra con `EsperaOError` o `ErrorCaja`.
 
 ## Contextos y hooks propios
@@ -73,6 +74,8 @@ pantalla lo muestra con `EsperaOError` o `ErrorCaja`.
 - `useReservar(funcionId, recargarMapa)`: crea la reserva y sigue a Tu compra, o recarga el mapa si perdió una butaca.
 - `useCandyDeLaCompra(reserva, alGuardar, alFallar)`: el pedido de candy (sumar, restar, sacar, vaciar), un PUT por vez con los
   clics seguidos juntos; si el backend rechaza, vuelve a lo guardado.
+- `usePedidoDeLaCompra(reserva, productos, sumar, alFallar)`: arma el pedido sobre ese hook, trae la cotización y da el
+  total a mostrar (el provisorio mientras viaja el PUT es la única cuenta de plata del front).
 - `usePagar(codigo)` y `useVueltaDelPago(codigo, alVolver)`: un checkout nuevo por «Pagar» (con el medio que cotizó el
   backend, Mercado Pago) y la vuelta de Mercado Pago.
 - `useEsperarPago(codigo, reserva)`: consulta cada 10 s hasta que el pago llega.
@@ -87,7 +90,8 @@ pantalla lo muestra con `EsperaOError` o `ErrorCaja`.
 - **Pantalla:** un componente en la carpeta de su funcionalidad y su `<Route>` en `app/Rutas.jsx`. Si pasa
   de ~150 líneas, partirla en piezas con nombre de intención y la lógica a un `useXxx`.
 - **Componente:** en la carpeta de la pantalla que lo usa; a `compartido/` recién cuando lo usa otra.
-- **Operación de API:** una función en `api/api-http.js` y su ruta en `API.md`.
+- **Operación de API:** una función en el módulo de su subdominio (`api/ventas.js`, `api/candy.js`…) y su ruta en `API.md`;
+  `api-http.js` la reexporta. Un subdominio nuevo es un módulo nuevo y un `export *` en la fachada.
 
 Imports: `./` dentro de la carpeta, `@/` (es `src/`) entre carpetas. Callbacks por prop: `alVerbo`
 (`alElegir`, `alCambiar`); handlers internos en infinitivo (`reservar`, `cancelar`).

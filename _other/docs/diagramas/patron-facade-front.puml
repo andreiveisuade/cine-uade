@@ -1,0 +1,37 @@
+@startuml
+!include _estilo-patrones.iuml
+class TuCompra <<Client>>
+class Ticket <<Client>>
+class "api-http.js" as Fachada <<Facade>> {
+  export * de cada subdominio
+}
+class "ventas.js" as Ventas <<Facade>> {
+  + crearReserva(pedido)
+  + pedirCandy(codigo, cantidades)
+  + abrirCheckout(codigo, medio)
+}
+class "candy.js" as Candy <<Facade>> {
+  + obtenerProductosCandy()
+}
+class "clienteHttp.js" as Cliente <<Facade>> {
+  + get(ruta)
+  + post(ruta, cuerpo)
+  + put(ruta, cuerpo)
+  + borrar(ruta)
+}
+class ErrorApi {
+  + status
+}
+class fetch <<Subsystem>>
+class JSON <<Subsystem>>
+TuCompra --> Fachada
+Ticket --> Fachada
+Fachada --> Ventas
+Fachada --> Candy
+Ventas --> Cliente
+Candy --> Cliente
+Cliente --> fetch
+Cliente --> JSON
+Cliente ..> ErrorApi : tira
+note bottom of Cliente : esconde fetch, JSON y errores;\nla misma forma que ClienteHttp en Swing
+@enduml

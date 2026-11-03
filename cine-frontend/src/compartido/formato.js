@@ -2,6 +2,9 @@ export function precio(monto) {
   return "$ " + Math.round(monto).toLocaleString("es-AR");
 }
 
+// «1 entrada», «2 entradas»: el plural de los sustantivos que se cuentan en el front (entrada, película).
+export const cantidad = (n, sustantivo) => `${n} ${sustantivo}${n === 1 ? "" : "s"}`;
+
 export function precioExacto(monto) {
   return "$ " + monto.toFixed(2);
 }

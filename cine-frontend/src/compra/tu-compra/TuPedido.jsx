@@ -2,13 +2,11 @@ import { ActionIcon, Badge, Button, Divider, Group, Loader, ScrollArea, Stack, T
 import { IconTrash } from "@tabler/icons-react";
 import { AnimatePresence, m } from "motion/react";
 import { ErrorCaja } from "@/compartido/estado/ErrorCaja.jsx";
-import { precio } from "@/compartido/formato.js";
-import { estadoDelCandy } from "@/ticket/estadoReserva.js";
+import { cantidad, precio } from "@/compartido/formato.js";
+import { comprasCobradas, estadoDelCandy } from "@/ticket/estadoReserva.js";
 import { Entrada } from "@/ticket/entrada/Entrada.jsx";
 import { Contador } from "./Contador.jsx";
 import clases from "./Candy.module.css";
-
-const entradas = (n) => `${n} entrada${n === 1 ? "" : "s"}`;
 
 // El pedido tiene la forma de la entrada que se está comprando: arriba lo que lleva, en el talón cómo se paga.
 export function TuPedido({ talon, ...props }) {
@@ -26,13 +24,13 @@ export function TuPedido({ talon, ...props }) {
 // Lo que se paga ahora, en renglones: las entradas fijas y el candy con su cantidad, su subtotal y cómo sacarlo.
 // El candy ya cobrado va aparte y no se toca.
 export function RenglonesDelPedido({ reserva, sumar, pedido, candy }) {
-  const cobradas = (reserva.candy ?? []).filter((c) => c.estado === "COBRADA");
+  const cobradas = comprasCobradas(reserva);
   return (
     <Stack gap="sm">
       {!sumar && (
         <Group justify="space-between" align="flex-start" wrap="nowrap" className="cine-cifras">
           <div>
-            <Text fw={650}>{entradas(reserva.entradas.length)}</Text>
+            <Text fw={650}>{cantidad(reserva.entradas.length, "entrada")}</Text>
             <Text size="sm" c="dimmed">{reserva.entradas.map((e) => e.codigo).join(", ")}</Text>
           </div>
           <Text fw={650}>{precio(reserva.total)}</Text>

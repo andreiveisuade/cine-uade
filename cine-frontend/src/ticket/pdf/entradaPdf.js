@@ -1,6 +1,6 @@
 import { etiqueta } from "@/api/etiquetas.js";
 import { diaDelMes, hora, precio } from "@/compartido/formato.js";
-import { avisoDe, CODIGO_POR_ESTADO, codigoLegible, conAcreditacion, renglonesDelCandy } from "@/ticket/estadoReserva.js";
+import { avisoDe, CODIGO_POR_ESTADO, codigoLegible, conAcreditacion, renglonesDelCandy, totalDeLaEntrada } from "@/ticket/estadoReserva.js";
 
 // Los tonos de tema.js y tema.css sobre papel blanco: se imprime sin gastar tinta en fondos.
 const COLOR = {
@@ -139,12 +139,11 @@ function cuerpo(doc, reserva, poster, arriba, corte) {
   const renglones = renglonesDelCandy(reserva).filter((r) => r.cobrado);
   if (renglones.length) y = candy(doc, renglones, x, y + 4, ancho) + 2;
 
-  const cantidad = reserva.entradas.length;
+  const total = totalDeLaEntrada(reserva);
   letra(doc, "bold", 11, COLOR.texto);
-  doc.text(`Total · ${cantidad} entrada${cantidad === 1 ? "" : "s"}${renglones.length ? " y candy" : ""}`, x, y + 8, { baseline: "bottom" });
+  doc.text(total.texto, x, y + 8, { baseline: "bottom" });
   letra(doc, "bold", 22, COLOR.texto);
-  doc.text(precio(reserva.total + renglones.reduce((suma, r) => suma + r.subtotal, 0)), x + ancho, y + 9,
-    { align: "right", baseline: "bottom" });
+  doc.text(precio(total.importe), x + ancho, y + 9, { align: "right", baseline: "bottom" });
   return y + 9 + RELLENO;
 }
 

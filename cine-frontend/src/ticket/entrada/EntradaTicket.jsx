@@ -1,7 +1,7 @@
 import { Box, Group, SimpleGrid, Stack, Text } from "@mantine/core";
 import { etiqueta } from "@/api/etiquetas.js";
 import { dia, hora, precio } from "@/compartido/formato.js";
-import { renglonesDelCandy, vigente } from "@/ticket/estadoReserva.js";
+import { renglonesDelCandy, totalDeLaEntrada, vigente } from "@/ticket/estadoReserva.js";
 import { ButacaEntrada } from "./ButacaEntrada.jsx";
 import { CabeceraEntrada } from "./CabeceraEntrada.jsx";
 import { CandyEntrada } from "./CandyEntrada.jsx";
@@ -14,6 +14,7 @@ export function EntradaTicket({ reserva, pagoEnVivo }) {
   const atenuada = !vigente(reserva);
   const sala = reserva.sala || reserva.funcion.sala;
   const items = renglonesDelCandy(reserva);
+  const total = totalDeLaEntrada(reserva);
   return (
     <Entrada talon={reserva.codigo && <TalonEntrada reserva={reserva} pagoEnVivo={pagoEnVivo} />}
       style={atenuada ? { opacity: 0.6, filter: "grayscale(1)" } : undefined}>
@@ -31,10 +32,8 @@ export function EntradaTicket({ reserva, pagoEnVivo }) {
           {reserva.entradas.map((e) => <ButacaEntrada key={e.codigo} entrada={e} />)}
           {items.length > 0 && <CandyEntrada renglones={items} />}
           <Group justify="space-between" align="baseline" pt="sm">
-            <Text fw={650}>Total · {reserva.entradas.length} entrada{reserva.entradas.length === 1 ? "" : "s"}{items.length ? " y candy" : ""}</Text>
-            <Text className="cine-display cine-cifras" fz={36} fw={850} lh={1}>
-              {precio(reserva.total + items.reduce((suma, i) => suma + i.subtotal, 0))}
-            </Text>
+            <Text fw={650}>{total.texto}</Text>
+            <Text className="cine-display cine-cifras" fz={36} fw={850} lh={1}>{precio(total.importe)}</Text>
           </Group>
         </Box>
       </Stack>

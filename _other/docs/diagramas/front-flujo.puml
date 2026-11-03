@@ -6,12 +6,12 @@ skinparam maxMessageSize 220
 
 participant "Pelicula.jsx\ncartelera/pelicula/" as P
 participant "useCargar\ncompartido/hooks/" as H
-participant "api-http.js\napi/" as A
+participant "api-http.js → cartelera.js\n→ http/clienteHttp.js" as A
 participant "nginx :8080\n/api" as N
 participant "backend\nPeliculaController" as B
 
 P -> H : useCargar(() => Promise.all([\n obtenerPelicula(id), obtenerFuncionesDePelicula(id)]), [id])
-H -> A : pedir() en un efecto
+H -> A : obtenerPelicula(id) en un efecto\n(cartelera.js → get(ruta))
 A -> N : GET /api/peliculas/7\nGET /api/peliculas/7/funciones
 N -> B : proxy_pass
 B --> A : 200 JSON (DTO)
@@ -21,7 +21,7 @@ P -> P : FichaPelicula, ListaFunciones...\n(todo derivado en el render)
 
 == error ==
 B --> A : 4xx {"error": "..."}
-A --> H : throw Error(mensaje del backend)
+A --> H : throw ErrorApi(mensaje del backend, status)
 H --> P : { error }
 P -> P : EsperaOError muestra el mensaje tal cual
 @enduml

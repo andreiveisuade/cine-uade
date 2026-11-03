@@ -27,7 +27,7 @@ package "compartido/" as COMP #F2F0ED {
 }
 
 package "api/" as API #F2F0ED {
-  [api-http.js\nunico acceso al backend] as HTTP
+  [api-http.js (fachada)\nun modulo por subdominio\nhttp/clienteHttp] as HTTP
   [etiquetas, formato\niconos] as PRES
 }
 

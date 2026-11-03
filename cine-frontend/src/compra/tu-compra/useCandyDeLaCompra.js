@@ -1,13 +1,13 @@
 import { useEffect, useEffectEvent, useState } from "react";
 import * as api from "@/api/api-http.js";
+import { pedidoPendiente } from "@/ticket/estadoReserva.js";
 
 const ESPERA_MS = 400;
 const MAXIMO = 20;
 
 // El pedido pendiente que ya tiene la reserva, como productoId → cantidad.
 function cantidadesDe(reserva) {
-  const pendiente = (reserva.candy ?? []).find((c) => c.estado === "PENDIENTE");
-  return Object.fromEntries((pendiente?.items ?? []).map((i) => [i.productoId, i.cantidad]));
+  return Object.fromEntries((pedidoPendiente(reserva)?.items ?? []).map((i) => [i.productoId, i.cantidad]));
 }
 
 const iguales = (a, b) => Object.keys({ ...a, ...b }).every((id) => (a[id] ?? 0) === (b[id] ?? 0));

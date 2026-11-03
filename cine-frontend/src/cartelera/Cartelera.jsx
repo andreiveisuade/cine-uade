@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router";
 import * as api from "@/api/api-http.js";
 import { etiqueta } from "@/api/etiquetas.js";
 import { EsperaOError } from "@/compartido/estado/EsperaOError.jsx";
+import { cantidad } from "@/compartido/formato.js";
 import { Vacio } from "@/compartido/estado/Vacio.jsx";
 import { useCargar } from "@/compartido/hooks/useCargar.js";
 import { useTitulo } from "@/compartido/hooks/useTitulo.js";
@@ -22,7 +23,7 @@ export function Cartelera({ conHero = false }) {
   const datos = carga.datos ?? carga.previos;
   if (!datos) return <EsperaOError carga={carga} esqueleto={<CarteleraEsqueleto />} />;
   const [peliculas, generos] = datos;
-  const cuenta = `${peliculas.length} película${peliculas.length === 1 ? "" : "s"} ${genero ? `de ${etiqueta(genero).toLowerCase()}` : "en cartel"}`;
+  const cuenta = `${cantidad(peliculas.length, "película")} ${genero ? `de ${etiqueta(genero).toLowerCase()}` : "en cartel"}`;
   const Cabeza = conHero ? Seccion : Encabezado;
 
   return (

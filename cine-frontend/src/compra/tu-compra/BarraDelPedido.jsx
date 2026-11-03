@@ -2,7 +2,7 @@ import { useRef } from "react";
 import { Box, Button, Drawer, Group, Stack, Text } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { IconChevronUp } from "@tabler/icons-react";
-import { precio } from "@/compartido/formato.js";
+import { cantidad, precio } from "@/compartido/formato.js";
 import { MontoAnimado } from "@/compartido/ui/MontoAnimado.jsx";
 import { RenglonesDelPedido } from "./TuPedido.jsx";
 
@@ -14,7 +14,7 @@ export function BarraDelPedido({ visible, total, alIrAPagar, ...pedido }) {
   const aPagar = useRef(false);
   const candy = pedido.pedido.items.reduce((n, i) => n + i.cantidad, 0);
   const lleva = [
-    !pedido.sumar && `${pedido.reserva.entradas.length} entrada${pedido.reserva.entradas.length === 1 ? "" : "s"}`,
+    !pedido.sumar && cantidad(pedido.reserva.entradas.length, "entrada"),
     candy > 0 && `${candy} de candy`,
   ].filter(Boolean).join(" + ") || "Nada todavía";
 
