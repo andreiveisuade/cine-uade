@@ -34,7 +34,7 @@ class PrecioDeLosPedidosTest {
                         "DOS_D", precio)),
                 pedido("programación", precio -> new PedidoProgramacionDTO(1, 1, "2026-09-01", null, "20:00",
                         List.of(), "SUBTITULADA", "DOS_D", precio)),
-                pedido("grilla", precio -> new PedidoGrillaDTO(null, null, null, null, null, precio, null, null)),
+                pedido("grilla", precio -> new PedidoGrillaDTO(null, null, null, null, null, precio, null)),
                 pedido("producto", precio -> new PedidoProductoDTO("Agua", "BEBIDA", precio, null)),
                 pedido("combo", precio -> new PedidoComboDTO("Combo", precio, Map.of(), null)),
                 pedido("edición de producto", precio -> new PedidoEdicionProductoDTO("Agua", precio, null)));

@@ -5,7 +5,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import lombok.RequiredArgsConstructor;
@@ -14,17 +14,22 @@ import org.springframework.transaction.annotation.Transactional;
 
 import ar.uade.cine.model.cartelera.EstadoRevision;
 import ar.uade.cine.model.cartelera.Pelicula;
+import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.rechazos.DatoInvalido;
+import ar.uade.cine.model.salas.Asiento;
 import ar.uade.cine.model.salas.Sala;
+import ar.uade.cine.model.ventas.Entrada;
+import ar.uade.cine.model.ventas.TipoTarifa;
 import ar.uade.cine.repository.cartelera.PeliculaRepository;
 import ar.uade.cine.repository.salas.SalaRepository;
 import ar.uade.cine.service.programaciones.PropuestaGrilla.PaseSugerido;
 import ar.uade.cine.service.funciones.AgendaDeSala;
 import ar.uade.cine.service.funciones.GestorFunciones;
+import ar.uade.cine.service.salas.GestorSalas;
 import ar.uade.cine.infrastructure.reloj.Reloj;
 
-// Grilla automática de varios días; reparte pases al elenco sin pisar R3 ni R20 y mide el tiempo libre.
+// Grilla automática de varios días; llena todas las salas sin pisar R3 ni R20 y mide ocupación y facturación.
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -33,20 +38,14 @@ public class PlanificadorGrilla {
     private final PeliculaRepository peliculaRepository;
     private final SalaRepository salaRepository;
     private final GestorFunciones funciones;
+    private final GestorSalas salas;
     private final Reloj reloj;
 
     @Transactional(readOnly = true)
     public PropuestaGrilla proponer(CriteriosGrilla criterios) {
-        List<Sala> cargadas = salaRepository.findAll();
-        if (cargadas.isEmpty()) {
+        List<Sala> todas = salaRepository.findAll();
+        if (todas.isEmpty()) {
             throw new DatoInvalido("No hay salas cargadas para programar");
-        }
-        // R8: una grilla en 3D reparte solo entre las salas que lo proyectan.
-        List<Sala> salas = cargadas.stream()
-                .filter(sala -> criterios.formato().proyeccion().sePuedeProyectarEn(sala.getTipo()))
-                .toList();
-        if (salas.isEmpty()) {
-            throw new DatoInvalido("No hay salas que puedan proyectar en 3D");
         }
         List<Pelicula> elenco = ElencoGrilla.elegir(
                 peliculaRepository.findByEstadoRevision(EstadoRevision.CONFIRMADA), criterios.cuantasPeliculas());
@@ -56,14 +55,11 @@ public class PlanificadorGrilla {
         }
         // SRP y Fabricación pura: la ventana horaria y el reparto viven aparte; acá solo se orquesta.
         VentanaDelDia ventana = new VentanaDelDia(criterios, reloj.ahora());
-        List<PaseSugerido> pases = new RepartoDePases(elenco, new PuntajeConfiable(elenco))
-                .repartir(salas, agendasDe(salas, criterios), ventana);
-        // La sala que el reparto deja libre a propósito no cuenta como tiempo sin usar.
-        List<Sala> usadas = salas.stream()
-                .filter(sala -> pases.stream().anyMatch(pase -> pase.salaId() == sala.getId()))
-                .toList();
-        return new PropuestaGrilla(elenco, pases,
-                IndicadoresGrilla.de(elenco, pases, minutosLibres(usadas, ventana, criterios)));
+        PuntajeConfiable puntajes = new PuntajeConfiable(elenco);
+        List<PaseSugerido> pases = new RepartoDePases(elenco, puntajes)
+                .repartir(todas, agendasDe(todas, criterios), ventana);
+        return new PropuestaGrilla(elenco, pases, IndicadoresGrilla.de(elenco, pases,
+                minutosLibres(todas, ventana, criterios), aSalaLlena(todas, criterios.precio()), puntajes));
     }
 
     // Se recalcula en vez de recibirla del cliente, que podría mandar una vieja o adulterada.
@@ -71,7 +67,7 @@ public class PlanificadorGrilla {
         PropuestaGrilla propuesta = proponer(criterios);
         for (PaseSugerido pase : propuesta.pases()) {
             funciones.programar(pase.peliculaId(), pase.salaId(), pase.inicio(),
-                    criterios.formato());
+                    criterios.formatoEn(pase.proyeccion()));
         }
         return propuesta;
     }
@@ -92,10 +88,7 @@ public class PlanificadorGrilla {
         }
         int disponibles = (int) (minutosPorSala * salas.size());
 
-        // Solo lo cargado en las salas de la grilla: lo de una sala 2D no le quita tiempo a una en 3D.
-        Set<Integer> deLaGrilla = salas.stream().map(Sala::getId).collect(Collectors.toSet());
         List<Funcion> programadas = funciones.buscar(null, null, criterios.periodo()).stream()
-                .filter(f -> deLaGrilla.contains(f.getSalaId()))
                 // Lo que empezó antes de la ventana de su día (apertura o, hoy, ahora) no la ocupa.
                 .filter(f -> !f.getInicio().isBefore(ventana.primerIntento(f.getInicio().toLocalDate())))
                 .filter(f -> f.getInicio().isBefore(ventana.cierre(f.getInicio().toLocalDate())))
@@ -109,5 +102,19 @@ public class PlanificadorGrilla {
 
         // Con funciones cargadas a mano el descuento puede pasarse de la ventana.
         return Math.max(disponibles - ocupados, 0);
+    }
+
+    // Lo que recauda un pase a sala llena con la tarifa general, la misma cuenta que la entrada; sin las rotas (R9).
+    private Function<PaseSugerido, Dinero> aSalaLlena(List<Sala> todas, Dinero precio) {
+        Map<Integer, Sala> porId = todas.stream().collect(Collectors.toMap(Sala::getId, sala -> sala));
+        Map<Integer, List<Asiento>> asientos = salas.asientosDe(porId.keySet());
+        return pase -> {
+            Sala sala = porId.get(pase.salaId());
+            return asientos.getOrDefault(sala.getId(), List.of()).stream()
+                    .filter(asiento -> !asiento.estaFueraDeServicio())
+                    .map(asiento -> Entrada.precioDe(TipoTarifa.GENERAL,
+                            asiento.getTipo().aplicarA(sala.getTipo().aplicarA(precio)), pase.proyeccion()))
+                    .reduce(Dinero.CERO, Dinero::mas);
+        };
     }
 }

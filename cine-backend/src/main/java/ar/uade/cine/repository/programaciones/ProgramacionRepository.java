@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.programaciones.Programacion;
 import ar.uade.cine.repository.Repositorio;
 
@@ -16,6 +17,8 @@ public interface ProgramacionRepository extends Repositorio<Programacion> {
     boolean existsBySala_Id(int salaId);
 
     boolean existsByPelicula_Id(int peliculaId);
+
+    boolean existsByPelicula_IdAndFormato_ProyeccionAndActivaTrue(int peliculaId, Proyeccion proyeccion);
 
     @Query("""
             select p from Programacion p

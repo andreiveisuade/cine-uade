@@ -247,7 +247,7 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
         salas.agregar("Sala 2", TipoSala.TRES_D, List.of(6, 8));
         assertDoesNotThrow(
                 () -> funciones.programar(1, 2, LocalDateTime.of(2026, 8, 20, 20, 0),
-                        new FormatoDeFuncion(Version.DOBLADA, Proyeccion.TRES_D, Dinero.de(4500))));
+                        new FormatoDeFuncion(Version.DOBLADA, Proyeccion.DOS_D, Dinero.de(4500))));
     }
 
     @Test
@@ -341,7 +341,8 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
 
     @Test
     void editarCambiaTodoLoQueElAltaRecibe() {
-        cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13);
+        cartelera.agregar(DatosPelicula.con().titulo("Matrix").duracion(136).generos(List.of(Genero.ACCION))
+                .clasificacion(Clasificacion.MAS_13).formatos(List.of(Proyeccion.DOS_D, Proyeccion.TRES_D)).armar());
         salas.agregar("Sala 3D", TipoSala.TRES_D, List.of(10, 10));
 
         funciones.reprogramar(1, 2, 2, LocalDateTime.of(2026, 8, 21, 18, 30),
@@ -426,7 +427,8 @@ class GestorFuncionesTest extends PruebaDeIntegracion {
     private static final int DURACION = 136;
 
     private Funcion funcionDeLas20() {
-        return new Funcion(null, new Sala("Sala 1", TipoSala.DOS_D, 15), LocalDateTime.of(2026, 8, 20, 20, 0),
+        return new Funcion(new Pelicula("Matrix", DURACION, List.of(Genero.ACCION), Clasificacion.MAS_13),
+                new Sala("Sala 1", TipoSala.DOS_D, 15), LocalDateTime.of(2026, 8, 20, 20, 0),
                 new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
     }
 

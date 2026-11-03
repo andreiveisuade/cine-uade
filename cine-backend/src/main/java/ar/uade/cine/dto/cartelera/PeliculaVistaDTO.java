@@ -7,5 +7,5 @@ public record PeliculaVistaDTO(int id, String titulo, int duracionMinutos, List<
                                String clasificacion, String posterUrl, String director, int anio,
                                String idiomaOriginal, String sinopsis, boolean enCartelera,
                                String estadoRevision, double puntaje, int votos,
-                               String trailerYoutube) {
+                               String trailerYoutube, List<String> formatos) {
 }

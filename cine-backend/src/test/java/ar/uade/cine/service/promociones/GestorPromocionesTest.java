@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import ar.uade.cine.model.imagenes.ImagenUrl;
 import ar.uade.cine.PruebaDeIntegracion;
 import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.promociones.CondicionesPromocion;
 import ar.uade.cine.model.promociones.ParametrosPromocion;
 import ar.uade.cine.model.promociones.Promocion;
@@ -55,7 +56,7 @@ class GestorPromocionesTest extends PruebaDeIntegracion {
     }
 
     private static Entrada entrada(double precio, TipoTarifa tarifa) {
-        return new Entrada(A1, tarifa, Dinero.de(precio));
+        return new Entrada(A1, tarifa, Dinero.de(precio), Proyeccion.DOS_D);
     }
 
     private Promocion porcentaje(String nombre, double porcentaje) {

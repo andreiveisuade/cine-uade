@@ -81,7 +81,8 @@ public class Reserva {
     public Reserva(Funcion funcion, Cliente cliente, List<ButacaPedida> butacas, LocalDateTime creadaEn) {
         ValidadorReserva.validarFuncion(funcion);
         List<Entrada> entradas = butacas.stream()
-                .map(b -> new Entrada(b.asiento(), b.tarifa(), funcion.precioDe(b.asiento(), funcion.getSala())))
+                .map(b -> new Entrada(b.asiento(), b.tarifa(), funcion.precioDe(b.asiento(), funcion.getSala()),
+                        funcion.getProyeccion()))
                 .toList();
         ValidadorReserva.validar(funcion, cliente, entradas, creadaEn);
         this.funcion = funcion;

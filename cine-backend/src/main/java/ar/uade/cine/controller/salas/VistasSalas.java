@@ -12,8 +12,10 @@ import org.springframework.stereotype.Component;
 
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.funciones.Funcion;
+import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.salas.Asiento;
 import ar.uade.cine.model.salas.Sala;
+import ar.uade.cine.model.ventas.Entrada;
 import ar.uade.cine.model.ventas.TipoTarifa;
 import ar.uade.cine.dto.salas.AsientoVistaDTO;
 import ar.uade.cine.dto.salas.SalaVistaDTO;
@@ -67,15 +69,15 @@ public class VistasSalas {
         return new AsientoVistaDTO(a.getId(), a.getSalaId(), a.getFila(), a.getNumero(), a.getCodigo(),
                 a.getTipo().name(), a.getEstado().name(),
                 ocupados.contains(a.getId()),
-                funcion.precioDe(a, sala).aPesos(),
-                preciosPorTarifa(funcion.precioDe(a, sala)));
+                Entrada.precioDe(TipoTarifa.GENERAL, funcion.precioDe(a, sala), funcion.getProyeccion()).aPesos(),
+                preciosPorTarifa(funcion.precioDe(a, sala), funcion.getProyeccion()));
     }
 
-    // Misma cuenta que la entrada al venderse (TipoTarifa.aplicarA), en el orden del enum.
-    private Map<String, Double> preciosPorTarifa(Dinero precioDeLaButaca) {
+    // Misma cuenta que la entrada al venderse (Entrada.precioDe), en el orden del enum.
+    private Map<String, Double> preciosPorTarifa(Dinero precioDeLaButaca, Proyeccion proyeccion) {
         Map<String, Double> precios = new LinkedHashMap<>();
         for (TipoTarifa t : TipoTarifa.values()) {
-            precios.put(t.name(), t.aplicarA(precioDeLaButaca).aPesos());
+            precios.put(t.name(), Entrada.precioDe(t, precioDeLaButaca, proyeccion).aPesos());
         }
         return precios;
     }

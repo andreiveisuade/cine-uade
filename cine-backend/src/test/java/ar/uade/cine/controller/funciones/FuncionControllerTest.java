@@ -79,6 +79,20 @@ class FuncionControllerTest extends PruebaDeApi {
         assertEquals(mensaje, respuesta.error());
     }
 
+    // R31: Interstellar se cargó sin decir el formato, así que se estrena solo en 2D.
+    @Test
+    void unaFuncion3DDeUnaPeliculaSinVersion3DEs400ConElMensaje() {
+        salas.agregar("Sala IMAX", TipoSala.IMAX, List.of(10));
+
+        Respuesta respuesta = post("/api/funciones", "{\"peliculaId\":1,\"salaId\":2,"
+                + "\"inicio\":\"2026-08-14T20:30:00\",\"idioma\":\"SUBTITULADA\",\"proyeccion\":\"TRES_D\","
+                + "\"precio\":4500}");
+
+        assertEquals(400, respuesta.estado());
+        assertEquals("La película Interstellar no tiene versión en 3D", respuesta.error());
+        assertEquals(0, get("/api/funciones").json().size());
+    }
+
     // DECIMAL(10,2) no guarda cien millones: sin el tope, MySQL rechazaba el INSERT con un 500.
     @Test
     void unPrecioDeCienMillonesEs400() {

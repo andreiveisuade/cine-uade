@@ -29,6 +29,14 @@ CREATE TABLE IF NOT EXISTS pelicula_genero (
     FOREIGN KEY (pelicula_id) REFERENCES pelicula(id) ON DELETE CASCADE
 );
 
+-- En que formatos se estrena (R31): DOS_D, TRES_D o los dos, como pelicula_genero; al menos uno
+CREATE TABLE IF NOT EXISTS pelicula_formato (
+    pelicula_id INT NOT NULL,
+    formato VARCHAR(10) NOT NULL,
+    PRIMARY KEY (pelicula_id, formato),
+    FOREIGN KEY (pelicula_id) REFERENCES pelicula(id) ON DELETE CASCADE
+);
+
 -- La distribucion de butacas la dice la tabla asiento, no la sala
 CREATE TABLE IF NOT EXISTS sala (
     id INT PRIMARY KEY AUTO_INCREMENT,

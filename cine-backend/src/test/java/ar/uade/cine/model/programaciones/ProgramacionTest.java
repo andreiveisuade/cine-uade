@@ -107,6 +107,16 @@ class ProgramacionTest {
                         new FormatoDeFuncion(version, proyeccion, Dinero.de(precio)))).getMessage());
     }
 
+    // R31: una película sin versión 3D no se programa en 3D, aunque la sala lo proyecte.
+    @Test
+    void unaGrillaEn3DDeUnaPeliculaSinVersion3DNoSeConstruye() {
+        Sala imax = new Sala("Sala IMAX", TipoSala.IMAX, 15);
+
+        assertEquals("La película Matrix no tiene versión en 3D", assertThrows(Rechazo.class,
+                () -> new Programacion(MATRIX, imax, LocalDate.of(2026, 9, 7), null, LocalTime.of(20, 30), Set.of(),
+                        new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.TRES_D, Dinero.de(5000)))).getMessage());
+    }
+
     // R20 y el horizonte miran el reloj (14/08/2026 10:00): un rango ya pasado no generaría nada, uno a más de un año se rechaza.
     @ParameterizedTest(name = "{0}")
     @CsvSource(textBlock = """

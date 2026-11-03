@@ -19,6 +19,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
 import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.rechazos.Rechazo;
 import ar.uade.cine.model.salas.Asiento;
 import ar.uade.cine.model.salas.TipoAsiento;
@@ -45,10 +46,23 @@ class PromocionTest {
     }
 
     private static List<Entrada> entradas(String precios) {
+        return entradas(precios, Proyeccion.DOS_D);
+    }
+
+    private static List<Entrada> entradas(String precios, Proyeccion proyeccion) {
         Asiento butaca = new Asiento(null, 1, 1, TipoAsiento.ESTANDAR);
         return Arrays.stream(precios.split(" "))
-                .map(precio -> new Entrada(butaca, TipoTarifa.GENERAL, Dinero.de(Double.parseDouble(precio))))
+                .map(precio -> new Entrada(butaca, TipoTarifa.GENERAL, Dinero.de(Double.parseDouble(precio)),
+                        proyeccion))
                 .toList();
+    }
+
+    // R15 sobre el precio de la entrada, como siempre: el anteojo es parte de la entrada y la que se regala va entera.
+    @Test
+    void el2x1En3DRegalaLaEntradaConSusAnteojos() {
+        Promocion dosPorUno = TipoPromocion.NXM.crear("2x1", new ParametrosPromocion(null, null, 2, 1), AGOSTO, HOY);
+
+        assertEquals(Dinero.de(6000), dosPorUno.calcularDescuento(entradas("5000 5000", Proyeccion.TRES_D)));
     }
 
     // Cuál corre lo elige el gestor; cuánto descuenta cada una es lógica pura. Precios separados por espacio.

@@ -16,8 +16,9 @@ import ar.uade.cine.model.validacion.Regla;
 // Pedido de grilla automática del encargado; Value Object: completa los defaults y se valida al nacer.
 // Se valida al construirse: el planificador nunca ve criterios imposibles.
 // Apertura y cierre no son una FranjaHoraria: el cierre 00:00 es el final del día.
+// Sin proyección: el formato de cada pase sale de la sala y de la película (R8, R31).
 public record CriteriosGrilla(LocalDate desde, int dias, LocalTime apertura, LocalTime cierre,
-                              int cuantasPeliculas, FormatoDeFuncion formato) {
+                              int cuantasPeliculas, Version version, Dinero precio) {
 
     // La propuesta se arma entera en memoria, pase por pase: sin tope, un pedido de años la tumba.
     public static final int MAXIMO_DIAS = 31;
@@ -25,7 +26,10 @@ public record CriteriosGrilla(LocalDate desde, int dias, LocalTime apertura, Loc
     // Con cuatro salas salen ~20 pases por día: pasadas 20 películas, a alguna le toca menos de uno. Default: ocho.
     public static final int MAXIMO_PELICULAS = 20;
 
+    // Idioma y precio primero, como cuando viajaban en un FormatoDeFuncion armado antes que los criterios.
     public CriteriosGrilla {
+        Regla.objeto(version).obligatorio("Falta el idioma");
+        Dinero.importeValido(precio, "precio");
         Regla.objeto(desde).obligatorio("Falta la fecha de inicio de la grilla");
         Regla.numero(dias).mayorQueCero("La grilla tiene que cubrir al menos un día")
                 .entre(1, MAXIMO_DIAS, "La grilla no puede cubrir más de " + MAXIMO_DIAS + " días");
@@ -38,11 +42,11 @@ public record CriteriosGrilla(LocalDate desde, int dias, LocalTime apertura, Loc
         }
     }
 
-    // Sin lo que el pedido no trae: una semana desde hoy, de 14 a 0, con 8 películas subtituladas en 2D.
+    // Sin lo que el pedido no trae: una semana desde hoy, de 14 a 0, con 8 películas subtituladas.
     // Completa y valida en una construcción; hoy lo pasa quien tiene el reloj: no empieza en el pasado ni pasa de un año.
     public static CriteriosGrilla completando(LocalDate hoy, LocalDate desde, Integer dias, LocalTime apertura,
                                               LocalTime cierre, Integer cuantasPeliculas, Dinero precio,
-                                              Version version, Proyeccion proyeccion) {
+                                              Version version) {
         LocalDate inicio = desde == null ? hoy : desde;
         // R20: los días pasados no tienen ningún pase posible
         if (inicio.isBefore(hoy)) {
@@ -53,11 +57,14 @@ public record CriteriosGrilla(LocalDate desde, int dias, LocalTime apertura, Loc
                 apertura == null ? LocalTime.of(14, 0) : apertura,
                 cierre == null ? LocalTime.MIDNIGHT : cierre,
                 cuantasPeliculas == null ? 8 : cuantasPeliculas,
-                new FormatoDeFuncion(version == null ? Version.SUBTITULADA : version,
-                        proyeccion == null ? Proyeccion.DOS_D : proyeccion, precio));
+                version == null ? Version.SUBTITULADA : version, precio);
         ValidadorFuncion.dentroDelHorizonte(criterios.periodo().hasta(), hoy,
                 "La grilla tiene que terminar dentro del próximo año");
         return criterios;
+    }
+
+    public FormatoDeFuncion formatoEn(Proyeccion proyeccion) {
+        return new FormatoDeFuncion(version, proyeccion, precio);
     }
 
     // Los días que cubre, el primero y el último incluidos.

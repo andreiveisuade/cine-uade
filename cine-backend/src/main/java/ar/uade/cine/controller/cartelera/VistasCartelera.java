@@ -15,6 +15,8 @@ import ar.uade.cine.model.cartelera.Importacion;
 import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.model.cartelera.RenglonDeCorrida;
 import ar.uade.cine.model.funciones.Funcion;
+import ar.uade.cine.model.ventas.Entrada;
+import ar.uade.cine.model.ventas.TipoTarifa;
 import ar.uade.cine.model.salas.Asiento;
 import ar.uade.cine.model.salas.Sala;
 import ar.uade.cine.dto.cartelera.EstadoImportadorVistaDTO;
@@ -49,7 +51,7 @@ public class VistasCartelera {
                 p.getClasificacion().name(), catalogo.posterUrl(), catalogo.director(), catalogo.anio(),
                 catalogo.idiomaOriginal(), catalogo.sinopsis(), p.estaEnCartelera(),
                 p.getEstadoRevision().name(), catalogo.puntaje(), catalogo.votos(),
-                p.getTrailerYoutube());
+                p.getTrailerYoutube(), p.getFormatos().stream().map(Enum::name).toList());
     }
 
     public ImportacionVistaDTO importacion(Importacion i) {
@@ -135,7 +137,8 @@ public class VistasCartelera {
                                   List<AsientoVistaDTO> butacas, Integer libres) {
         return new FuncionVistaDTO(f.getId(), f.getPeliculaId(), f.getSalaId(),
                 Fechas.texto(f.getInicio()), f.getVersion().name(), f.getProyeccion().name(),
-                f.getFormato().precio().aPesos(), f.precioEn(sala).aPesos(),
+                f.getFormato().precio().aPesos(),
+                Entrada.precioDe(TipoTarifa.GENERAL, f.precioEn(sala), f.getProyeccion()).aPesos(),
                 vistasSalas.sala(sala, asientos), pelicula, butacas, libres);
     }
 

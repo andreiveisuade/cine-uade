@@ -12,8 +12,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
 import ar.uade.cine.model.dinero.Dinero;
-import ar.uade.cine.model.funciones.FormatoDeFuncion;
-import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
 
 class VentanaDelDiaTest {
@@ -22,7 +20,7 @@ class VentanaDelDiaTest {
 
     private static CriteriosGrilla deCatorceAVeintitres(int dias) {
         return new CriteriosGrilla(DIA, dias, LocalTime.of(14, 0), LocalTime.of(23, 0), 1,
-                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
+                Version.SUBTITULADA, Dinero.de(5000));
     }
 
     // R20: el primer intento es la apertura, o el primer turno de media hora que todavía no pasó.

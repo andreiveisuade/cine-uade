@@ -34,6 +34,7 @@ import ar.uade.cine.model.ventas.Entrada;
 import ar.uade.cine.model.ventas.TipoTarifa;
 import ar.uade.cine.dto.salas.AsientoVistaDTO;
 import ar.uade.cine.dto.salas.SalaVistaDTO;
+import ar.uade.cine.service.cartelera.DatosPelicula;
 import ar.uade.cine.service.cartelera.GestorCartelera;
 import ar.uade.cine.service.funciones.GestorFunciones;
 import ar.uade.cine.service.salas.GestorSalas;
@@ -155,7 +156,22 @@ class VistasSalasTest extends PruebaDeIntegracion {
 
         double mostrado = vistas.asiento(a1, funcion, sala, Set.of()).precios().get(tarifa.name());
 
-        assertEquals(new Entrada(a1, tarifa, funcion.precioDe(a1, sala)).precio().aPesos(), mostrado);
+        assertEquals(new Entrada(a1, tarifa, funcion.precioDe(a1, sala), Proyeccion.DOS_D).precio().aPesos(), mostrado);
+    }
+
+    // Los clientes no recalculan: el mapa de una función 3D ya trae los anteojos en cada tarifa.
+    @Test
+    void enUnaFuncion3DElMapaYaSumaLosAnteojos() {
+        cartelera.agregar(DatosPelicula.con().titulo("Avatar").duracion(162).generos(List.of(Genero.ACCION))
+                .clasificacion(Clasificacion.ATP).formatos(List.of(Proyeccion.DOS_D, Proyeccion.TRES_D)).armar());
+        Sala sala = salas.agregar("Sala 3D", TipoSala.TRES_D, List.of(1));
+        Funcion funcion = funciones.programar(2, sala.getId(), LocalDateTime.of(2026, 8, 20, 20, 0),
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.TRES_D, Dinero.de(5000)));
+
+        AsientoVistaDTO a1 = vistas.asiento(asiento(sala, "A1"), funcion, sala, Set.of());
+
+        assertEquals(7500.0, a1.precio(), 0.001, "5000 x 1.3 (3D) + 1000 de anteojos");
+        assertEquals(4250.0, a1.precios().get("JUBILADO"), 0.001, "5000 x 1.3 x 0.5 + 1000 enteros");
     }
 
     @Test

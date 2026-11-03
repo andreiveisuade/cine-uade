@@ -31,5 +31,8 @@ public record PedidoEdicionPeliculaDTO(
         @Schema(example = "26000")
         Integer votos,
         @Schema(description = "Id del video de YouTube o su URL; vacío lo saca", example = "vKQi3bBA1y8")
-        String trailerYoutube) {
+        String trailerYoutube,
+        @Schema(description = "Al menos uno (R31); sacar uno en uso da 409", allowableValues = {"DOS_D", "TRES_D"},
+                example = "[\"DOS_D\", \"TRES_D\"]")
+        List<String> formatos) {
 }

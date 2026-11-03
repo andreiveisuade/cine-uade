@@ -84,6 +84,7 @@ public class Programacion {
         ValidadorProgramacion.hora(horaInicio);
         Set<DayOfWeek> dias = ValidadorProgramacion.dias(diasSemana, validado);
         formato.exigirProyectableEn(sala);
+        pelicula.exigirFormato(formato.proyeccion());
         this.pelicula = pelicula;
         this.sala = sala;
         this.periodo = validado;

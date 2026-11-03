@@ -37,7 +37,7 @@ class GrillaControllerTest extends PruebaDeApi {
     void levantarLaApiConUnCine() {
 
         cartelera.agregar(new DatosPelicula("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13,
-                null, null, null, null, null, null, 8.7, null, null));
+                null, null, null, null, null, null, 8.7, null, null, null));
         salas.agregar("Sala 1", TipoSala.DOS_D, List.of(5, 5));
     }
 
@@ -48,6 +48,8 @@ class GrillaControllerTest extends PruebaDeApi {
 
         assertEquals(200, respuesta.estado());
         assertTrue(respuesta.json().get("pases").size() > 0);
+        assertEquals("DOS_D", respuesta.json().get("pases").get(0).get("proyeccion").asText());
+        assertTrue(respuesta.json().get("indicadores").get("facturacionEsperada").asDouble() > 0);
         assertEquals(0, respuesta.json().get("funcionesCreadas").asInt(),
                 "previsualizar no escribe: el contador queda en cero");
     }
@@ -77,9 +79,11 @@ class GrillaControllerTest extends PruebaDeApi {
     }
 
     // Como las fechas y las horas: antes un "" decía «Falta el idioma» en un campo que no es obligatorio.
+    // La proyección ya no es del pedido: un cliente viejo que la manda no rompe nada.
     @Test
-    void unIdiomaYUnaProyeccionVaciosCuentanComoNoEnviados() {
-        Respuesta respuesta = post("/api/grilla/propuesta", "{\"precio\":5000,\"idioma\":\"\",\"proyeccion\":\" \"}");
+    void unIdiomaVacioYUnaProyeccionDeMasNoCambianNada() {
+        Respuesta respuesta = post("/api/grilla/propuesta",
+                "{\"precio\":5000,\"idioma\":\"\",\"proyeccion\":\"TRES_D\"}");
 
         assertEquals(200, respuesta.estado());
         assertTrue(respuesta.json().get("pases").size() > 0);

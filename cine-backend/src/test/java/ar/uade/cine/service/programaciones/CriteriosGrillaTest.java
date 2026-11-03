@@ -12,8 +12,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
 import ar.uade.cine.model.dinero.Dinero;
-import ar.uade.cine.model.funciones.FormatoDeFuncion;
-import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
 import ar.uade.cine.model.rechazos.Rechazo;
 import ar.uade.cine.model.tiempo.Periodo;
@@ -42,7 +40,7 @@ class CriteriosGrillaTest {
             LocalTime cierre, int cuantas, double precio, String mensaje) {
         assertEquals(mensaje, assertThrows(Rechazo.class,
                 () -> new CriteriosGrilla(desde, dias, apertura, cierre, cuantas,
-                        new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(precio)))).getMessage());
+                        Version.SUBTITULADA, Dinero.de(precio))).getMessage());
     }
 
     // Hoy es el 14/08/2026. Una grilla que empieza en el pasado o termina a más de un año se rechaza (R20).
@@ -54,17 +52,17 @@ class CriteriosGrillaTest {
     void completarRechazaLaQueEmpiezaEnElPasadoOTerminaAMasDeUnAnio(String caso, LocalDate desde, int dias,
             String mensaje) {
         assertEquals(mensaje, assertThrows(Rechazo.class,
-                () -> CriteriosGrilla.completando(HOY, desde, dias, null, null, null, Dinero.de(5000), null, null))
+                () -> CriteriosGrilla.completando(HOY, desde, dias, null, null, null, Dinero.de(5000), null))
                 .getMessage());
     }
 
     @Test
-    void sinDatosCompletaUnaSemanaDesdeHoyDe14A0ConOchoSubtituladasEn2D() {
+    void sinDatosCompletaUnaSemanaDesdeHoyDe14A0ConOchoSubtituladas() {
         CriteriosGrilla semana = CriteriosGrilla.completando(HOY, null, null, null, null, null, Dinero.de(5000),
-                null, null);
+                null);
 
         assertEquals(new CriteriosGrilla(HOY, 7, LocalTime.of(14, 0), LocalTime.MIDNIGHT, 8,
-                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000))), semana);
+                Version.SUBTITULADA, Dinero.de(5000)), semana);
         assertEquals(new Periodo(HOY, LocalDate.of(2026, 8, 20)), semana.periodo());
     }
 
@@ -75,7 +73,7 @@ class CriteriosGrillaTest {
             """)
     void cerrarALaMedianocheEsCerrarAlEmpezarElDiaSiguiente(LocalTime cierre, LocalDateTime esperado) {
         CriteriosGrilla semana = new CriteriosGrilla(LocalDate.of(2026, 9, 1), 7, LocalTime.of(14, 0), cierre,
-                8, new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)));
+                8, Version.SUBTITULADA, Dinero.de(5000));
 
         assertEquals(esperado, semana.cierreDe(LocalDate.of(2026, 9, 3)));
     }

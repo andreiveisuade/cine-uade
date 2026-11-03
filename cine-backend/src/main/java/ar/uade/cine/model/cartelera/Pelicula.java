@@ -1,7 +1,10 @@
 package ar.uade.cine.model.cartelera;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
@@ -19,8 +22,10 @@ import lombok.AccessLevel;
 import lombok.Getter;
 
 import ar.uade.cine.model.cartelera.validacion.ValidadorPelicula;
+import ar.uade.cine.model.funciones.Proyeccion;
+import ar.uade.cine.model.rechazos.DatoInvalido;
 
-// Película del catálogo (R2, R7, R10); Experto de su ciclo de revisión, validada por ValidadorPelicula.
+// Película del catálogo (R2, R7, R10, R31); Experto de revisión y formatos, validada por ValidadorPelicula.
 @Entity
 @Getter
 public class Pelicula {
@@ -42,6 +47,14 @@ public class Pelicula {
     @Column(name = "genero")
     @Enumerated(EnumType.STRING)
     private List<Genero> generos = new ArrayList<>();
+
+    // TMDB no informa el formato: la que no dice otra cosa se estrena en 2D.
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "pelicula_formato",
+            joinColumns = @JoinColumn(name = "pelicula_id"))
+    @Column(name = "formato")
+    @Enumerated(EnumType.STRING)
+    private Set<Proyeccion> formatos = EnumSet.of(Proyeccion.DOS_D);
 
     @Embedded
     private CatalogoPelicula catalogo = new CatalogoPelicula();
@@ -80,6 +93,27 @@ public class Pelicula {
         this.clasificacion = clasificacionValida;
         this.generos.clear();
         this.generos.addAll(generosValidos);
+    }
+
+    public Set<Proyeccion> getFormatos() {
+        return EnumSet.copyOf(formatos);
+    }
+
+    public void cambiarFormatos(Collection<Proyeccion> formatos) {
+        Set<Proyeccion> validos = ValidadorPelicula.formatos(formatos);
+        this.formatos.clear();
+        this.formatos.addAll(validos);
+    }
+
+    public boolean seEstrenaEn(Proyeccion proyeccion) {
+        return formatos.contains(proyeccion);
+    }
+
+    // R31. Experto: la película sabe en qué formatos se estrena; la función y la grilla se lo preguntan.
+    public void exigirFormato(Proyeccion proyeccion) {
+        if (!seEstrenaEn(proyeccion)) {
+            throw new DatoInvalido("La película " + titulo + " no tiene versión en " + proyeccion.getEtiqueta());
+        }
     }
 
     // El catálogo es inmutable: se reemplaza entero por otro armado con conCambios, que ya viene validado.

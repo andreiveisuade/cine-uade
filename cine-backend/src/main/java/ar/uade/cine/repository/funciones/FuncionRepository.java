@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 import jakarta.persistence.QueryHint;
 
 import ar.uade.cine.model.funciones.Funcion;
+import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.repository.Repositorio;
 
 // Persistencia de funciones; Repository de Spring Data, con los filtros opcionales resueltos en la base.
@@ -27,6 +28,9 @@ public interface FuncionRepository extends Repositorio<Funcion> {
     boolean existsByPelicula_Id(int peliculaId);
 
     boolean existsBySala_Id(int salaId);
+
+    boolean existsByPelicula_IdAndFormato_ProyeccionAndInicioAfter(int peliculaId, Proyeccion proyeccion,
+                                                                   LocalDateTime ahora);
 
     @Query("""
             select f from Funcion f

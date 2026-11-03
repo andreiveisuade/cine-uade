@@ -75,7 +75,7 @@ public class VistasProgramaciones {
 
     private PaseSugeridoVistaDTO pase(PaseSugerido pase) {
         return new PaseSugeridoVistaDTO(pase.peliculaId(), pase.titulo(), pase.salaId(), pase.sala(),
-                Fechas.texto(pase.inicio()), pase.duracionMinutos());
+                Fechas.texto(pase.inicio()), pase.duracionMinutos(), pase.proyeccion().name());
     }
 
     private IndicadoresGrillaVistaDTO indicadores(IndicadoresGrilla medidas) {
@@ -83,7 +83,7 @@ public class VistasProgramaciones {
         medidas.pasesPorGenero().forEach((genero, cuantos) -> porGenero.put(genero.name(), cuantos));
         return new IndicadoresGrillaVistaDTO(medidas.minutosProgramados(), medidas.minutosDisponibles(),
                 medidas.ocupacion(), medidas.puntajePromedio(), medidas.generosCubiertos(),
-                medidas.generosTotales(), porGenero);
+                medidas.generosTotales(), porGenero, medidas.facturacionEsperada().aPesos());
     }
 
     private static String texto(LocalDate fecha) {

@@ -1,12 +1,16 @@
 package ar.uade.cine.model.cartelera.validacion;
 
+import java.util.Collection;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
+import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.validacion.Regla;
 
-// Valida título, duración, géneros y clasificación de una película; guardas de Regla que llama Pelicula.
+// Valida título, duración, géneros, clasificación y formatos; guardas de Regla que llama Pelicula.
 // Cada método devuelve el dato listo (recortado, sin repetidos); Pelicula valida todo antes de asignar.
 public final class ValidadorPelicula {
 
@@ -36,5 +40,12 @@ public final class ValidadorPelicula {
 
     public static Clasificacion clasificacion(Clasificacion clasificacion) {
         return Regla.objeto(clasificacion).obligatorio("Falta la clasificación por edad").valor();
+    }
+
+    // R31: sin ningún formato la película no se podría programar. Los repetidos se juntan, como los géneros.
+    public static Set<Proyeccion> formatos(Collection<Proyeccion> formatos) {
+        Regla.lista(formatos).noVacia("La película tiene que tener al menos un formato")
+                .sinNulos("Falta el formato");
+        return EnumSet.copyOf(formatos);
     }
 }

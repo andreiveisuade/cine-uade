@@ -1,5 +1,6 @@
 package ar.uade.cine.service.programaciones;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -36,5 +37,11 @@ final class VentanaDelDia {
 
     LocalDateTime cierre(LocalDate fecha) {
         return criterios.cierreDe(fecha);
+    }
+
+    // De la apertura al cierre; todos los días de la grilla tienen el mismo horario.
+    int minutosDelDia() {
+        LocalDate dia = criterios.desde();
+        return (int) Duration.between(dia.atTime(criterios.apertura()), cierre(dia)).toMinutes();
     }
 }

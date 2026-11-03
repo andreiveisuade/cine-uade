@@ -20,6 +20,7 @@ import ar.uade.cine.controller.http.Parseo;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.cartelera.Pelicula;
+import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.dto.cartelera.PedidoEdicionPeliculaDTO;
 import ar.uade.cine.dto.cartelera.PedidoPeliculaDTO;
 import ar.uade.cine.dto.cartelera.PeliculaVistaDTO;
@@ -116,7 +117,7 @@ public class PeliculaController {
         return datosDe(new PedidoEdicionPeliculaDTO(pedido.titulo(), pedido.duracionMinutos(),
                 pedido.generos(), pedido.clasificacion(), pedido.director(), pedido.sinopsis(),
                 pedido.anio(), pedido.idiomaOriginal(), pedido.posterUrl(), pedido.enCartelera(),
-                pedido.puntaje(), pedido.votos(), pedido.trailerYoutube()));
+                pedido.puntaje(), pedido.votos(), pedido.trailerYoutube(), pedido.formatos()));
     }
 
     private static DatosPelicula datosDe(PedidoEdicionPeliculaDTO pedido) {
@@ -138,6 +139,8 @@ public class PeliculaController {
                 .puntaje(pedido.puntaje())
                 .votos(pedido.votos())
                 .trailerYoutube(pedido.trailerYoutube())
+                .formatos(pedido.formatos() == null
+                        ? null : Parseo.constantes(Proyeccion.class, pedido.formatos(), "el formato"))
                 .armar();
     }
 }
