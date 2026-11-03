@@ -99,6 +99,20 @@ if ($actual) {
 # --------------------------------------------------------------- 4. levantar
 Paso "4/5  Levantando"
 
+# Compose toma PUERTO_WEB del entorno antes que del .env: $env:PUERTO_WEB=8090; .\setup.ps1
+$puerto = if ($env:PUERTO_WEB) { $env:PUERTO_WEB } else { Get-Variable-Env .env 'PUERTO_WEB' }
+if (-not $puerto) { $puerto = '8080' }
+
+# Docker avisa del puerto ocupado recien despues del build y con un mensaje criptico: se mira antes.
+$publicado = docker compose port frontend 8080 2>$null
+if ("$publicado" -notlike "*:$puerto") {
+  $ocupa = Get-NetTCPConnection -LocalPort $puerto -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1
+  if ($ocupa) {
+    $proceso = (Get-Process -Id $ocupa.OwningProcess -ErrorAction SilentlyContinue).ProcessName
+    Fatal "El puerto $puerto lo usa $proceso (PID $($ocupa.OwningProcess)). Cerralo, o levanta en otro: `$env:PUERTO_WEB=8090; .\setup.ps1"
+  }
+}
+
 Info "La primera vez tarda varios minutos: Maven baja las dependencias del backend."
 docker compose up -d --build
 if ($LASTEXITCODE -ne 0) {
@@ -121,6 +135,7 @@ if ($sanos -lt 2) {
   Aviso "Tardaron mas de 5 minutos. Mira que pasa con:"
   Write-Host "      docker compose ps"
   Write-Host "      docker compose logs backend"
+  Write-Host "  Si el log dice que el schema no coincide, a tu base le falta una migracion: cine-backend\src\main\resources\db\migraciones\"
   exit 1
 }
 Ok "mysql y backend sanos"
@@ -159,9 +174,7 @@ if ((Contar 'sala') -gt 0) {
   }
 }
 
-$puerto  = Get-Variable-Env .env 'PUERTO_WEB'
 $adminer = Get-Variable-Env .env 'PUERTO_ADMINER'
-if (-not $puerto)  { $puerto  = '8080' }
 if (-not $adminer) { $adminer = '8081' }
 $dbUser = Get-Variable-Env .env 'DB_USER'
 $dbName = Get-Variable-Env .env 'DB_NAME'

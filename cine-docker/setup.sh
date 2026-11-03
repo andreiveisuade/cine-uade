@@ -91,8 +91,22 @@ fi
 # --------------------------------------------------------------- 4. levantar
 paso "4/5  Levantando"
 
+var() { grep "^$1=" .env | cut -d= -f2- || true; }
+# Compose toma PUERTO_WEB del entorno antes que del .env: PUERTO_WEB=8090 ./setup.sh
+puerto=${PUERTO_WEB:-$(var PUERTO_WEB)}; puerto=${puerto:-8080}
+adminer=$(var PUERTO_ADMINER); adminer=${adminer:-8081}
+
+# Docker avisa del puerto ocupado recién después del build y con un mensaje críptico: se mira antes.
+if [[ "$(docker compose port frontend 8080 2>/dev/null)" != *":$puerto" ]]; then
+  ocupa=$(lsof -nP -iTCP:"$puerto" -sTCP:LISTEN 2>/dev/null | awk 'NR==2 {print $1 " (PID " $2 ")"}')
+  [ -n "$ocupa" ] && fatal "El puerto $puerto lo usa $ocupa. Cerralo, o levantá en otro: PUERTO_WEB=8090 ./setup.sh"
+fi
+
 info "La primera vez tarda varios minutos: Maven baja las dependencias del backend."
-docker compose up -d --build
+if ! docker compose up -d --build; then
+  aviso "No levantó (build o arranque). El motivo está en: docker compose logs backend"
+  exit 1
+fi
 
 printf '  Esperando a que los servicios estén sanos'
 for _ in $(seq 1 60); do
@@ -106,6 +120,7 @@ if [ "${sanos:-0}" -lt 2 ]; then
   aviso "Tardaron más de 5 minutos. Mirá qué pasa con:"
   echo "      docker compose ps"
   echo "      docker compose logs backend"
+  echo "  Si el log dice que el schema no coincide, a tu base le falta una migración: cine-backend/src/main/resources/db/migraciones/"
   exit 1
 fi
 ok "mysql y backend sanos"
@@ -125,22 +140,19 @@ else
     || aviso "Falló el sembrado. Probá a mano: ./seed/datos-de-ejemplo.sh"
 fi
 
-var() { grep "^$1=" .env | cut -d= -f2- || true; }
-puerto=$(var PUERTO_WEB); puerto=${puerto:-8080}
-adminer=$(var PUERTO_ADMINER); adminer=${adminer:-8081}
-
 cat <<FIN
 
 $(printf '\033[1mListo\033[0m')
 
   Cliente     http://localhost:${puerto}
   Swagger     http://localhost:${puerto}/swagger-ui.html
-  Panel       cd ../cine-swing && ./mvnw compile exec:java
+  Panel       cd ../cine-swing && ./setup.sh   (elegí Local al ingresar)
               encargado@cine.uade.ar / cine2026   (Puerta: puerta@cine.uade.ar / cine2026)
 
   Adminer     http://localhost:${adminer}/?server=mysql&username=$(var DB_USER)&db=$(var DB_NAME)
               usuario $(var DB_USER)   clave $(var DB_PASSWORD)
               (la clave es de tu MySQL local, la generó este script; está en .env)
+$( [ -f docker-compose.override.yml ] && grep -q 3306 docker-compose.override.yml && printf '\n  Workbench   127.0.0.1:3306, mismo usuario y clave, schema %s' "$(var DB_NAME)" )
 
   Para bajarlo:  docker compose down
   Guía completa: ../_other/COMO-LEVANTARLO.md

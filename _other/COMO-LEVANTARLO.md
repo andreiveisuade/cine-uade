@@ -29,7 +29,7 @@ La promo del seed vence a los 90 días. Correr el seed dos veces da `409` inofen
 ## Usarlo
 
 ```sh
-cd cine-swing && ./mvnw compile exec:java      # el panel, en otra terminal
+cd cine-swing && ./setup.sh                   # el panel, en otra terminal
 cd cine-swing; .\mvnw.cmd compile exec:java    # Windows (PowerShell)
 ```
 

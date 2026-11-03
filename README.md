@@ -31,7 +31,7 @@ Requiere Docker Desktop; el panel, además, JDK 21.
 
 ```bash
 cd cine-docker && ./setup.sh          # Windows: .\setup.ps1
-cd ../cine-swing && ./mvnw compile exec:java   # panel (Windows: .\mvnw.cmd)
+cd ../cine-swing && ./setup.sh               # panel (Windows: .\mvnw.cmd compile exec:java)
 cd ../cine-android && ./gradlew assembleDebug  # APK de la Puerta para el celular
 ```
 
