@@ -46,6 +46,7 @@ describe("Ticket", () => {
     ["PAGADA", "Entrada paga. Mostrá el código en la puerta."],
     ["EXPIRADA", "Esta reserva venció. Las butacas ya se liberaron."],
     ["CANCELADA", "Esta reserva está cancelada."],
+    ["NO_USADA", "La función ya terminó: esta entrada venció sin usarse."],
   ])("con estado %s le dice al comprador lo que corresponde", async (estado, texto) => {
     api.obtenerReservaPorCodigo.mockResolvedValue(reserva(estado));
 
@@ -133,6 +134,7 @@ describe("Ticket como entrada", () => {
     ["PAGADA", true],
     ["EXPIRADA", false],
     ["CANCELADA", false],
+    ["NO_USADA", false],
   ])("con estado %s el QR del código aparece: %s", async (estado, conQr) => {
     api.obtenerReservaPorCodigo.mockResolvedValue(reserva(estado));
     abrir();
@@ -156,13 +158,34 @@ describe("Ticket como entrada", () => {
     expect(screen.getAllByText(/traé el carnet/)).toHaveLength(1);
   });
 
-  it("el comprobante del backend no se muestra suelto: se despliega", async () => {
+  it("el comprobante del backend no se muestra suelto: se despliega debajo de las acciones", async () => {
+    const usuario = userEvent.setup();
     api.obtenerReservaPorCodigo.mockResolvedValue(reserva("RESERVADA"));
     abrir();
 
-    expect(await screen.findByText("Ver el comprobante en texto")).toBeInTheDocument();
-    expect(screen.getByText("Ver el comprobante en texto").closest("details")).not.toHaveAttribute("open");
+    const boton = await screen.findByRole("button", { name: "Ver el comprobante en texto" });
+    expect(boton).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByText(/TICKET #1/)).not.toBeInTheDocument();
+
+    await usuario.click(boton);
+
+    expect(boton).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByText(/TICKET #1/)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Copiar comprobante" })).not.toBeInTheDocument();
+  });
+
+  // Una columna del más usado al menos; lo que no aplica no aparece y el resto sigue en orden.
+  it.each([
+    ["PAGADA", ["Mostrar en la puerta", "Descargar entrada", "Ver el comprobante en texto", "Volver a la cartelera"]],
+    ["NO_USADA", ["Ver el comprobante en texto", "Volver a la cartelera"]],
+    ["EXPIRADA", ["Ver el comprobante en texto", "Volver a la cartelera"]],
+  ])("con estado %s las acciones van en este orden", async (estado, acciones) => {
+    api.obtenerReservaPorCodigo.mockResolvedValue(reserva(estado));
+    abrir();
+
+    const grupo = await screen.findByRole("group", { name: "Acciones del ticket" });
+
+    expect([...grupo.querySelectorAll("a, button")].map((a) => a.textContent)).toEqual(acciones);
   });
 
   it("el código se copia desde el talón, al lado del código legible", async () => {
@@ -183,6 +206,7 @@ describe("descargar la entrada en PDF", () => {
     ["PAGADA", true],
     ["EXPIRADA", false],
     ["CANCELADA", false],
+    ["NO_USADA", false],
   ])("con estado %s el botón aparece: %s", async (estado, aparece) => {
     api.obtenerReservaPorCodigo.mockResolvedValue(reserva(estado));
     abrir();
@@ -223,15 +247,25 @@ describe("venta cruzada en el ticket", () => {
     api.obtenerPromocionesVigentes.mockResolvedValue([promo]);
   });
 
-  it("muestra combos primero, después los productos con foto y al final las promos", async () => {
+  it("muestra combos primero y después los productos con foto; las promos de entradas no", async () => {
     api.obtenerReservaPorCodigo.mockResolvedValue(reserva("RESERVADA", true));
     abrir();
 
     const seccion = await screen.findByRole("region", { name: "Para sumar a la función" });
     // Texto exacto: el combo también nombra a los pochoclos en su detalle.
     const nombres = within(seccion).getAllByText(/^(Combo clásico|Pochoclos grandes|2x1)$/).map((n) => n.textContent);
-    expect(nombres).toEqual(["Combo clásico", "Pochoclos grandes", "2x1"]);
+    expect(nombres).toEqual(["Combo clásico", "Pochoclos grandes"]);
     expect(seccion).not.toHaveTextContent("Agua");
+    expect(api.obtenerPromocionesVigentes).not.toHaveBeenCalled();
+  });
+
+  it("tocar una tarjeta lleva a sumar ese producto a la compra", async () => {
+    api.obtenerReservaPorCodigo.mockResolvedValue(reserva("PAGADA"));
+    abrir();
+
+    const combo = await screen.findByRole("link", { name: "Sumar Combo clásico" });
+    expect(combo).toHaveAttribute("href", "/compra/ABCD1234?sumar=9");
+    expect(screen.getByRole("link", { name: "Sumar Pochoclos grandes" })).toHaveAttribute("href", "/compra/ABCD1234?sumar=1");
   });
 
   it.each([
@@ -277,6 +311,38 @@ describe("venta cruzada en el ticket", () => {
     await screen.findByText("Total · 2 entradas");
 
     expect(screen.queryByText("Candy a retirar")).not.toBeInTheDocument();
+  });
+
+  // R32: la entrada vence, el candy no. El QR queda solo para retirar lo cobrado, y no se suma candy nuevo.
+  it.each([
+    ["vencida sin usar", { ...reserva("NO_USADA") }],
+    ["ya usada en la puerta", { ...reserva("PAGADA"), ingresadaEn: "2026-10-21T19:50:00" }],
+  ])("%s, con candy por retirar el QR sigue para el candy y nada más", async (_caso, laReserva) => {
+    api.obtenerReservaPorCodigo.mockResolvedValue({ ...laReserva, candy: [
+      { id: 2, estado: "COBRADA", items: [{ productoId: 1, nombre: "Pochoclos", cantidad: 2, subtotal: 7000 }] },
+    ] });
+    abrir();
+    await screen.findByText("ABCD 1234");
+
+    expect(screen.getByText("Candy a retirar")).toBeInTheDocument();
+    expect(screen.getByText("a retirar")).toBeInTheDocument();
+    expect(screen.getByText("Se retira en el candy con el mismo QR de la entrada, aunque la entrada ya no sirva."))
+      .toBeInTheDocument();
+    expect(screen.getByTitle("QR del código ABCD1234")).toBeInTheDocument();
+    expect(screen.getByText("Mostralo en el candy para retirar lo tuyo")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Mostrar en la puerta" })).not.toBeInTheDocument();
+  });
+
+  it("vencida sin usar no ofrece candy nuevo y, con el candy ya retirado, tampoco el QR", async () => {
+    api.obtenerReservaPorCodigo.mockResolvedValue({ ...reserva("NO_USADA"), candy: [
+      { id: 2, estado: "COBRADA", retiradaEn: "2026-10-21T19:55:00", items: [{ productoId: 1, nombre: "Pochoclos", cantidad: 2, subtotal: 7000 }] },
+    ] });
+    abrir();
+    await screen.findByText("La función ya terminó: esta entrada venció sin usarse.");
+
+    expect(screen.queryByTitle("QR del código ABCD1234")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Para sumar a la función")).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Sumar candy" })).not.toBeInTheDocument();
   });
 
   it("una reserva vencida no ofrece nada para sumar", async () => {

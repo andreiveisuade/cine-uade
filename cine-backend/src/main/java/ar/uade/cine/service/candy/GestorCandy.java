@@ -49,7 +49,7 @@ public class GestorCandy {
     }
 
     // El cliente sale de la reserva; si el pedido nombra uno, tiene que ser ese.
-    // Solo reserva pagada: el candy se retira con el QR de la entrada.
+    // Solo reserva pagada: el candy se retira con el QR de la entrada. Con la función terminada, no (R32).
     public CompraCandy venderParaReserva(int reservaId, Integer clienteId, Map<Integer, Integer> cantidades,
                                          MedioPago medio, String codigoAutorizacion) {
         Reserva reserva = reservaRepository.exigir(reservaId, "la reserva");
@@ -61,6 +61,7 @@ public class GestorCandy {
             throw new ConflictoDeNegocio("La reserva " + reservaId
                     + " no está pagada: cobrala antes de agregarle candy");
         }
+        reserva.exigirQueAdmitaCandy(reloj.ahora());
         return vender(reserva.getClienteId(), reservaId, cantidades, medio, codigoAutorizacion);
     }
 

@@ -84,6 +84,11 @@ public class Funcion {
         return yaPaso(inicio, ahora);
     }
 
+    // R32, con el mismo corte que R19: la que termina en este instante ya terminó.
+    public boolean yaTermino(LocalDateTime ahora) {
+        return yaPaso(getFin(pelicula.getDuracionMinutos()), ahora);
+    }
+
     // R20 y el horizonte miran el reloj: los exige el alta, con la hora que pasa el gestor.
     public void exigirProgramableA(LocalDateTime ahora) {
         if (yaEmpezo(ahora)) {

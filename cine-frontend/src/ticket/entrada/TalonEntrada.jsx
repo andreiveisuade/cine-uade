@@ -2,7 +2,7 @@ import { Badge, Box, Stack, Text } from "@mantine/core";
 import { m } from "motion/react";
 import { QRCodeSVG } from "qrcode.react";
 import { fechaHora } from "@/compartido/formato.js";
-import { CODIGO_POR_ESTADO, codigoLegible, entradaValida } from "@/compartido/estadoReserva.js";
+import { CODIGO_POR_ESTADO, codigoLegible, entradaValida, qrSoloParaElCandy } from "@/compartido/estadoReserva.js";
 import { CopiarCodigo } from "./CopiarCodigo.jsx";
 import clases from "@/compartido/ui/Entrada.module.css";
 
@@ -12,6 +12,7 @@ const SELLO = { opacity: 1, scale: 1, rotate: -8 };
 
 export function TalonEntrada({ reserva, pagoEnVivo }) {
   const usada = reserva.ingresadaEn;
+  const soloCandy = qrSoloParaElCandy(reserva);
   return (
     <Stack gap="sm" align="center" ta="center" justify="center" h="100%" pos="relative">
       {reserva.estado === "PAGADA" && (
@@ -22,11 +23,12 @@ export function TalonEntrada({ reserva, pagoEnVivo }) {
         </Badge>
       )}
       <Text size="xs" c="dimmed" tt="uppercase" fw={700} style={{ letterSpacing: "0.12em" }}>Código de acceso</Text>
-      {entradaValida(reserva) && (
+      {(entradaValida(reserva) || soloCandy) && (
         <Box p={8} bg="white" style={{ borderRadius: "var(--mantine-radius-sm)", lineHeight: 0 }}>
           <QRCodeSVG value={reserva.codigo} size={132} level="M" title={`QR del código ${reserva.codigo}`} />
         </Box>
       )}
+      {soloCandy && <Text size="xs" fw={700}>Mostralo en el candy para retirar lo tuyo</Text>}
       {/* El ícono cuelga a la derecha para que el código siga centrado bajo el QR. */}
       <Box pos="relative">
         <Text ff="monospace" fw={700} className={`cine-cifras ${clases.codigo}`}

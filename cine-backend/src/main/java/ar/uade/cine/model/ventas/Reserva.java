@@ -31,7 +31,7 @@ import jakarta.persistence.Version;
 import lombok.AccessLevel;
 import lombok.Getter;
 
-// Reserva de butacas sin repetir (R5, R6, R13, R17-R19); Experto en sus transiciones, @Version por carreras.
+// Reserva de butacas sin repetir (R5, R6, R13, R17-R19, R32); Experto en sus transiciones, @Version.
 // Contexto del patrón State: cada operación le pide la transición a EstadoReserva (`estado = estado.pagar()`).
 @Entity
 @Getter
@@ -180,9 +180,22 @@ public class Reserva {
         if (ingresadaEn != null) {
             throw new ConflictoDeNegocio("Esa entrada ya se usó el " + ingresadaEn.format(DIA_Y_HORA));
         }
+        exigirLaFuncionSinTerminar(cuando, "la entrada no sirve más");
         exigirElDiaDeLaFuncion(cuando);
         estado = siguiente;
         ingresadaEn = cuando;
+    }
+
+    // R32: con la función terminada no se le suma candy a la entrada; lo ya cobrado se retira igual.
+    public void exigirQueAdmitaCandy(LocalDateTime ahora) {
+        exigirLaFuncionSinTerminar(ahora, "el candy se compra sin la entrada");
+    }
+
+    // R32. Antes que el día en la puerta: la de ayer ya terminó.
+    private void exigirLaFuncionSinTerminar(LocalDateTime ahora, String indicacion) {
+        if (funcion.yaTermino(ahora)) {
+            throw new DatoInvalido("La función ya terminó: " + indicacion);
+        }
     }
 
     // Se entra solo el día de la función: la de mañana o la de ayer no deja pasar.
@@ -212,8 +225,12 @@ public class Reserva {
     }
 
     // R17 sin scheduler: la vencida figura RESERVADA hasta que alguien abre el mapa; para afuera ya venció.
+    // R32 igual: la paga sin usar sigue PAGADA y, terminada la función, para afuera está NO_USADA.
     public EstadoReserva estadoA(LocalDateTime ahora) {
-        return estaVencida(ahora) ? estado.expirar() : estado;
+        if (estaVencida(ahora)) {
+            return estado.expirar();
+        }
+        return ingresadaEn == null && funcion.yaTermino(ahora) ? estado.terminarLaFuncion() : estado;
     }
 
     // Hasta cuándo se puede pagar; null si ya no espera el pago.

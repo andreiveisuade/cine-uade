@@ -11,6 +11,7 @@ enum EstadoReserva <<State>> {
   ~ cancelar()
   ~ expirar()
   ~ ingresar()
+  ~ terminarLaFuncion()
   + ocupaButacas()
 }
 class RESERVADA <<ConcreteState>> {
@@ -18,12 +19,13 @@ class RESERVADA <<ConcreteState>> {
 }
 class PAGADA <<ConcreteState>> {
   ingresar() : PAGADA
+  terminarLaFuncion() : NO_USADA
 }
-class "CANCELADA / EXPIRADA" as Cerradas <<ConcreteState>>
+class "CANCELADA / EXPIRADA / NO_USADA" as Cerradas <<ConcreteState>>
 Reserva o--> EstadoReserva
 EstadoReserva <|-- RESERVADA
 EstadoReserva <|-- PAGADA
 EstadoReserva <|-- Cerradas
 note bottom of Reserva : estado = estado.pagar()\nlo que el estado no permite, rechaza
-note bottom of Cerradas : no sobrescriben nada:\nrechazan todo
+note bottom of Cerradas : no sobrescriben nada:\nrechazan todo; NO_USADA es solo\nefectiva (R32), como la vencida
 @enduml

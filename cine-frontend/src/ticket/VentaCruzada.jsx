@@ -4,25 +4,29 @@ import "@mantine/carousel/styles.css";
 import Autoplay from "embla-carousel-autoplay";
 import { Group, Stack, Title } from "@mantine/core";
 import { useReducedMotion } from "motion/react";
+import { Link } from "react-router";
 import { TarjetaCombo } from "@/promos/tarjetas/TarjetaCombo.jsx";
 import { TarjetaProducto } from "@/promos/tarjetas/TarjetaProducto.jsx";
-import { TarjetaPromo } from "@/promos/tarjetas/TarjetaPromo.jsx";
 import { LlamadoAlCandy } from "./LlamadoAlCandy.jsx";
 
-// Lo que se puede sumar a la función, en el orden en que conviene: combos, sueltos con foto, promos de entradas.
-function slides(productos, promos) {
+// Solo candy, combos primero y después los sueltos con foto: las promos son de entradas y viven en #/promos.
+// Cada tarjeta lleva a sumar ese producto; por query y no por state, para que sobreviva la vuelta de Google.
+function slides(productos, codigo) {
+  const tarjeta = (p, nodo) => ({
+    clave: p.id,
+    nodo: <Link to={`/compra/${codigo}?sumar=${p.id}`} aria-label={`Sumar ${p.nombre}`} className="cine-tarjeta-link">{nodo}</Link>,
+  });
   return [
-    ...productos.filter((p) => p.esCombo).map((c) => ({ clave: `combo-${c.id}`, nodo: <TarjetaCombo combo={c} /> })),
-    ...productos.filter((p) => !p.esCombo && p.imagenUrl).map((p) => ({ clave: `producto-${p.id}`, nodo: <TarjetaProducto producto={p} ratio={16 / 9} /> })),
-    ...promos.map((p) => ({ clave: `promo-${p.nombre}`, nodo: <TarjetaPromo promo={p} conCondiciones={false} /> })),
+    ...productos.filter((p) => p.esCombo).map((c) => tarjeta(c, <TarjetaCombo combo={c} />)),
+    ...productos.filter((p) => !p.esCombo && p.imagenUrl).map((p) => tarjeta(p, <TarjetaProducto producto={p} ratio={16 / 9} />)),
   ];
 }
 
-export function VentaCruzada({ reserva, productos, promos }) {
+export function VentaCruzada({ reserva, productos }) {
   const quieto = useReducedMotion();
   // Una sola instancia por montaje: el carrusel la arranca y la frena él mismo.
   const [autoplay] = useState(() => Autoplay({ delay: 4500, stopOnInteraction: false, stopOnMouseEnter: true, stopOnFocusIn: true }));
-  const items = slides(productos, promos);
+  const items = slides(productos, reserva.codigo);
   if (!items.length) return null;
   return (
     <Stack component="section" gap="md" aria-label="Para sumar a la función">

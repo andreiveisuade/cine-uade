@@ -7,6 +7,8 @@ import ar.uade.cine.swing.pantallas.Operador;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.io.IOException;
 import java.util.List;
@@ -52,16 +54,22 @@ class PantallaReservasTest {
         assertEquals("Efectivo 10:00 · entró 20:10", encargado.celda(1, "Pago"));
     }
 
-    @Test
-    void unaVencidaNoCuentaComoActiva() {
+    // R32: NO_USADA es la paga que nadie usó con la función terminada; llega así del backend y se muestra tal cual.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            vencida sin pagar, EXPIRADA, Vencida
+            paga sin usar,     NO_USADA, Vencida sin usar
+            """)
+    void unaVencidaNoCuentaComoActiva(String caso, String estado, String etiqueta) {
         servidor.responder("GET /api/reservas", 200, "[" + reserva(5, "RESERVADA", true, "null") + ","
-                + reserva(8, "EXPIRADA", false, "null") + "]");
+                + reserva(8, estado, false, "null") + "]");
         encargado.cerrar();
 
         encargado = Operador.en(() -> new PantallaReservas(new ApiVentas(new ClienteHttp(servidor.url())),
                 navegacion));
 
         encargado.esperarTexto("2 reservas · 1 activa · 1 pendiente de cobro");
+        assertEquals(etiqueta, encargado.celda(1, "Estado"));
     }
 
     @Test

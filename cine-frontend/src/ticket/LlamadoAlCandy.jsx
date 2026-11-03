@@ -1,4 +1,5 @@
 import { Button, Group, Text } from "@mantine/core";
+import { IconCandy } from "@tabler/icons-react";
 import { Link } from "react-router";
 
 // Sin pagar, el candy se suma a la compra y se paga con la entrada; ya paga, se suma y se paga aparte (R30).
@@ -7,7 +8,7 @@ export function LlamadoAlCandy({ reserva }) {
     return (
       <Group gap="sm">
         <Text fw={650}>Sumalo ahora y retiralo con el QR de tu entrada.</Text>
-        <Button size="compact-md" variant="light" component={Link} to={`/compra/${reserva.codigo}`}>Sumar candy</Button>
+        <Button color="ambar" leftSection={<IconCandy size={18} />} component={Link} to={`/compra/${reserva.codigo}`}>Sumar candy</Button>
       </Group>
     );
   }

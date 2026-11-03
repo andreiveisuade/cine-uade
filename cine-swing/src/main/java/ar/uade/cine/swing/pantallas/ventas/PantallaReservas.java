@@ -35,7 +35,7 @@ import static ar.uade.cine.swing.comun.Formato.precio;
 public final class PantallaReservas extends PantallaListado<Reserva> {
 
     // En el orden en que le importan a quien atiende: primero lo que hay que cobrar hoy.
-    private static final List<String> ESTADOS = List.of("RESERVADA", "PAGADA", "EXPIRADA", "CANCELADA");
+    private static final List<String> ESTADOS = List.of("RESERVADA", "PAGADA", "NO_USADA", "EXPIRADA", "CANCELADA");
 
     private final ApiVentas apiVentas;
     private final Navegacion navegacion;
@@ -99,8 +99,9 @@ public final class PantallaReservas extends PantallaListado<Reserva> {
     @Override
     protected String sinFiltrar(List<Reserva> todas) {
         List<Reserva> aCobrar = todas.stream().filter(Reserva::cobrable).toList();
-        // Activa es la que todavía cuenta para la sala: ni cancelada ni vencida.
-        long activas = todas.stream().filter(r -> !List.of("CANCELADA", "EXPIRADA").contains(r.estado())).count();
+        // Activa es la que todavía cuenta para la sala: ni cancelada ni vencida, tampoco la paga sin usar (R32).
+        long activas = todas.stream().filter(r -> !List.of("CANCELADA", "EXPIRADA", "NO_USADA").contains(r.estado()))
+                .count();
         // R30: el candy pedido en la web se cobra junto con la reserva.
         double pendiente = aCobrar.stream().mapToDouble(r -> r.total() + r.totalCandy()).sum();
         return cantidad(todas.size(), "reserva", "reservas") + " · " + cantidad((int) activas, "activa", "activas")

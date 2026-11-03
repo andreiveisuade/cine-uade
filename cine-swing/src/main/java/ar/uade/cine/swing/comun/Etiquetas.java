@@ -31,6 +31,7 @@ public final class Etiquetas {
             Map.entry("PAGADA", "Pagada"),
             Map.entry("CANCELADA", "Cancelada"),
             Map.entry("EXPIRADA", "Vencida"),
+            Map.entry("NO_USADA", "Vencida sin usar"),
             Map.entry("GENERAL", "General"),
             Map.entry("MENOR", "Menor"),
             Map.entry("JUBILADO", "Jubilado"),

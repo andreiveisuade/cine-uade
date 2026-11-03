@@ -104,6 +104,22 @@ class CompraCandyControllerTest extends PruebaDeApi {
         assertEquals(400, post("/api/candy/retiros", "{}").estado());
     }
 
+    // R32: la función de mañana termina 136 minutos después; la entrada vence, el candy cobrado se retira igual.
+    @Test
+    void terminadaLaFuncionLaEntradaVencePeroElCandySeRetira() {
+        cargarCarta();
+        int reserva = reservaPagadaDe(clientes.ingresarConGoogle("Andrei", "andrei@uade.edu.ar").getId());
+        post("/api/candy/compras", "{\"reservaId\":" + reserva
+                + ",\"cantidades\":{\"" + pochoclos + "\":1},\"medio\":\"EFECTIVO\"}");
+        reloj.mover(reloj.ahora().plusDays(1).plusMinutes(136));
+
+        Respuesta retiro = post("/api/candy/retiros",
+                "{\"codigo\":\"" + consultas.obtener(reserva).getCodigo() + "\"}");
+
+        assertEquals(200, retiro.estado());
+        assertEquals("NO_USADA", get("/api/reservas/" + reserva).json().get("estado").asText());
+    }
+
     // Sin clienteId la compra queda a nombre del dueño de la reserva.
     @Test
     void unaVentaParaUnaReservaSinClienteHeredaElDeLaReserva() {

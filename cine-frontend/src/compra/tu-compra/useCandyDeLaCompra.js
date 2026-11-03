@@ -13,10 +13,12 @@ function cantidadesDe(reserva) {
 const iguales = (a, b) => Object.keys({ ...a, ...b }).every((id) => (a[id] ?? 0) === (b[id] ?? 0));
 
 // R30: cada cambio manda el pedido entero, de a uno por vez: dos PUT a la vez chocan por @Version (409). Los clics
-// seguidos se juntan en uno, y lo que el backend rechaza vuelve a lo último guardado.
-export function useCandyDeLaCompra(reserva, alGuardar, alFallar) {
+// seguidos se juntan en uno, y lo que el backend rechaza vuelve a lo último guardado. El producto tocado en el ticket
+// arranca con 1 si no estaba: es un cambio más, y viaja en el mismo PUT.
+export function useCandyDeLaCompra(reserva, alGuardar, alFallar, productoTocado) {
   const [guardadas, setGuardadas] = useState(() => cantidadesDe(reserva));
-  const [cantidades, setCantidades] = useState(guardadas);
+  const [cantidades, setCantidades] = useState(() =>
+    (productoTocado && !guardadas[productoTocado] ? { ...guardadas, [productoTocado]: 1 } : guardadas));
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState(null);
   const pendiente = !iguales(cantidades, guardadas);
