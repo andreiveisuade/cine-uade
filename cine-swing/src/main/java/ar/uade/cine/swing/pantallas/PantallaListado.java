@@ -7,7 +7,8 @@ import java.util.List;
 import java.util.Map;
 
 // Listado con filtros y su conteo. Patrón Template Method (GoF): cada pantalla dice cómo pedir y qué contar, no cuándo.
-// Al entrar se piden todas (para el "mostrando 3 de 40") y después lo filtrado en cada cambio de filtro.
+// Al entrar se piden todas (para el "mostrando 3 de 40") y después lo filtrado en cada cambio de filtro; sin
+// ningún filtro puesto, lo filtrado son todas y no se pide dos veces.
 public abstract class PantallaListado<T> extends Pantalla {
 
     protected final BarraFiltros filtros = new BarraFiltros();
@@ -45,16 +46,26 @@ public abstract class PantallaListado<T> extends Pantalla {
         cargar(() -> obtener(null), lista -> {
             todas = lista;
             alRecargar(lista);
-            buscar();
+            if (sinFiltros(filtros.valores())) {
+                mostrar(lista);
+            } else {
+                buscar();
+            }
         });
     }
 
     protected final void buscar() {
         Map<String, String> elegidos = filtros.valores();
-        cargar(() -> obtener(elegidos), visibles -> {
-            tabla().mostrar(visibles);
-            filtros.mostrarConteo(conteo(todas, visibles));
-            alMostrar(visibles);
-        });
+        cargar(() -> obtener(elegidos), this::mostrar);
+    }
+
+    private void mostrar(List<T> visibles) {
+        tabla().mostrar(visibles);
+        filtros.mostrarConteo(conteo(todas, visibles));
+        alMostrar(visibles);
+    }
+
+    private static boolean sinFiltros(Map<String, String> elegidos) {
+        return elegidos.values().stream().allMatch(valor -> valor == null || valor.isBlank());
     }
 }

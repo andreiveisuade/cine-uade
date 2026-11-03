@@ -21,6 +21,8 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridLayout;
 import java.awt.Insets;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 
 // Piezas de pantalla que se repiten, para que cada pantalla arme lo suyo y todas se vean igual.
 // Los espacios y la letra salen de Escala; los colores, de Colores.
@@ -108,9 +110,22 @@ public final class Componentes {
      * quedan pegadas a la tabla y a la vista del conteo: se elige y se actúa en el mismo lugar. Sin filtros, null.
      */
     public static JPanel listado(JComponent filtros, JComponent resumen, JComponent acciones, JComponent tabla) {
-        JPanel barra = new JPanel(new BorderLayout(Escala.BLOQUE, 0));
+        JPanel barra = new JPanel(new BorderLayout(Escala.BLOQUE, Escala.JUNTO));
         barra.add(resumen, BorderLayout.WEST);
         barra.add(acciones, BorderLayout.EAST);
+        // BorderLayout encima WEST y EAST cuando no entran: si no hay ancho, los botones bajan debajo del conteo.
+        barra.addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                boolean entran = barra.getWidth() >= resumen.getPreferredSize().width + Escala.BLOQUE
+                        + acciones.getPreferredSize().width;
+                String dondeResumen = entran ? BorderLayout.WEST : BorderLayout.NORTH;
+                if (dondeResumen.equals(((BorderLayout) barra.getLayout()).getConstraints(resumen))) return;
+                barra.add(resumen, dondeResumen);
+                barra.add(acciones, entran ? BorderLayout.EAST : BorderLayout.SOUTH);
+                barra.revalidate();
+            }
+        });
         JPanel arriba = new JPanel(new BorderLayout(0, Escala.CERCA));
         if (filtros != null) arriba.add(filtros, BorderLayout.NORTH);
         arriba.add(barra, BorderLayout.SOUTH);
