@@ -9,6 +9,7 @@ quedan solo en el backend.
 Requiere JDK 21 y el sistema levantado ([`cine-docker`](../cine-docker/README.md)).
 
 ```bash
+./setup.sh                                      # arma el jar si cambió algo y lo abre (--tests, --solo-armar)
 ./mvnw compile exec:java                        # sin empaquetar (Windows: .\mvnw.cmd)
 ./mvnw package && java -jar target/cine-swing.jar  # jar con las dependencias adentro
 ./mvnw clean test                               # contra un servidor HTTP falso, sin backend ni pantalla
