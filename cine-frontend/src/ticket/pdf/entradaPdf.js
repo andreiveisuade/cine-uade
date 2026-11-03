@@ -1,6 +1,6 @@
 import { etiqueta } from "@/api/etiquetas.js";
 import { diaDelMes, hora, precio } from "@/compartido/formato.js";
-import { avisoDe, CODIGO_POR_ESTADO, codigoLegible, conAcreditacion, renglonesDelCandy, totalDeLaEntrada } from "@/ticket/estadoReserva.js";
+import { avisoDe, CODIGO_POR_ESTADO, codigoLegible, conAcreditacion, renglonesDelCandy, totalDeLaEntrada } from "@/compartido/estadoReserva.js";
 
 // Los tonos de tema.js y tema.css sobre papel blanco: se imprime sin gastar tinta en fondos.
 const COLOR = {

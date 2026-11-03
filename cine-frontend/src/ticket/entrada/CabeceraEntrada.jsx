@@ -1,7 +1,7 @@
 import { Badge, Box, Group, Stack, Text, Title } from "@mantine/core";
 import { etiqueta } from "@/api/etiquetas.js";
 import { Poster } from "@/compartido/ui/Poster.jsx";
-import { avisoDe, COLOR_ESTADO } from "@/ticket/estadoReserva.js";
+import { avisoDe, COLOR_ESTADO } from "@/compartido/estadoReserva.js";
 
 export function CabeceraEntrada({ reserva }) {
   return (

@@ -3,7 +3,7 @@ import * as api from "@/api/api-http.js";
 import { ErrorCaja } from "@/compartido/estado/ErrorCaja.jsx";
 import { fechaHora, precio } from "@/compartido/formato.js";
 import { useCargar } from "@/compartido/hooks/useCargar.js";
-import { estadoDelCandy } from "@/ticket/estadoReserva.js";
+import { estadoDelCandy } from "@/compartido/estadoReserva.js";
 
 // CU-16: lo cobrado del candy, con o sin entrada, y si ya se retiró.
 export function ComprasDeCandy() {

@@ -1,6 +1,6 @@
 import { useEffect, useEffectEvent, useState } from "react";
 import * as api from "@/api/api-http.js";
-import { pedidoPendiente } from "@/ticket/estadoReserva.js";
+import { pedidoPendiente } from "@/compartido/estadoReserva.js";
 
 const ESPERA_MS = 400;
 const MAXIMO = 20;

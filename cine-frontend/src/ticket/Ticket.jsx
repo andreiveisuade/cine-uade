@@ -9,7 +9,7 @@ import { AccionesTicket } from "./AccionesTicket.jsx";
 import { ComprobanteTexto } from "./ComprobanteTexto.jsx";
 import { EnLaPuerta } from "./EnLaPuerta.jsx";
 import { EntradaTicket } from "@/ticket/entrada/EntradaTicket.jsx";
-import { vigente } from "./estadoReserva.js";
+import { vigente } from "@/compartido/estadoReserva.js";
 import { TicketEsqueleto } from "./TicketEsqueleto.jsx";
 import { useEsperarPago } from "./pago/useEsperarPago.js";
 import { useFestejarPago } from "./pago/useFestejarPago.js";

@@ -2,7 +2,7 @@ import { Anchor, Box, Button, Group, Text } from "@mantine/core";
 import { IconQrcode } from "@tabler/icons-react";
 import { Link, useLocation } from "react-router";
 import { useSesion } from "@/cuenta/SesionDelCliente.jsx";
-import { entradaValida } from "./estadoReserva.js";
+import { entradaValida } from "@/compartido/estadoReserva.js";
 import { DescargarEntrada } from "./pdf/DescargarEntrada.jsx";
 
 // Lo que se puede hacer con el ticket según su estado y si hay sesión.

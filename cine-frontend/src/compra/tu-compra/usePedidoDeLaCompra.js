@@ -1,7 +1,7 @@
 import { useState } from "react";
 import * as api from "@/api/api-http.js";
 import { useCargar } from "@/compartido/hooks/useCargar.js";
-import { pedidoPendiente } from "@/ticket/estadoReserva.js";
+import { pedidoPendiente } from "@/compartido/estadoReserva.js";
 import { useCandyDeLaCompra } from "./useCandyDeLaCompra.js";
 
 // Nombre y precio de cada producto del pedido: de la carta, o del pedido guardado si ya no está a la venta.

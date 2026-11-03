@@ -3,8 +3,8 @@ import { IconTrash } from "@tabler/icons-react";
 import { AnimatePresence, m } from "motion/react";
 import { ErrorCaja } from "@/compartido/estado/ErrorCaja.jsx";
 import { cantidad, precio } from "@/compartido/formato.js";
-import { comprasCobradas, estadoDelCandy } from "@/ticket/estadoReserva.js";
-import { Entrada } from "@/ticket/entrada/Entrada.jsx";
+import { comprasCobradas, estadoDelCandy } from "@/compartido/estadoReserva.js";
+import { Entrada } from "@/compartido/ui/Entrada.jsx";
 import { Contador } from "./Contador.jsx";
 import clases from "./Candy.module.css";
 

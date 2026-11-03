@@ -1,6 +1,6 @@
 import { etiqueta } from "@/api/etiquetas.js";
 import { fechaHora, precioExacto } from "@/compartido/formato.js";
-import { conAcreditacion } from "@/ticket/estadoReserva.js";
+import { conAcreditacion } from "@/compartido/estadoReserva.js";
 
 const LINEA = "=".repeat(44);
 

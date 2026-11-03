@@ -1,12 +1,12 @@
 import { Box, Group, SimpleGrid, Stack, Text } from "@mantine/core";
 import { etiqueta } from "@/api/etiquetas.js";
 import { dia, hora, precio } from "@/compartido/formato.js";
-import { renglonesDelCandy, totalDeLaEntrada, vigente } from "@/ticket/estadoReserva.js";
+import { renglonesDelCandy, totalDeLaEntrada, vigente } from "@/compartido/estadoReserva.js";
 import { ButacaEntrada } from "./ButacaEntrada.jsx";
 import { CabeceraEntrada } from "./CabeceraEntrada.jsx";
 import { CandyEntrada } from "./CandyEntrada.jsx";
 import { DatoEntrada } from "./DatoEntrada.jsx";
-import { Entrada } from "./Entrada.jsx";
+import { Entrada } from "@/compartido/ui/Entrada.jsx";
 import { TalonEntrada } from "./TalonEntrada.jsx";
 
 // El ticket es una entrada de verdad: cuerpo con la función y las butacas, talón con el código para la puerta.

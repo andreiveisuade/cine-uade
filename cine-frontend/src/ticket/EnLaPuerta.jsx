@@ -1,6 +1,6 @@
 import { Box, Modal, Stack, Text } from "@mantine/core";
 import { QRCodeSVG } from "qrcode.react";
-import { codigoLegible } from "./estadoReserva.js";
+import { codigoLegible } from "@/compartido/estadoReserva.js";
 
 // Para la puerta: el código y el QR a pantalla llena, con brillo máximo de contraste.
 export function EnLaPuerta({ reserva, abierto, alCerrar }) {

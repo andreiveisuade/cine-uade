@@ -2,7 +2,7 @@ import { Alert, Paper, Table, Text, Title } from "@mantine/core";
 import { etiqueta } from "@/api/etiquetas.js";
 import { precio } from "@/compartido/formato.js";
 import { DatosFuncion } from "@/compra/DatosFuncion.jsx";
-import { conAcreditacion } from "@/ticket/estadoReserva.js";
+import { conAcreditacion } from "@/compartido/estadoReserva.js";
 
 // Lo elegido en el mapa, ya reservado, a modo de confirmación: cada butaca con su tarifa y el precio de las entradas.
 export function EntradasDeLaCompra({ reserva }) {

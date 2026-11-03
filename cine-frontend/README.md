@@ -30,11 +30,11 @@ src/
     layout/       Barra, Pie, Marca, BotonTema
   api/            api-http.js (fachada: único acceso al backend), un módulo por subdominio y etiquetas del contrato
     http/         clienteHttp (fetch, JSON y errores), ErrorApi, mensajeDeError, rutas
-  compartido/     lo que usa más de una pantalla; formato (precio, hora, día) e iconos
+  compartido/     lo que usa más de una pantalla; formato (precio, hora, día), estadoReserva e iconos
     hooks/        useCargar, useEnviar, useTitulo
     layout/       Contenedor, Banda, Grilla, Destacados, Seccion, Encabezado, Volver
     estado/       Cargando, EsperaOError, ErrorCaja, Vacio, Avisos
-    ui/           Poster, Chips, MontoAnimado, LogoMercadoPago
+    ui/           Poster, Chips, MontoAnimado, LogoMercadoPago, Entrada (la forma con talón)
     formularios/  faltantes
   cartelera/      home con portada, cartelera, película y trailer
   compra/         mapa de butacas y función; selección, bloqueo y tarifas

@@ -2,9 +2,9 @@ import { Badge, Box, Stack, Text } from "@mantine/core";
 import { m } from "motion/react";
 import { QRCodeSVG } from "qrcode.react";
 import { fechaHora } from "@/compartido/formato.js";
-import { CODIGO_POR_ESTADO, codigoLegible, entradaValida } from "@/ticket/estadoReserva.js";
+import { CODIGO_POR_ESTADO, codigoLegible, entradaValida } from "@/compartido/estadoReserva.js";
 import { CopiarCodigo } from "./CopiarCodigo.jsx";
-import clases from "./Entrada.module.css";
+import clases from "@/compartido/ui/Entrada.module.css";
 
 // El sello cae solo si el pago se vio llegar en esta pantalla; un ticket que ya abrió pago lo muestra quieto.
 const SELLO_CAYENDO = { opacity: 0, scale: 2.2, rotate: -24 };

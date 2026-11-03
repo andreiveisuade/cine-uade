@@ -10,7 +10,7 @@ import { useCargar } from "@/compartido/hooks/useCargar.js";
 import { useTitulo } from "@/compartido/hooks/useTitulo.js";
 import { Encabezado } from "@/compartido/layout/Encabezado.jsx";
 import { useSesion } from "@/cuenta/SesionDelCliente.jsx";
-import { avisoDe } from "@/ticket/estadoReserva.js";
+import { avisoDe } from "@/compartido/estadoReserva.js";
 import { AlgoDulce } from "./AlgoDulce.jsx";
 import { BarraDelPedido } from "./BarraDelPedido.jsx";
 import { EntradasDeLaCompra } from "./EntradasDeLaCompra.jsx";
