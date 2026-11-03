@@ -186,6 +186,7 @@ package "model.funciones" {
     + Funcion(pelicula : Pelicula, sala : Sala, inicio : LocalDateTime, formato : FormatoDeFuncion, programacionId : Integer)
     + {static} yaPaso(inicio : LocalDateTime, ahora : LocalDateTime) : boolean
     + yaEmpezo(ahora : LocalDateTime) : boolean
+    + yaTermino(ahora : LocalDateTime) : boolean
     + reprogramar(pelicula : Pelicula, sala : Sala, inicio : LocalDateTime, formato : FormatoDeFuncion) : void
     + exigirProgramableA(ahora : LocalDateTime) : void
     + getFin(duracionMinutos : int) : LocalDateTime
@@ -274,6 +275,7 @@ package "model.ventas" {
     + cancelar(ahora : LocalDateTime) : void
     + expirar() : void
     + registrarIngreso(cuando : LocalDateTime) : void
+    + exigirQueAdmitaCandy(ahora : LocalDateTime) : void
     + estaVigente() : boolean
     + estaVencida(ahora : LocalDateTime) : boolean
     + estadoA(ahora : LocalDateTime) : EstadoReserva
@@ -295,12 +297,14 @@ package "model.ventas" {
     PAGADA
     CANCELADA
     EXPIRADA
+    NO_USADA
     ~ {static} NO_SE_PUEDE_COBRAR : String
     - etiqueta : String
     ~ pagar() : EstadoReserva
     ~ cancelar() : EstadoReserva
     ~ expirar() : EstadoReserva
     ~ ingresar() : EstadoReserva
+    ~ terminarLaFuncion() : EstadoReserva
     + esperaPago() : boolean
     + ocupaButacas() : boolean
     + estaPagada() : boolean

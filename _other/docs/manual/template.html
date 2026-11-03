@@ -500,7 +500,7 @@ body.lightbox-locked { overflow: hidden; }
         <li><strong>Encargado (Swing):</strong> trae la cartelera de TMDB, programa funciones, cobra, vende candy, cierra la caja.</li>
         <li><strong>Acomodador (Swing o Android):</strong> valida entradas en la puerta; en el celular, escaneando el QR.</li>
         <li><strong>El sistema:</strong> no vende dos veces una butaca; calcula precios, tarifas y promociones.</li>
-        <li>Java 21 + Spring Boot + MySQL; React; Swing; Android; Docker Compose. 29 casos de uso, reglas R1 a R28 y R30 (R22, R24, R25 y R27 cayeron con el ingreso con Google).</li>
+        <li>Java 21 + Spring Boot + MySQL; React; Swing; Android; Docker Compose. 29 casos de uso, reglas R1 a R28, R30 y R32 (R22, R24, R25 y R27 cayeron con el ingreso con Google).</li>
       </ul>
     </section>
 
@@ -556,11 +556,11 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td>CU-13</td><td>Admin</td><td>Gestionar la carta del candy</td><td>—</td></tr>
             <tr><td>CU-14</td><td>Admin</td><td>Armar un combo</td><td>R14</td></tr>
             <tr><td>CU-15</td><td>Cliente</td><td>Comprar en el candy y recibir el ticket</td><td>R11</td></tr>
-            <tr><td>CU-15b</td><td>Cliente</td><td>Sumar candy a una reserva pagada, en el mostrador o en la web, y retirarlo con el QR</td><td>R11, R30</td></tr>
+            <tr><td>CU-15b</td><td>Cliente</td><td>Sumar candy a una reserva pagada, en el mostrador o en la web, y retirarlo con el QR</td><td>R11, R30, R32</td></tr>
             <tr><td>CU-16</td><td>Cliente</td><td>Ver sus compras del candy (<code>GET /candy/compras/mias</code>)</td><td>R21</td></tr>
             <tr><td>CU-17</td><td>Admin</td><td>Alta, baja y vigencia de promociones</td><td>R15, R16</td></tr>
-            <tr><td>CU-18</td><td>Acomodador</td><td>Validar una entrada con el código</td><td>R18</td></tr>
-            <tr><td>CU-18b</td><td>Acomodador</td><td>Validar una entrada desde el celular: escanea el QR o tipea el código (extiende CU-18)</td><td>R18</td></tr>
+            <tr><td>CU-18</td><td>Acomodador</td><td>Validar una entrada con el código</td><td>R18, R32</td></tr>
+            <tr><td>CU-18b</td><td>Acomodador</td><td>Validar una entrada desde el celular: escanea el QR o tipea el código (extiende CU-18)</td><td>R18, R32</td></tr>
             <tr><td>CU-19</td><td>Admin</td><td>Emitir el <a href="#informes">borderó</a> de una función y la declaración jurada del período (INCAA)</td><td>—</td></tr>
             <tr><td>CU-20</td><td>Admin</td><td>Recaudación de una función, boletería y candy</td><td>—</td></tr>
           </tbody>
@@ -582,7 +582,7 @@ body.lightbox-locked { overflow: hidden; }
         <li><strong>CU-05b:</strong> con sesión, <code>PUT /api/cuenta</code> cambia el nombre (mismas reglas que el alta; el email es el de Google y no cambia). <code>DELETE /api/cuenta</code>, con una confirmación, cierra la sesión: reservas, pagos y entradas quedan, y las RESERVADAS sin pagar vencen solas. Entrar de nuevo con Google la reabre (R23, R26).</li>
         <li><strong>CU-07b:</strong> el candy se arma como un carrito: cada tarjeta lleva «Agregar» y, con algo, el contador «− N +» en el mismo lugar (tope 20 por producto, el «+» dice por qué no suma); «Tu pedido», con la forma de la entrada, lista las entradas y el candy en renglones con cantidad, subtotal, sacar y vaciar, y en su talón el pago. El total cambia en el acto y «Pagar» espera a que el backend guarde; si rechaza, vuelve a lo guardado y lo dice. Si MP rechaza el pago, la vuelta llega al ticket con el motivo y «Terminar la compra» lleva de nuevo a Tu compra para probar otro medio; las butacas siguen guardadas hasta <code>venceEn</code>. Cambiar el candy después de abrir un pago invalida ese checkout (409 al cobrar), por eso cada «Pagar» abre uno nuevo.</li>
         <li><strong>CU-08:</strong> una reserva vencida no se cancela (la API ya la muestra <code>EXPIRADA</code>, aunque en la base siga <code>RESERVADA</code>): 409 «La reserva N venció: sus butacas volvieron a estar disponibles». Las butacas ya están libres (R17).</li>
-        <li><strong>CU-09:</strong> el QR, «Descargar entrada» y «Mostrar en la puerta» aparecen solo con la reserva pagada y sin usar en la puerta: sin pagar, el ticket dice hasta qué hora se paga (<code>venceEn</code>) y en la puerta no serviría (R18). Si el PDF no se puede armar: «No pudimos armar el PDF. Probá de nuevo». El candy va en un bloque «Candy a retirar» dentro de la entrada, cada compra con su estado (sin pagar, a retirar, retirado), y se retira con el mismo QR; el PDF lleva solo lo cobrado.</li>
+        <li><strong>CU-09:</strong> el QR, «Descargar entrada» y «Mostrar en la puerta» aparecen solo con la reserva pagada y sin usar en la puerta: sin pagar, el ticket dice hasta qué hora se paga (<code>venceEn</code>) y en la puerta no serviría (R18). Si el PDF no se puede armar: «No pudimos armar el PDF. Probá de nuevo». El candy va en un bloque «Candy a retirar» dentro de la entrada, cada compra con su estado (sin pagar, a retirar, retirado), y se retira con el mismo QR; el PDF lleva solo lo cobrado. Con la función terminada y la entrada sin usar (<code>NO_USADA</code>, R32) el ticket sale atenuado, avisa «La función ya terminó: esta entrada venció sin usarse» y no ofrece «Mostrar en la puerta», PDF ni candy nuevo. El candy no vence: si queda candy cobrado sin retirar (con la entrada vencida o ya usada), el QR sigue, rotulado «Solo para retirar el candy», y el bloque avisa que se retira con el mismo QR aunque la entrada ya no sirva. Las acciones van en una columna centrada: «Mostrar en la puerta», «Descargar entrada», «Ver el comprobante en texto» (se despliega debajo) y «Volver a la cartelera»; las que no aplican no aparecen.</li>
         <li><strong>CU-10:</strong> contra Producción dormida, el ingreso avisa «Despertando el servidor de producción: puede tardar un minuto» y espera hasta 120 s (contra el resto, 30 s). Con Otro…, una URL mal escrita no deja ingresar.</li>
         <li><strong>CU-10b:</strong> sin token de Aiven, la base sale «Desconocido» y ofrece abrir la consola de Aiven; con el token rechazado, «Aiven rechazó el token: revisá que esté vigente y tenga acceso al proyecto». Sin token, Despertar solo espera a Render.</li>
       </ul>
@@ -1071,7 +1071,7 @@ docker compose up -d --build
         <table>
           <thead><tr><th>Status</th><th>Rechazo</th><th>Cuándo</th></tr></thead>
           <tbody>
-            <tr><td>400</td><td><code>DatoInvalido</code></td><td>El pedido está mal y repetirlo no cambia nada: topes, formato, función empezada (R19), sin código de autorización (R11), «no es el día» en la puerta (R18), email de empleado al comprar</td></tr>
+            <tr><td>400</td><td><code>DatoInvalido</code></td><td>El pedido está mal y repetirlo no cambia nada: topes, formato, función empezada (R19), sin código de autorización (R11), «no es el día» en la puerta (R18), la función terminada en la puerta y al venderle candy a la reserva (R32), email de empleado al comprar</td></tr>
             <tr><td>404</td><td><code>RecursoNoEncontrado</code></td><td>No existe, o es de otro cliente (R21: el mismo texto)</td></tr>
             <tr><td>409</td><td><code>ConflictoDeNegocio</code>, <code>ButacaOcupada</code></td><td>Pedido válido que choca con el estado: cobrar una reserva pagada, cancelada o vencida (R5, R17); cancelar una cobrada (R13) o vencida (R17); entrar sin pagar o por segunda vez (R18); candy para una reserva sin pagar; borrar o editar algo en uso (R12); nombre repetido; butaca tomada (R4); <code>@Version</code></td></tr>
             <tr><td>429</td><td><code>DemasiadosIntentos</code></td><td>Cinco claves mal seguidas por email o IP (solo Basic)</td></tr>
@@ -1234,7 +1234,7 @@ docker compose up -d --build
       <h3>Validación de formularios: qué mira el cliente y qué el backend</h3>
       <ul>
         <li><strong>Swing:</strong> obligatorios (marcados <code>*</code>) y formato de lo tipeado (número, <code>8,10,12</code>, <code>A1</code>, <code>HH:mm</code>, la URL de Otro… en el ingreso). Si el formato inválido viajara como <code>null</code>, <code>abc</code> en el precio respondería «El precio es obligatorio».</li>
-        <li><strong>Backend:</strong> las reglas R1 a R28 y R30. Un precio cero o negativo pasa a propósito: está bien escrito y lo decide el modelo; duplicarlo daría dos lugares que se contradicen.</li>
+        <li><strong>Backend:</strong> las reglas R1 a R28, R30 y R32. Un precio cero o negativo pasa a propósito: está bien escrito y lo decide el modelo; duplicarlo daría dos lugares que se contradicen.</li>
         <li>Todos los formularios usan <code>comun/Validacion</code>; el formato lo lee <code>Lecturas</code>, sin Swing, testeable sola.</li>
       </ul>
 
@@ -1677,6 +1677,7 @@ puntaje   = (v/(v+50)) × nota + (50/(v+50)) × promedio del catálogo</code></p
       <ul>
         <li><code>RESERVADA</code> vence a los 30 min. El <code>UNIQUE</code> no sabe de tiempo: la primera consulta que la encuentra la pasa a <code>EXPIRADA</code> y libera las butacas (<code>funcion_id = NULL</code>). Sin proceso de fondo (<a href="#mapa-diseno">CQS consciente</a>).</li>
         <li>Hacia afuera ya venció: <code>Reserva.estadoA(ahora)</code> la da <code>EXPIRADA</code> (y <code>cobrable</code>/<code>cancelable</code> en <code>false</code>) aunque la base siga en <code>RESERVADA</code>, y la vista trae <code>venceEn</code> para que el ticket diga hasta qué hora se paga. Leer no escribe: <code>ConsultasReservas</code> es de solo lectura.</li>
+        <li><strong>La paga que nadie usó</strong> (R32) vence igual, sin escribir: terminada la función (inicio + duración), <code>estadoA</code> la da <code>NO_USADA</code> aunque la base siga <code>PAGADA</code>. Sigue cobrada para la caja y los informes. El candy cobrado no vence: se retira con el mismo QR. La entrada no se devuelve.</li>
       </ul>
 
       <p>El ticket se escribe después del commit (<a href="#observer">Observer</a>).</p>
@@ -1823,7 +1824,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
       <ul>
         <li><strong>Un código por reserva:</strong> el grupo entra junto.</li>
         <li><strong>No es el id:</strong> aleatorio, 8 caracteres, sin <code>O I 0 1</code>. <code>CodigoDeAcceso</code> lo genera y lo normaliza (sin ningún espacio, sin distinguir mayúsculas), porque se tipea o se dicta cuando el escáner no lee; los clientes lo mandan tal cual. No valida la forma a propósito: uno mal tipeado da 404 y no le cuenta a nadie cómo es uno válido.</li>
-        <li><strong>Solo el día de la función</strong> (<a href="#reglas">R18</a>): otro día es 400; sin pagar o ya usada, 409.</li>
+        <li><strong>Solo el día de la función y hasta que termina</strong> (<a href="#reglas">R18, R32</a>): otro día o con la función terminada es 400; sin pagar o ya usada, 409. Lo terminado sale primero: la de ayer dice «La función ya terminó: la entrada no sirve más». El retiro del candy no tiene ventana: el candy no vence.</li>
         <li><strong>El ingreso es un timestamp</strong>, no un estado: el cobro es otro eje.</li>
       </ul>
     </section>
@@ -1901,6 +1902,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
             <tr><td><del>R27</del></td><td><del>Solo el ADMINISTRADOR asigna una clave temporal</del>. Cayó: no hay clave que asignar</td></tr>
             <tr><td>R28</td><td>El cliente entra a la web solo con su cuenta de Google y con el email verificado. Si ya hay un cliente con ese email —compró sin cuenta o tenía clave— es el mismo cliente: conserva su nombre y ve sus reservas. Si no, se lo da de alta con el nombre de Google. El email de un empleado no entra por Google: el panel es la aplicación de escritorio, con su clave. En la web se compra con esa sesión: la reserva es del cliente de la sesión, nunca del email que viaje en el pedido</td></tr>
             <tr><td>R30</td><td>El candy que se pide en la web viaja con la reserva y se cobra en el mismo pago, nunca antes: mismo medio y misma autorización, en caja, por checkout o por la conciliación. Se pide mientras la reserva se puede cobrar o, ya pagada, hasta que empieza la función: ahí se cobra solo el candy, en un checkout aparte que no vuelve a cobrar las entradas. Pedir de nuevo reemplaza el pedido. Si la reserva se cancela o vence, el pedido queda anulado. Las promos siguen siendo solo de entradas (R15, R16) y el candy conserva el ahorro de sus combos (R14). Convive con «candy de mostrador con una reserva sin pagar = 409»: las dos aseguran que nunca hay candy cobrado de una reserva sin cobrar. El candy cobrado se entrega con el QR de la entrada, una sola vez (409 la segunda, con la hora del retiro)</td></tr>
+            <tr><td>R32</td><td>Una entrada paga y sin usar vence cuando termina la función (inicio + duración de la película): la API la muestra <code>NO_USADA</code> sin tocar la base, la puerta la rechaza (400 «La función ya terminó: la entrada no sirve más») y no se le suma candy nuevo (400, también en el mostrador). El candy no vence: lo cobrado se retira con el mismo QR cuando sea, con la entrada usada o vencida. La usada sigue <code>PAGADA</code>, con su ingreso</td></tr>
           </tbody>
         </table>
       </div>
@@ -2042,6 +2044,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
             <tr><td>R17, R18</td><td><code>EstadoReservaTest</code>, <code>ReservaTest</code>, <code>GestorReservasTest.noSeCancelaUnaReservaVencida</code></td></tr>
             <tr><td>R19</td><td><code>GestorReservasTest</code>, <code>PagoControllerTest</code></td></tr>
             <tr><td>R30</td><td><code>CompraCandyTest</code> (pendiente, cobrar, anular), <code>GestorCandyTest</code> (<code>elPedido*</code>, <code>cancelarOVencerLaReservaAnulaElPedido</code>, <code>elArqueoCuentaElPedidoRecienCuandoSeCobra</code>, el mostrador sigue en 409), <code>GestorPagosTest</code> (caja, checkout, cotización, <code>siElCandyCambiaDespuesDeAbrirElCheckoutNoSeCobra</code>), <code>ConciliacionPagosTest.laConciliacionCobraTambienElCandyPendiente</code>, <code>MercadoPagoHttpTest.elCandyVaEnSuPropioItem</code>, <code>CuentaDelClienteTest</code> (PUT del candy y cotización, R21), <code>VistasVentasTest</code>, <code>PantallaCobroTest</code> (Swing); sumar a una paga: <code>GestorPagosTest</code> (<code>conLaEntradaPaga*</code>, <code>laVueltaDelCheckoutDelCandy*</code>, <code>elCheckoutDelCandyVenceAntesDeQueEmpieceLaFuncion</code>), <code>ConciliacionPagosTest.laConciliacionCobraElCheckoutSoloDeCandy</code>, <code>MercadoPagoHttpTest.elCheckoutSoloDeCandyLlevaUnItemYSeReconoceAlBuscarlo</code>; retiro: <code>CompraCandyTest.elCandyCobradoSeRetiraUnaSolaVez</code>, <code>GestorCandyTest.conElQrSeRetiraTodoLoCobradoDeLaReservaUnaSolaVez</code>, <code>CompraCandyControllerTest</code>, <code>SeguridadTest</code>, <code>PantallaPuertaTest</code> (Swing)</td></tr>
+            <tr><td>R32</td><td><code>ReservaTest</code> (<code>laEntradaPagaQueNadieUsoVenceAlTerminarLaFuncion</code>, <code>terminadaLaFuncionNoSeEntraNiSeGastaLaEntrada</code>), <code>GestorCandyTest.terminadaLaFuncionElCandyCobradoSeRetiraPeroNoSeVendeMasConLaEntrada</code>, <code>PagoControllerTest.laEntradaPagaSinUsarVenceAlTerminarLaFuncion</code>, <code>CompraCandyControllerTest.terminadaLaFuncionLaEntradaVencePeroElCandySeRetira</code>, <code>Ticket.test.jsx</code>, <code>MisReservas.test.jsx</code>, <code>PantallaReservasTest</code> (Swing)</td></tr>
             <tr><td>CU-16</td><td><code>GestorCandyTest.lasComprasDelClienteSonLasCobradas</code>, <code>CuentaDelClienteTest.veSusComprasDeCandyCobradas</code></td></tr>
             <tr><td>Bloqueo</td><td><code>BloqueoDeButacasTest</code></td></tr>
             <tr><td>Seguridad</td><td><code>SeguridadTest</code> (<code>matrizDeRoles</code>: status exacto por rol y familia de rutas), <code>SesionControllerTest</code>, <code>PaginaDePrivacidadTest</code></td></tr>
@@ -2693,7 +2696,7 @@ export const put = (ruta, cuerpo) =&gt; pedir("PUT", ruta, cuerpo);</code></pre>
       <h2>Estado y pendientes</h2>
       <p>
         <strong>Hecho:</strong> los 27 <a href="#casos-de-uso">casos de uso</a> y las <a href="#reglas">reglas</a>
-        R1 a R28 y R30, cada una con su prueba (<a href="#probar">trazabilidad</a>).
+        R1 a R28, R30 y R32, cada una con su prueba (<a href="#probar">trazabilidad</a>).
       </p>
       <p><strong>Pendiente:</strong></p>
       <ul>

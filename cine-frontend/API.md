@@ -172,7 +172,9 @@ reservar: el cliente los muestra y suma, no los recalcula.
 Toda reserva trae `cobrable` y `cancelable`, calculados con las mismas reglas que aplica el backend al cobrar
 (R5, R17, R19) y al cancelar (R13, R17), y mientras espera el pago, `venceEn`: hasta cuándo se puede pagar (`creadaEn` + 30 min).
 El `estado` es el de ahora: pasado `venceEn` sale `EXPIRADA`, aunque en la base siga `RESERVADA` hasta que alguien
-consulte el mapa de la función (R17 no tiene scheduler).
+consulte el mapa de la función (R17 no tiene scheduler). Igual con la paga que nadie usó (R32): terminada la función
+(inicio + duración) sale `NO_USADA`, aunque en la base siga `PAGADA` y cuente como cobrada; la usada sigue `PAGADA` con
+`ingresadaEn`. El candy no vence: lo cobrado se sigue retirando con el mismo código.
 
 | Ruta | Qué hace |
 |---|---|
@@ -180,7 +182,7 @@ consulte el mapa de la función (R17 no tiene scheduler).
 | `GET /reservas/mias` | Cliente con sesión: sus reservas con `codigo`, de la más nueva a la más vieja |
 | `POST /reservas/codigo/{codigo}/cancelacion` | Cliente con sesión, solo la suya (R21) y sin cobrar (R13, `409`); libera las butacas (R6). Vencida: `409` `La reserva N venció: sus butacas volvieron a estar disponibles` (R17). Sin sesión `401`; ajena `404` |
 | `GET /reservas/{id}` · `POST /reservas/{id}/cancelacion` | Lo mismo por id, solo `ADMINISTRADOR`: el id se adivina |
-| `GET /reservas?estado=&dia=&q=` | Listado del encargado, de la más nueva a la más vieja. `q` busca en código, butaca, cliente, email y película; `estado` filtra por el estado efectivo (una vencida sin expirar en la base sale con `EXPIRADA`) |
+| `GET /reservas?estado=&dia=&q=` | Listado del encargado, de la más nueva a la más vieja. `q` busca en código, butaca, cliente, email y película; `estado` filtra por el estado efectivo (una vencida sin expirar en la base sale con `EXPIRADA`; la paga sin usar con la función terminada, con `NO_USADA`) |
 
 Toda reserva trae también `candy`: sus compras de candy sin las anuladas, cada una con la forma de
 `GET /candy/compras` (`estado` `PENDIENTE` o `COBRADA`). La `PENDIENTE` es la pedida en la web y se cobra con la
@@ -452,7 +454,8 @@ En el alta, el combo y la edición, nombre y precio se validan antes que el nomb
     "total": 12000, "ahorro": 1500 }
 ```
 
-- Sin `reservaId` es venta de mostrador. Con `reservaId`, la reserva tiene que estar pagada (`409`) y ser del cliente.
+- Sin `reservaId` es venta de mostrador. Con `reservaId`, la reserva tiene que estar pagada (`409`), ser del cliente y
+  su función no puede haber terminado (`400` `La función ya terminó: el candy se compra sin la entrada`, R32).
 - Cada cantidad de 1 a 20; lo que salió de la carta no se vende. El código, como al cobrar una reserva (R11).
 - El pedido y el medio de pago se validan antes de buscar los productos (`404`).
 - `ahorro` es el descuento de los combos, congelado al vender.
@@ -490,7 +493,8 @@ Las fotos de promociones y productos. Primero se sube el archivo y después su `
 ## Control de acceso (CU-18)
 
 `POST /acceso` `{ "codigo": "K7M2P9XQ" }`: marca la entrada usada y devuelve la reserva. `409` si está sin
-pagar (R18) o ya se usó; `400` si no es el día de la función; `404` si no existe. El código tiene 8 caracteres, sin
+pagar (R18) o ya se usó; `400` si no es el día de la función o si ya terminó (R32, `La función ya terminó: la entrada no
+sirve más`, que sale antes que el día); `404` si no existe. El código tiene 8 caracteres, sin
 `O`, `I`, `0` ni `1`, y se busca sin espacios ni distinción de mayúsculas (`k7m2 p9xq` encuentra `K7M2P9XQ`).
 
 ### Retiro del candy
@@ -498,7 +502,8 @@ pagar (R18) o ya se usó; `400` si no es el día de la función; `404` si no exi
 `POST /candy/retiros` `{ "codigo": "K7M2P9XQ" }`: el candy escanea el mismo QR de la entrada y marca como retirado
 todo lo cobrado de esa reserva que todavía no se retiró (lo de la web y lo del mostrador para la reserva). `200` con
 esas compras, cada una con `retiradaEn`. `409` `La entrada no tiene candy para retirar` si no tiene candy cobrado, y
-`El candy de esa entrada ya se retiró el 21/10 19:50` si ya se entregó todo; `404` si el código no existe. El código
+`El candy de esa entrada ya se retiró el 21/10 19:50` si ya se entregó todo; `404` si el código no existe. El candy no
+vence (R32): se retira cualquier día, también con la entrada usada o vencida sin usar. El código
 se busca como en `/acceso`. Toda compra de candy trae `retiradaEn` cuando ya se retiró (antes no viene).
 
 ## Importador
