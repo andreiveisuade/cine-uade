@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -519,19 +520,31 @@ class GestorCandyTest extends PruebaDeIntegracion {
         rechaza("El candy de esa entrada ya se retiró el 14/08 10:00", () -> candy.retirar(reserva.getCodigo()));
     }
 
-    // R32: Matrix dura 136 minutos. Terminada la función la entrada vence, pero el candy no: lo cobrado se retira
-    // igual con el QR; lo que ya no se puede es sumarle candy nuevo a la entrada.
-    @Test
-    void terminadaLaFuncionElCandyCobradoSeRetiraPeroNoSeVendeMasConLaEntrada() {
+    // R32: la entrada vence, el candy no. La función es el 15/08 a las 10 y Matrix termina a las 12:16.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            la víspera,           2026-08-14T23:59
+            el día de la función, 2026-08-15T11:00
+            después del fin,      2026-08-18T10:00
+            """)
+    void loCobradoSeRetiraCuandoSea(String caso, LocalDateTime cuando) {
         Reserva reserva = reservarYCobrar();
         candy.venderParaReserva(reserva.getId(), null, pedido(pochoclos, 1), MedioPago.EFECTIVO, "");
-        reloj.mover(reloj.ahora().plusDays(3));
+        reloj.mover(cuando);
+
+        assertEquals(1, candy.retirar(reserva.getCodigo()).size());
+    }
+
+    // R32: lo que sí se corta con la función terminada es sumarle candy nuevo a la entrada.
+    @Test
+    void terminadaLaFuncionNoSeLeVendeCandyNuevoALaEntrada() {
+        Reserva reserva = reservarYCobrar();
+        reloj.mover(reloj.ahora().plusDays(1).plusMinutes(136));
 
         DatoInvalido venta = assertThrows(DatoInvalido.class,
                 () -> candy.venderParaReserva(reserva.getId(), null, pedido(gaseosa, 1), MedioPago.EFECTIVO, ""));
 
         assertEquals("La función ya terminó: el candy se compra sin la entrada", venta.getMessage());
-        assertEquals(1, candy.retirar(reserva.getCodigo()).size());
     }
 
     @ParameterizedTest(name = "{0}")
