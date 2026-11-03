@@ -12,6 +12,14 @@ const pelicula = (cambios) => ({
   posterUrl: "https://image.tmdb.org/p.jpg", trailerYoutube: "vKQi3bBA1y8", ...cambios,
 });
 
+// Una función a las `hh:mm` de dentro de `dias` días, en hora local como la manda el backend.
+const funcion = (id, dias, hh) => {
+  const d = new Date();
+  d.setDate(d.getDate() + dias);
+  const fecha = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  return { id, inicio: `${fecha}T${hh}:00`, sala: { nombre: `Sala ${id}`, tipo: "DOS_D" }, proyeccion: "DOS_D", idioma: "SUBTITULADA", precioDesde: 5000 };
+};
+
 const matchMediaOriginal = window.matchMedia;
 
 function conMovimientoReducido() {
@@ -69,5 +77,25 @@ describe("Pelicula", () => {
     expect(screen.queryByTitle("Trailer de Dune")).not.toBeInTheDocument();
     await userEvent.click(play);
     expect(screen.getByTitle("Trailer de Dune")).toBeInTheDocument();
+  });
+
+  it("abre el primer día, pliega el resto y cada encabezado cuenta sus funciones", async () => {
+    api.obtenerPelicula.mockResolvedValue(pelicula());
+    api.obtenerFuncionesDePelicula.mockResolvedValue([funcion(1, 0, "18:00"), funcion(2, 0, "21:30"), funcion(3, 1, "20:00")]);
+    abrir();
+
+    const hoy = await screen.findByRole("button", { name: /Hoy/ });
+    const manana = screen.getByRole("button", { name: /Mañana/ });
+    expect(hoy).toHaveTextContent("2 funciones");
+    expect(manana).toHaveTextContent("1 función");
+    expect(hoy).toHaveAttribute("aria-expanded", "true");
+    expect(manana).toHaveAttribute("aria-expanded", "false");
+    expect(screen.getByRole("link", { name: /18:00/ })).toBeVisible();
+    expect(screen.queryByRole("link", { name: /20:00/ })).not.toBeInTheDocument();
+
+    await userEvent.click(manana);
+    expect(manana).toHaveAttribute("aria-expanded", "true");
+    expect(await screen.findByRole("link", { name: /20:00/ })).toBeVisible();
+    expect(hoy).toHaveAttribute("aria-expanded", "true");
   });
 });
