@@ -378,6 +378,9 @@ una semana desde hoy, de 14 a 24, ocho títulos, subtitulada en 2D.
 
 - `cierre: "00:00"` es fin del día. Solo películas confirmadas; no pisa funciones existentes ni propone
   horarios que ya pasaron (R20). En 3D usa solo las salas que lo proyectan.
+- Llena primero la sala más barata que proyecta el formato (2D, 3D, IMAX, 4D) y abre la siguiente solo si
+  alguna película del elenco quedó sin pase ese día. `minutosDisponibles` y `ocupacion` cuentan solo las
+  salas que la propuesta usa.
 - `400`: `desde` en el pasado o fin a más de un año, `dias` fuera de 1 a 31, `cuantasPeliculas` fuera de 1 a
   20, cierre que no es posterior a la apertura, ninguna película o sala posible.
 

@@ -99,6 +99,8 @@ else
     echo "Funciones"
     # La grilla automática: una semana desde hoy, de 14 a 24, en 2D subtitulada. Necesita las salas de arriba.
     alta grilla '{"dias":7,"cuantasPeliculas":6,"precio":5000}' "Una semana de grilla"
+    # El 2D llena primero las salas 2D; las 3D, IMAX y 4D quedan para el 3D.
+    alta grilla '{"dias":7,"cuantasPeliculas":3,"precio":5000,"proyeccion":"TRES_D"}' "Una semana de grilla en 3D"
 fi
 
 echo "Promociones"

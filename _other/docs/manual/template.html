@@ -1631,10 +1631,24 @@ puntaje   = (v/(v+50)) × nota + (50/(v+50)) × promedio del catálogo</code></p
       <ul>
         <li><strong>Elenco:</strong> goloso, explicable elección por elección. El bono inclina, no decide.</li>
         <li><strong>Votos</strong> (<code>PuntajeConfiable</code>): seis votos no valen como miles; cero votos con puntaje es carga manual y vale tal cual.</li>
-        <li><strong>Reparto:</strong> sala por sala y día por día, el pase va a la película con más deuda (<code>asignados / puntaje</code>), sin pasar el cierre ni pisar lo programado. Determinista.</li>
+        <li><strong>Reparto (algoritmo voraz):</strong> sala por sala y turno por turno, entra la película que todavía no tiene pase ese día; entre ellas, la de más deuda (<code>asignados / puntaje</code>). Si no termina antes del cierre, se descarta y se prueba la siguiente; si no entra ninguna, la sala está completa. No pisa lo programado (<a href="#reglas">R3</a>). Determinista.</li>
+        <li><strong>Sala adecuada primero:</strong> se llena primero la sala más barata que proyecta el formato (2D, después 3D, IMAX y 4D). La siguiente se abre solo si alguna película del elenco quedó sin pase ese día, y la que se abre se llena entera. Así una grilla 2D no ocupa la IMAX ni la 4D si entra en las 2D, y quedan libres para la grilla 3D.</li>
         <li><strong>Solo salas que pueden (<a href="#reglas">R8</a>):</strong> una grilla en 3D reparte entre las que lo proyectan, o rechaza; si no, la propuesta fallaría al aplicarla.</li>
-        <li><strong>Desde ahora (R20):</strong> hoy arranca en el primer intento de 30 minutos que no pasó, y la ocupación se mide sobre esa ventana.</li>
+        <li><strong>Desde ahora (R20):</strong> hoy arranca en el primer intento de 30 minutos que no pasó.</li>
+        <li><strong>Ocupación:</strong> se mide sobre las salas que la grilla usó; las que deja libres no cuentan como tiempo perdido.</li>
       </ul>
+      <p>La estrategia, en el formato de Programación III:</p>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Elemento</th><th>En el planificador</th></tr></thead>
+        <tbody>
+          <tr><td>Conjunto de candidatos</td><td>Las salas que proyectan el formato, de la más barata a la más cara; en cada turno, las películas del elenco</td></tr>
+          <tr><td>Función selección</td><td>Primero las que no tienen pase ese día; después, la de más deuda; si empatan, por título</td></tr>
+          <tr><td>Función factibilidad</td><td>Termina antes del cierre, no choca con lo programado ni con la limpieza (R3), arranca después de ahora (R20) y la sala proyecta el formato (R8)</td></tr>
+          <tr><td>Función solución</td><td>Sala: no entra ninguna película más. Día: todo el elenco tiene pase, y no se abre otra sala</td></tr>
+          <tr><td>Función objetivo</td><td>Sala adecuada, después cobertura diaria, después pases en proporción al puntaje, después ocupación. El voraz la aproxima, no la garantiza</td></tr>
+        </tbody>
+      </table></div>
+      <p>Complejidad: Θ(S log S) para ordenar las salas más O(D·S·T·k), con D días, S salas, T turnos por día y k películas. En el peor caso (31 días, 6 salas, 20 películas) son unos 100 mil pasos: corre en milisegundos. No es mochila fraccionada: una función no se parte.</p>
     </section>
 
     <section class="doc-section" id="reservas">
@@ -1935,7 +1949,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
         <table>
           <thead><tr><th>Módulo</th><th>Tests</th><th>Líneas</th><th>Ramas</th><th>Cómo correrlo</th><th>Reporte</th></tr></thead>
           <tbody>
-            <tr><td>Backend</td><td>1606</td><td>97,5 %</td><td>92,9 %</td><td><code>cd cine-backend &amp;&amp; mvn test</code></td><td><code>target/site/jacoco/</code> (html, xml, csv)</td></tr>
+            <tr><td>Backend</td><td>1612</td><td>97,5 %</td><td>92,9 %</td><td><code>cd cine-backend &amp;&amp; mvn test</code></td><td><code>target/site/jacoco/</code> (html, xml, csv)</td></tr>
             <tr><td>Swing</td><td>231</td><td>78,7 %</td><td>64,4 %</td><td><code>cd cine-swing &amp;&amp; ./mvnw test</code></td><td><code>target/site/jacoco/</code></td></tr>
             <tr><td>Front</td><td>185</td><td>91,7 %</td><td>86,5 %</td><td><code>cd cine-frontend &amp;&amp; npm run coverage</code></td><td><code>coverage/</code></td></tr>
             <tr><td>Android</td><td>—</td><td>37,0 % (134 de 362)</td><td>—</td><td><code>cd cine-android &amp;&amp; ./gradlew test createDebugUnitTestCoverageReport</code></td><td><code>app/build/reports/coverage/test/debug/</code> (html y <code>report.xml</code>)</td></tr>
