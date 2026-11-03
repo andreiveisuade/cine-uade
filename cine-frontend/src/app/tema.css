@@ -57,6 +57,12 @@ h1, h2, h3, .cine-display {
 
 a { text-underline-offset: 0.2em; }
 
+/* Una tarjeta entera como link (la venta cruzada del ticket): se levanta al pasar; el foco usa el anillo de arriba. */
+.cine-tarjeta-link { display: block; height: 100%; color: inherit; text-decoration: none; border-radius: var(--mantine-radius-md);
+  transition: transform 150ms ease, box-shadow 150ms ease; }
+.cine-tarjeta-link:hover { transform: translateY(-2px); box-shadow: var(--mantine-shadow-md); }
+@media (prefers-reduced-motion: reduce) { .cine-tarjeta-link { transition: none; } .cine-tarjeta-link:hover { transform: none; } }
+
 [data-mantine-color-scheme="dark"] { scrollbar-color: #3b404d var(--mantine-color-body); }
 
 /* Barra de la portada: el tiempo hasta la próxima destacada. */

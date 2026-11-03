@@ -265,6 +265,24 @@ describe("Tu compra: sumar candy a una entrada paga", () => {
     expect(screen.getAllByText("Entradas")).toHaveLength(1);
   });
 
+  // La tarjeta del carrusel del ticket lleva con ?sumar=: el producto entra con 1, en un solo pedido.
+  it("entra con el producto tocado en el ticket ya sumado", async () => {
+    api.pedirCandy.mockResolvedValue({ ...PAGADA, candy: pedido([COMBO, 1]) });
+    renderConApp(<TuCompra />, { ruta: "/compra/:codigo", en: "/compra/ABCD1234?sumar=4" });
+
+    await waitFor(() => expect(api.pedirCandy).toHaveBeenCalledWith("ABCD1234", { 4: 1 }));
+    expect(api.pedirCandy).toHaveBeenCalledOnce();
+  });
+
+  it("si el producto tocado ya estaba en el pedido no lo duplica", async () => {
+    api.obtenerReservaPorCodigo.mockResolvedValue({ ...PAGADA, candy: pedido([COMBO, 2]) });
+    renderConApp(<TuCompra />, { ruta: "/compra/:codigo", en: "/compra/ABCD1234?sumar=4" });
+    await screen.findByText("Sumá candy a tu entrada");
+
+    await esperar(600);
+    expect(api.pedirCandy).not.toHaveBeenCalled();
+  });
+
   it("lo ya cobrado se ve aparte, con si falta retirarlo, y no se puede cambiar", async () => {
     api.obtenerReservaPorCodigo.mockResolvedValue({ ...PAGADA, candy: [
       { id: 9, estado: "COBRADA", items: [{ productoId: 1, nombre: "Pochoclos", cantidad: 2, precioUnitario: 3500, subtotal: 7000 }] },

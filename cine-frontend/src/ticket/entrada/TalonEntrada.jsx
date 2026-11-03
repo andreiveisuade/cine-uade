@@ -28,7 +28,7 @@ export function TalonEntrada({ reserva, pagoEnVivo }) {
           <QRCodeSVG value={reserva.codigo} size={132} level="M" title={`QR del código ${reserva.codigo}`} />
         </Box>
       )}
-      {soloCandy && <Text size="xs" fw={700}>Solo para retirar el candy</Text>}
+      {soloCandy && <Text size="xs" fw={700}>Mostralo en el candy para retirar lo tuyo</Text>}
       {/* El ícono cuelga a la derecha para que el código siga centrado bajo el QR. */}
       <Box pos="relative">
         <Text ff="monospace" fw={700} className={`cine-cifras ${clases.codigo}`}

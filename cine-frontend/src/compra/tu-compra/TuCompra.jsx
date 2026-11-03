@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { Alert, Badge, Button, Grid, Stack, Text, VisuallyHidden } from "@mantine/core";
 import { useInViewport, useMergedRef } from "@mantine/hooks";
-import { Link, Navigate, useNavigate, useParams } from "react-router";
+import { Link, Navigate, useNavigate, useParams, useSearchParams } from "react-router";
 import * as api from "@/api/api-http.js";
 import { useAvisar } from "@/compartido/estado/Avisos.jsx";
 import { EsperaOError } from "@/compartido/estado/EsperaOError.jsx";
@@ -23,6 +23,9 @@ import { usePedidoDeLaCompra } from "./usePedidoDeLaCompra.js";
 // ya paga es la misma, solo para el candy (R30).
 export function TuCompra() {
   const { codigo } = useParams();
+  // El producto que se tocó en el carrusel del ticket: entra al pedido con 1 si no estaba.
+  const [busqueda] = useSearchParams();
+  const productoTocado = Number(busqueda.get("sumar")) || null;
   useTitulo("Tu compra");
   const navegar = useNavigate();
   const { usuario } = useSesion();
@@ -34,20 +37,22 @@ export function TuCompra() {
   useVueltaDelPago(codigo, () => navegar(`/ticket/${codigo}`, { replace: true }));
 
   // R21: la cotización, el candy y el pago son del dueño, con su sesión.
-  if (usuario === null) return <Navigate to="/ingresar" state={{ volver: `/compra/${codigo}` }} replace />;
+  if (usuario === null) {
+    return <Navigate to="/ingresar" state={{ volver: `/compra/${codigo}${productoTocado ? `?sumar=${productoTocado}` : ""}` }} replace />;
+  }
   if (!carga.datos || usuario === undefined) return <EsperaOError carga={carga} />;
   const [reserva, productos] = carga.datos;
   if (reserva.ingresadaEn) return <Navigate to={`/ticket/${codigo}`} replace />;
   const sumar = reserva.estado === "PAGADA";
   if (!sumar && !reserva.cobrable) return <CompraTerminada reserva={reserva} />;
-  return <Compra reserva={reserva} productos={productos} sumar={sumar} />;
+  return <Compra reserva={reserva} productos={productos} sumar={sumar} productoTocado={productoTocado} />;
 }
 
-function Compra({ reserva, productos, sumar }) {
+function Compra({ reserva, productos, sumar, productoTocado }) {
   const navegar = useNavigate();
   const avisar = useAvisar();
   const { candy, pedido, cotiza, cotizacion, aPagar, actualizando, total } =
-    usePedidoDeLaCompra(reserva, productos, sumar, (mensaje) => avisar(mensaje, "error"));
+    usePedidoDeLaCompra(reserva, productos, sumar, (mensaje) => avisar(mensaje, "error"), productoTocado);
   const { pagar, pagando, error } = usePagar(reserva.codigo);
   const [abandonando, setAbandonando] = useState(false);
   const { ref: mirarPedido, inViewport: pedidoALaVista } = useInViewport();

@@ -247,15 +247,25 @@ describe("venta cruzada en el ticket", () => {
     api.obtenerPromocionesVigentes.mockResolvedValue([promo]);
   });
 
-  it("muestra combos primero, después los productos con foto y al final las promos", async () => {
+  it("muestra combos primero y después los productos con foto; las promos de entradas no", async () => {
     api.obtenerReservaPorCodigo.mockResolvedValue(reserva("RESERVADA", true));
     abrir();
 
     const seccion = await screen.findByRole("region", { name: "Para sumar a la función" });
     // Texto exacto: el combo también nombra a los pochoclos en su detalle.
     const nombres = within(seccion).getAllByText(/^(Combo clásico|Pochoclos grandes|2x1)$/).map((n) => n.textContent);
-    expect(nombres).toEqual(["Combo clásico", "Pochoclos grandes", "2x1"]);
+    expect(nombres).toEqual(["Combo clásico", "Pochoclos grandes"]);
     expect(seccion).not.toHaveTextContent("Agua");
+    expect(api.obtenerPromocionesVigentes).not.toHaveBeenCalled();
+  });
+
+  it("tocar una tarjeta lleva a sumar ese producto a la compra", async () => {
+    api.obtenerReservaPorCodigo.mockResolvedValue(reserva("PAGADA"));
+    abrir();
+
+    const combo = await screen.findByRole("link", { name: "Sumar Combo clásico" });
+    expect(combo).toHaveAttribute("href", "/compra/ABCD1234?sumar=9");
+    expect(screen.getByRole("link", { name: "Sumar Pochoclos grandes" })).toHaveAttribute("href", "/compra/ABCD1234?sumar=1");
   });
 
   it.each([
@@ -319,7 +329,7 @@ describe("venta cruzada en el ticket", () => {
     expect(screen.getByText("Se retira en el candy con el mismo QR de la entrada, aunque la entrada ya no sirva."))
       .toBeInTheDocument();
     expect(screen.getByTitle("QR del código ABCD1234")).toBeInTheDocument();
-    expect(screen.getByText("Solo para retirar el candy")).toBeInTheDocument();
+    expect(screen.getByText("Mostralo en el candy para retirar lo tuyo")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Mostrar en la puerta" })).not.toBeInTheDocument();
   });
 

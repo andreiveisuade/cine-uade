@@ -12,9 +12,9 @@ function catalogoDe(productos, reserva) {
 }
 
 // Lo que lleva la compra y cuánto se paga: el candy elegido, la cotización del backend y el total a mostrar.
-export function usePedidoDeLaCompra(reserva, productos, sumar, alFallar) {
+export function usePedidoDeLaCompra(reserva, productos, sumar, alFallar, productoTocado) {
   const [guardados, setGuardados] = useState(0);
-  const candy = useCandyDeLaCompra(reserva, () => setGuardados((n) => n + 1), alFallar);
+  const candy = useCandyDeLaCompra(reserva, () => setGuardados((n) => n + 1), alFallar, productoTocado);
   // Paga y sin pedido no hay nada que cotizar: el backend daría 409.
   const cotiza = !sumar || candy.hayPedido;
   const cotizacion = useCargar(() => (cotiza ? api.obtenerCotizacion(reserva.codigo) : Promise.resolve([])),
