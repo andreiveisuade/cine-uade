@@ -6,7 +6,7 @@ import ar.uade.cine.swing.api.dto.usuarios.Empleado;
 import ar.uade.cine.swing.comun.Colores;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.Escala;
-import ar.uade.cine.swing.comun.Etiquetas;
+import ar.uade.cine.swing.comun.Iconos;
 import ar.uade.cine.swing.comun.Mensajes;
 import ar.uade.cine.swing.pantallas.Destino;
 import ar.uade.cine.swing.pantallas.Navegacion;
@@ -18,6 +18,7 @@ import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
+import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
@@ -115,17 +116,17 @@ public final class VentanaPrincipal extends JFrame implements Navegacion {
         cabecera.add(Box.createHorizontalGlue());
         cabecera.add(marca(servidor));
         cabecera.add(Box.createHorizontalStrut(Escala.CERCA));
-        JLabel quien = new JLabel(empleado.nombre() + " · " + Etiquetas.etiqueta(empleado.rol()));
+        JLabel quien = new JLabel(empleado.nombre());
         quien.setForeground(Colores.secundario());
         cabecera.add(quien);
         cabecera.add(Box.createHorizontalStrut(Escala.CERCA));
         cabecera.add(interruptorDeTema());
         cabecera.add(Box.createHorizontalStrut(Escala.JUNTO));
-        JButton produccion = new JButton("Estado de producción");
+        JButton produccion = botonDeIcono(Iconos.actividad(), "Estado de producción");
         produccion.addActionListener(e -> VentanaProduccion.abrir(this, preferencias));
         cabecera.add(produccion);
         cabecera.add(Box.createHorizontalStrut(Escala.JUNTO));
-        JButton salir = new JButton("Salir");
+        JButton salir = botonDeIcono(Iconos.salir(), "Salir");
         salir.addActionListener(e -> alSalir.run());
         cabecera.add(salir);
         return cabecera;
@@ -134,8 +135,7 @@ public final class VentanaPrincipal extends JFrame implements Navegacion {
     // Dice adónde lleva, no dónde está: «Tema claro» estando en oscuro.
     private JButton interruptorDeTema() {
         boolean oscuro = Colores.oscuro();
-        JButton tema = new JButton(oscuro ? "☀ Tema claro" : "☾ Tema oscuro");
-        tema.setToolTipText("Se recuerda para la próxima vez");
+        JButton tema = botonDeIcono(oscuro ? Iconos.sol() : Iconos.luna(), oscuro ? "Tema claro" : "Tema oscuro");
         tema.addActionListener(e -> {
             Colores.usarTema(!oscuro);
             preferencias.put(CLAVE_TEMA, oscuro ? "claro" : "oscuro");
@@ -146,6 +146,15 @@ public final class VentanaPrincipal extends JFrame implements Navegacion {
             repaint();
         });
         return tema;
+    }
+
+    // Sin texto a la vista: el tooltip lo dice al pasar el mouse y el nombre accesible, a un lector de pantalla.
+    private static JButton botonDeIcono(Icon icono, String nombre) {
+        JButton boton = new JButton(icono);
+        boton.putClientProperty(FlatClientProperties.BUTTON_TYPE, FlatClientProperties.BUTTON_TYPE_TOOLBAR_BUTTON);
+        boton.setToolTipText(nombre);
+        boton.getAccessibleContext().setAccessibleName(nombre);
+        return boton;
     }
 
     private JComponent pie() {
@@ -166,9 +175,9 @@ public final class VentanaPrincipal extends JFrame implements Navegacion {
 
     // Producción salta a la vista: un alta de prueba ahí la ve el público.
     static JLabel marca(Servidor servidor) {
-        JLabel marca = new JLabel(servidor.entorno() == Servidor.Entorno.PRODUCCION
-                ? servidor.marca() + " · lo que cambies lo ve el público" : servidor.marca());
-        marca.setToolTipText(servidor.url() + " · para cambiarlo, salí y elegilo al ingresar");
+        JLabel marca = new JLabel(servidor.marca());
+        marca.setToolTipText((servidor.entorno() == Servidor.Entorno.PRODUCCION ? "Lo que cambies lo ve el público · " : "")
+                + servidor.url() + " · para cambiarlo, salí y elegilo al ingresar");
         marca.setBorder(BorderFactory.createEmptyBorder(2, Escala.JUNTO, 2, Escala.JUNTO));
         switch (servidor.entorno()) {
             case LOCAL -> marca.setForeground(Colores.secundario());
