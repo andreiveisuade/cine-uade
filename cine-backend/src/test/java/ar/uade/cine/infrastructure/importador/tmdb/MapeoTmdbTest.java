@@ -138,6 +138,36 @@ class MapeoTmdbTest {
         assertEquals(trailer, MapeoTmdb.trailerDe(json("{\"results\": " + videos + "}")));
     }
 
+    // Solo el job Director cuenta: el guionista o el director de fotografía no.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(delimiter = '|', textBlock = """
+            uno solo              | [{"job":"Director","name":"Denis Villeneuve"},{"job":"Screenplay","name":"Jon Spaihts"}] | Denis Villeneuve
+            dos                   | [{"job":"Director","name":"Lana Wachowski"},{"job":"Director","name":"Lilly Wachowski"}] | Lana Wachowski y Lilly Wachowski
+            tres                  | [{"job":"Director","name":"A"},{"job":"Director","name":"B"},{"job":"Director","name":"C"}] | A, B y C
+            repetido              | [{"job":"Director","name":"A"},{"job":"Director","name":"A"}] | A
+            sin director          | [{"job":"Director of Photography","name":"Greig Fraser"}] | ''
+            sin crew              | [] | ''
+            """)
+    void elDirectorSaleDelCrewYVariosSeUnen(String caso, String crew, String director) {
+        assertEquals(director, MapeoTmdb.directorDe(json("{\"credits\": {\"crew\": " + crew + "}}")));
+    }
+
+    @Test
+    void sinCreditosElDirectorQuedaVacio() {
+        assertEquals("", MapeoTmdb.directorDe(MissingNode.getInstance()));
+    }
+
+    // Cortar el nombre al medio dejaría un director que no existe; el que no entra en los 100 queda afuera.
+    @Test
+    void elDirectorQueNoEntraEnLaColumnaQuedaAfueraEntero() {
+        String largo = "x".repeat(60);
+        String director = MapeoTmdb.directorDe(json("""
+                {"credits": {"crew": [{"job": "Director", "name": "%s1"}, {"job": "Director", "name": "%s2"}]}}"""
+                .formatted(largo, largo)));
+
+        assertEquals(largo + "1", director);
+    }
+
     @Test
     void sinRespuestaDeVideosNoHayTrailer() {
         assertNull(MapeoTmdb.trailerDe(MissingNode.getInstance()));
@@ -151,7 +181,8 @@ class MapeoTmdbTest {
                 {"title": "Duna: Parte dos", "runtime": 166, "overview": "Paul y los Fremen",
                  "release_date": "2024-02-28", "original_language": "en",
                  "vote_average": 8.2, "vote_count": 5400,
-                 "genres": [{"name": "Ciencia ficción"}, {"name": "Aventura"}]}""");
+                 "genres": [{"name": "Ciencia ficción"}, {"name": "Aventura"}],
+                 "credits": {"crew": [{"job": "Director", "name": "Denis Villeneuve"}]}}""");
 
         JsonNode estrenos = json("""
                 {"results": [{"iso_3166_1": "AR", "release_dates": [{"certification": "+13"}]}]}""");
@@ -162,6 +193,7 @@ class MapeoTmdbTest {
         assertEquals(166, pelicula.duracionMinutos());
         assertEquals(List.of(Genero.ACCION, Genero.CIENCIA_FICCION), pelicula.generos());
         assertEquals(Clasificacion.MAS_13, pelicula.clasificacion());
+        assertEquals("Denis Villeneuve", pelicula.director());
         assertEquals("Paul y los Fremen", pelicula.sinopsis());
         assertEquals(2024, pelicula.anio());
         assertEquals("Inglés", pelicula.idiomaOriginal());

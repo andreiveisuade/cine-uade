@@ -16,10 +16,13 @@ import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.cartelera.TrailerYoutube;
 import ar.uade.cine.service.cartelera.DatosPelicula;
 
-// Traduce el JSON de TMDB a DatosPelicula (géneros, certificación, idioma, póster, trailer); Fabricación pura.
+// Traduce el JSON de TMDB a DatosPelicula (géneros, certificación, director, trailer…); Fabricación pura.
 final class MapeoTmdb {
 
     private static final String IMAGENES = "https://image.tmdb.org/t/p/w500";
+
+    // El largo de la columna director: más que esto y la película entera se rechazaría.
+    private static final int LARGO_DIRECTOR = 100;
 
     private static final Map<String, Genero> GENEROS = Map.ofEntries(
             entry("Acción", Genero.ACCION),
@@ -74,7 +77,7 @@ final class MapeoTmdb {
                 .duracion(detalle.path("runtime").asInt(0))
                 .generos(generosDe(detalle))
                 .clasificacion(clasificacionDe(certificacionArgentina(estrenos)))
-                .director("")
+                .director(directorDe(detalle))
                 .sinopsis(textoDe(detalle, "overview", ""))
                 .anio(anioDe(detalle.path("release_date").asText(null)))
                 .idiomaOriginal(idiomaDe(detalle.path("original_language").asText("")))
@@ -113,6 +116,29 @@ final class MapeoTmdb {
             }
         }
         return traducidos.isEmpty() ? List.of(Genero.DRAMA) : new ArrayList<>(traducidos);
+    }
+
+    // Los Director del crew (append_to_response=credits), sin repetir: «A», «A y B», «A, B y C»; vacío si no hay.
+    // El que no entra en la columna queda afuera entero, en vez de cortarle el nombre.
+    static String directorDe(JsonNode detalle) {
+        List<String> directores = new ArrayList<>();
+        for (JsonNode persona : detalle.path("credits").path("crew")) {
+            String nombre = persona.path("name").asText("").strip();
+            if ("Director".equals(persona.path("job").asText()) && !nombre.isEmpty() && !directores.contains(nombre)) {
+                directores.add(nombre);
+            }
+        }
+        while (unidos(directores).length() > LARGO_DIRECTOR) {
+            directores.removeLast();
+        }
+        return unidos(directores);
+    }
+
+    private static String unidos(List<String> nombres) {
+        if (nombres.size() <= 1) {
+            return String.join("", nombres);
+        }
+        return String.join(", ", nombres.subList(0, nombres.size() - 1)) + " y " + nombres.getLast();
     }
 
     // La primera no vacía de los estrenos en la Argentina; null si no hay, y la clasificación decide.

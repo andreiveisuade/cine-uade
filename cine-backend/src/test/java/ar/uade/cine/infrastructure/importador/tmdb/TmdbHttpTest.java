@@ -53,7 +53,8 @@ class TmdbHttpTest {
                 case "/movie/42" -> responder(intercambio, 200, """
                         {"title": "Duna", "runtime": 166, "original_language": "en",
                          "release_date": "2024-02-28", "vote_average": 8.2, "vote_count": 5400,
-                         "genres": [{"name": "Ciencia ficción"}]}""");
+                         "genres": [{"name": "Ciencia ficción"}],
+                         "credits": {"crew": [{"job": "Director", "name": "Denis Villeneuve"}]}}""");
                 case "/movie/42/release_dates" -> responder(intercambio, 200, """
                         {"results": [{"iso_3166_1": "US", "release_dates": [{"certification": "PG-13"}]},
                                      {"iso_3166_1": "AR", "release_dates": [{"certification": "+13"}]}]}""");
@@ -69,7 +70,29 @@ class TmdbHttpTest {
         assertEquals(166, duna.duracionMinutos());
         assertEquals(List.of(Genero.CIENCIA_FICCION), duna.generos());
         assertEquals(Clasificacion.MAS_13, duna.clasificacion());
+        assertEquals("Denis Villeneuve", duna.director());
         assertEquals("https://image.tmdb.org/t/p/w500/duna.jpg", duna.posterUrl());
+    }
+
+    // Los créditos van en el pedido del detalle: pedirlos aparte sumaría una llamada por película.
+    @Test
+    void elDetallePideLosCreditosEnElMismoPedido() {
+        List<String> detalles = new CopyOnWriteArrayList<>();
+        levantar(intercambio -> {
+            if (intercambio.getRequestURI().getPath().equals("/movie/now_playing")) {
+                responder(intercambio, 200, """
+                        {"results": [{"id": 42, "title": "Duna"}], "total_pages": 1}""");
+                return;
+            }
+            if (intercambio.getRequestURI().getPath().equals("/movie/42")) {
+                detalles.add(intercambio.getRequestURI().getQuery());
+            }
+            responder(intercambio, 200, "{\"title\": \"Duna\", \"runtime\": 166}");
+        });
+
+        catalogo().enCartelera(1);
+
+        assertEquals(List.of("language=es-AR&append_to_response=credits"), detalles);
     }
 
     // es-AR primero; sin trailer en castellano, el en-US; sin ninguno, null.
