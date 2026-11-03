@@ -151,6 +151,20 @@ class ClienteHttpTest {
         assertNull(autorizacionDelSiguientePedido());
     }
 
+    // Una escritura cortada por tiempo pudo haberse hecho igual: el mensaje no invita a repetirla a ciegas.
+    @Test
+    void unaEscrituraQueTardaDemasiadoAvisaQuePuedeHaberseHecho() {
+        ingresar();
+        servidor.responder("POST /api/funciones/borrado", 200, "{}");
+        servidor.demorar(1500);
+
+        ErrorApi error = assertThrows(ErrorApi.class,
+                () -> http.post("/funciones/borrado", java.util.Map.of(), Object.class, java.time.Duration.ofMillis(200)));
+
+        assertEquals("El servidor tardó demasiado en responder: puede que se haya hecho, revisá antes de repetirlo",
+                error.getMessage());
+    }
+
     @Test
     void elErrorDelBackendLlegaConSuMensajeIntacto() {
         ingresar();

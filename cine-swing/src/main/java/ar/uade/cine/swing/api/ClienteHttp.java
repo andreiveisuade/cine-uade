@@ -177,7 +177,10 @@ public final class ClienteHttp {
             registrar(metodo, ruta, String.valueOf(respuesta.statusCode()), desde);
         } catch (HttpTimeoutException e) {
             registrar(metodo, ruta, "tardó", desde);
-            throw new ErrorApi(0, "El servidor tardó demasiado en responder");
+            // Una escritura cortada pudo haberse hecho igual del otro lado: repetirla a ciegas puede duplicarla.
+            throw new ErrorApi(0, "GET".equals(metodo)
+                    ? "El servidor tardó demasiado en responder: probá de nuevo"
+                    : "El servidor tardó demasiado en responder: puede que se haya hecho, revisá antes de repetirlo");
         } catch (IOException e) {
             registrar(metodo, ruta, "sin red", desde);
             throw new ErrorApi(0, "No se pudo conectar con el servidor en " + base + ". ¿Está levantado?");

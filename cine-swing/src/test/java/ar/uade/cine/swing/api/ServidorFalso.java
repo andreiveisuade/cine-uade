@@ -24,6 +24,7 @@ public final class ServidorFalso {
     private final Map<String, Respuesta> respuestas = new LinkedHashMap<>();
     private final List<Recibido> recibidos = new ArrayList<>();
     private volatile long ultimoPedido;
+    private volatile long demoraMs;
 
     public ServidorFalso() throws IOException {
         servidor = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
@@ -76,7 +77,19 @@ public final class ServidorFalso {
         }
     }
 
+    /** Contesta recién después de {@code ms}: para probar qué pasa cuando el servidor tarda. */
+    public void demorar(long ms) {
+        demoraMs = ms;
+    }
+
     private void atender(HttpExchange intercambio) throws IOException {
+        if (demoraMs > 0) {
+            try {
+                Thread.sleep(demoraMs);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
         String ruta = intercambio.getRequestURI().toString();
         String cuerpo = new String(intercambio.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
         synchronized (recibidos) {
