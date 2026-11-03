@@ -22,12 +22,12 @@ record PublicarPelicula(ApiCartelera api, boolean publicar) implements AccionDeF
         return p.enCartelera() != publicar;
     }
 
-    // Despublicar la baja de la cartelera del cliente aunque tenga funciones: se pregunta. Publicar no.
+    // Despublicar borra sus funciones por delante (R33): se pregunta. Publicar no.
     @Override
     public Optional<Pregunta> pregunta(Pelicula p) {
         if (publicar) return Optional.empty();
         return Optional.of(new Pregunta("¿Despublicar " + p.titulo() + "? Deja de verse en la cartelera "
-                + "aunque tenga funciones.", "Sí, despublicar"));
+                + "y se borran sus funciones por delante.", "Sí, despublicar"));
     }
 
     @Override

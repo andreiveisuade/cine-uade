@@ -8,6 +8,7 @@ import java.util.Optional;
 import java.util.Set;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,11 +17,13 @@ import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.model.cartelera.TrailerYoutube;
+import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.repository.funciones.FuncionRepository;
 import ar.uade.cine.repository.cartelera.PeliculaRepository;
 import ar.uade.cine.repository.programaciones.ProgramacionRepository;
+import ar.uade.cine.repository.ventas.ReservaRepository;
 import ar.uade.cine.service.programaciones.GestorProgramaciones;
 import ar.uade.cine.infrastructure.reloj.Reloj;
 import ar.uade.cine.model.rechazos.RecursoNoEncontrado;
@@ -30,12 +33,14 @@ import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
 @Service
 @Transactional
 @RequiredArgsConstructor
+@Slf4j
 public class GestorCartelera {
 
     private final PeliculaRepository peliculaRepository;
     private final FuncionRepository funcionRepository;
     private final GestorProgramaciones programaciones;
     private final ProgramacionRepository programacionRepository;
+    private final ReservaRepository reservaRepository;
     private final Reloj reloj;
 
     public Pelicula agregar(String titulo, int duracionMinutos, List<Genero> generos,
@@ -117,7 +122,27 @@ public class GestorCartelera {
         if (Boolean.TRUE.equals(datos.enCartelera())) {
             pelicula.ponerEnCartelera();
         } else if (Boolean.FALSE.equals(datos.enCartelera())) {
-            pelicula.sacarDeCartelera();
+            despublicar(pelicula);
+        }
+    }
+
+    // R33: despublicada es que no se da, así que se lleva sus funciones por delante. Con reservas, o con una grilla
+    // que las volvería a generar, no se despublica; el rechazo deshace la transacción y no borra nada.
+    private void despublicar(Pelicula pelicula) {
+        if (programacionRepository.existsByPelicula_IdAndActivaTrue(pelicula.getId())) {
+            throw new ConflictoDeNegocio("La película " + pelicula.getTitulo()
+                    + " tiene una grilla activa: dala de baja antes de despublicarla");
+        }
+        LocalDateTime ahora = reloj.ahora();
+        if (reservaRepository.existsByFuncion_Pelicula_IdAndFuncion_InicioAfter(pelicula.getId(), ahora)) {
+            throw new ConflictoDeNegocio("La película " + pelicula.getTitulo()
+                    + " tiene funciones por delante con reservas: no se puede despublicar");
+        }
+        List<Funcion> porDelante = funcionRepository.findByPelicula_IdAndInicioAfter(pelicula.getId(), ahora);
+        funcionRepository.deleteAll(porDelante);
+        pelicula.sacarDeCartelera();
+        if (!porDelante.isEmpty()) {
+            log.info("pelicula {} despublicada · {} funciones por delante borradas", pelicula.getId(), porDelante.size());
         }
     }
 

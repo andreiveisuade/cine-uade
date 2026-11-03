@@ -56,7 +56,7 @@ public final class PantallaPeliculas extends PantallaListado<Pelicula> {
 
     public PantallaPeliculas(ApiCartelera apiCartelera, ApiCatalogos apiCatalogos, ApiImagenes apiImagenes) {
         super("Películas", "Una película llega a la cartelera cuando tiene funciones por delante; "
-                + "despublicarla la baja aunque las tenga.");
+                + "despublicarla las borra.");
         this.apiCartelera = apiCartelera;
         this.apiImagenes = apiImagenes;
         tabla.tabla().setRowHeight(ALTO_POSTER + Escala.PEGADO * 2);

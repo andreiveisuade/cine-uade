@@ -60,7 +60,7 @@ class PublicarPeliculaTest {
 
         var pregunta = accion.pregunta(p).orElseThrow();
 
-        assertEquals("¿Despublicar Matrix? Deja de verse en la cartelera aunque tenga funciones.", pregunta.texto());
+        assertEquals("¿Despublicar Matrix? Deja de verse en la cartelera y se borran sus funciones por delante.", pregunta.texto());
         assertEquals("Sí, despublicar", pregunta.si());
         assertFalse(accion.texto().isEmpty());
     }

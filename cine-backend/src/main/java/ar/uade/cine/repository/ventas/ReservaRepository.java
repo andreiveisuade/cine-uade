@@ -42,6 +42,8 @@ public interface ReservaRepository extends Repositorio<Reserva> {
 
     boolean existsByFuncion_Id(int funcionId);
 
+    boolean existsByFuncion_Pelicula_IdAndFuncion_InicioAfter(int peliculaId, LocalDateTime ahora);
+
     // Trae función, película y cliente en la misma consulta: el filtro por texto los lee a todos.
     @Query("""
             select r from Reserva r

@@ -500,7 +500,7 @@ body.lightbox-locked { overflow: hidden; }
         <li><strong>Encargado (Swing):</strong> trae la cartelera de TMDB, programa funciones, cobra, vende candy, cierra la caja.</li>
         <li><strong>Acomodador (Swing o Android):</strong> valida entradas en la puerta; en el celular, escaneando el QR.</li>
         <li><strong>El sistema:</strong> no vende dos veces una butaca; calcula precios, tarifas y promociones.</li>
-        <li>Java 21 + Spring Boot + MySQL; React; Swing; Android; Docker Compose. 29 casos de uso, reglas R1 a R28 y R30 a R32 (R22, R24, R25 y R27 cayeron con el ingreso con Google).</li>
+        <li>Java 21 + Spring Boot + MySQL; React; Swing; Android; Docker Compose. 29 casos de uso, reglas R1 a R28 y R30 a R33 (R22, R24, R25 y R27 cayeron con el ingreso con Google).</li>
       </ul>
     </section>
 
@@ -2007,7 +2007,7 @@ docker compose up -d --build
       <h3>Validación de formularios: qué mira el cliente y qué el backend</h3>
       <ul>
         <li><strong>Swing:</strong> obligatorios (marcados <code>*</code>) y formato de lo tipeado (número, <code>8,10,12</code>, <code>A1</code>, <code>HH:mm</code>, la URL de Otro… en el ingreso). Si el formato inválido viajara como <code>null</code>, <code>abc</code> en el precio respondería «El precio es obligatorio».</li>
-        <li><strong>Backend:</strong> las reglas R1 a R28 y R30 a R32. Un precio cero o negativo pasa a propósito: está bien escrito y lo decide el modelo; duplicarlo daría dos lugares que se contradicen.</li>
+        <li><strong>Backend:</strong> las reglas R1 a R28 y R30 a R33. Un precio cero o negativo pasa a propósito: está bien escrito y lo decide el modelo; duplicarlo daría dos lugares que se contradicen.</li>
         <li>Todos los formularios usan <code>comun/Validacion</code>; el formato lo lee <code>Lecturas</code>, sin Swing, testeable sola.</li>
       </ul>
 
@@ -6233,6 +6233,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
             <tr><td>R30</td><td>El candy que se pide en la web viaja con la reserva y se cobra en el mismo pago, nunca antes: mismo medio y misma autorización, en caja, por checkout o por la conciliación. Se pide mientras la reserva se puede cobrar o, ya pagada, hasta que empieza la función: ahí se cobra solo el candy, en un checkout aparte que no vuelve a cobrar las entradas. Pedir de nuevo reemplaza el pedido. Si la reserva se cancela o vence, el pedido queda anulado. Las promos siguen siendo solo de entradas (R15, R16) y el candy conserva el ahorro de sus combos (R14). Convive con «candy de mostrador con una reserva sin pagar = 409»: las dos aseguran que nunca hay candy cobrado de una reserva sin cobrar. El candy cobrado se entrega con el QR de la entrada, una sola vez (409 la segunda, con la hora del retiro)</td></tr>
             <tr><td>R31</td><td>Una función se proyecta solo en un formato en que se estrena su película. La película dice sus formatos (2D, 3D o los dos; al menos uno; sin decirlo, solo 2D, como lo que trae TMDB). Vale en el alta y la edición de funciones, en las grillas y en la grilla automática (400); sacarle a una película un formato que usan funciones por delante o una grilla activa es 409</td></tr>
             <tr><td>R32</td><td>Una entrada paga y sin usar vence cuando termina la función (inicio + duración de la película): la API la muestra <code>NO_USADA</code> sin tocar la base, la puerta la rechaza (400 «La función ya terminó: la entrada no sirve más») y no se le suma candy nuevo (400, también en el mostrador). El candy no vence: lo cobrado se retira con el mismo QR cuando sea, con la entrada usada o vencida. La usada sigue <code>PAGADA</code>, con su ingreso</td></tr>
+            <tr><td>R33</td><td>Despublicar una película borra sus funciones por delante: despublicada es que no se da, y si no seguían en la agenda y se vendían con el link directo. Si alguna tiene reservas, o la película tiene una grilla activa que las volvería a generar, es 409 y no cambia nada</td></tr>
           </tbody>
         </table>
       </div>
@@ -6378,6 +6379,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
             <tr><td>R19</td><td><code>GestorReservasTest</code>, <code>PagoControllerTest</code></td></tr>
             <tr><td>R30</td><td><code>CompraCandyTest</code> (pendiente, cobrar, anular), <code>GestorCandyTest</code> (<code>elPedido*</code>, <code>cancelarOVencerLaReservaAnulaElPedido</code>, <code>elArqueoCuentaElPedidoRecienCuandoSeCobra</code>, el mostrador sigue en 409), <code>GestorPagosTest</code> (caja, checkout, cotización, <code>siElCandyCambiaDespuesDeAbrirElCheckoutNoSeCobra</code>), <code>ConciliacionPagosTest.laConciliacionCobraTambienElCandyPendiente</code>, <code>MercadoPagoHttpTest.elCandyVaEnSuPropioItem</code>, <code>CuentaDelClienteTest</code> (PUT del candy y cotización, R21), <code>VistasVentasTest</code>, <code>PantallaCobroTest</code> (Swing); sumar a una paga: <code>GestorPagosTest</code> (<code>conLaEntradaPaga*</code>, <code>laVueltaDelCheckoutDelCandy*</code>, <code>elCheckoutDelCandyVenceAntesDeQueEmpieceLaFuncion</code>), <code>ConciliacionPagosTest.laConciliacionCobraElCheckoutSoloDeCandy</code>, <code>MercadoPagoHttpTest.elCheckoutSoloDeCandyLlevaUnItemYSeReconoceAlBuscarlo</code>; retiro: <code>CompraCandyTest.elCandyCobradoSeRetiraUnaSolaVez</code>, <code>GestorCandyTest.conElQrSeRetiraTodoLoCobradoDeLaReservaUnaSolaVez</code>, <code>CompraCandyControllerTest</code>, <code>SeguridadTest</code>, <code>PantallaPuertaTest</code> (Swing)</td></tr>
             <tr><td>R32</td><td><code>ReservaTest</code> (<code>laEntradaPagaQueNadieUsoVenceAlTerminarLaFuncion</code>, <code>terminadaLaFuncionNoSeEntraNiSeGastaLaEntrada</code>), <code>GestorCandyTest</code> (<code>loCobradoSeRetiraCuandoSea</code>, <code>terminadaLaFuncionNoSeLeVendeCandyNuevoALaEntrada</code>), <code>PagoControllerTest.laEntradaPagaSinUsarVenceAlTerminarLaFuncion</code>, <code>CompraCandyControllerTest.terminadaLaFuncionLaEntradaVencePeroElCandySeRetira</code>, <code>Ticket.test.jsx</code>, <code>MisReservas.test.jsx</code>, <code>PantallaReservasTest</code> (Swing)</td></tr>
+            <tr><td>R33</td><td><code>GestorCarteleraTest</code> (<code>despublicarBorraLasFuncionesPorDelante</code>), <code>PublicarPeliculaTest</code> (<code>laPreguntaDiceQueDejaDeVerse</code>)</td></tr>
             <tr><td>CU-16</td><td><code>GestorCandyTest.lasComprasDelClienteSonLasCobradas</code>, <code>CuentaDelClienteTest.veSusComprasDeCandyCobradas</code></td></tr>
             <tr><td>Bloqueo</td><td><code>BloqueoDeButacasTest</code></td></tr>
             <tr><td>Seguridad</td><td><code>SeguridadTest</code> (<code>matrizDeRoles</code>: status exacto por rol y familia de rutas), <code>SesionControllerTest</code>, <code>PaginaDePrivacidadTest</code></td></tr>
@@ -7029,7 +7031,7 @@ export const put = (ruta, cuerpo) =&gt; pedir("PUT", ruta, cuerpo);</code></pre>
       <h2>Estado y pendientes</h2>
       <p>
         <strong>Hecho:</strong> los 27 <a href="#casos-de-uso">casos de uso</a> y las <a href="#reglas">reglas</a>
-        R1 a R28 y R30 a R32, cada una con su prueba (<a href="#probar">trazabilidad</a>).
+        R1 a R28 y R30 a R33, cada una con su prueba (<a href="#probar">trazabilidad</a>).
       </p>
       <p><strong>Pendiente:</strong></p>
       <ul>

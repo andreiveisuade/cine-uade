@@ -25,6 +25,8 @@ public interface FuncionRepository extends Repositorio<Funcion> {
 
     List<Funcion> findByProgramacionId(int programacionId);
 
+    List<Funcion> findByPelicula_IdAndInicioAfter(int peliculaId, LocalDateTime ahora);
+
     boolean existsByPelicula_Id(int peliculaId);
 
     boolean existsBySala_Id(int salaId);

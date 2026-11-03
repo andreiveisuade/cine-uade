@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -44,11 +45,16 @@ import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
 import ar.uade.cine.model.rechazos.Rechazo;
 import ar.uade.cine.model.salas.Sala;
 import ar.uade.cine.model.salas.TipoSala;
+import ar.uade.cine.model.usuarios.Cliente;
+import ar.uade.cine.model.ventas.TipoTarifa;
 import ar.uade.cine.repository.cartelera.PeliculaRepository;
 import ar.uade.cine.repository.funciones.FuncionRepository;
 import ar.uade.cine.repository.programaciones.ProgramacionRepository;
 import ar.uade.cine.repository.salas.SalaRepository;
 import ar.uade.cine.service.cartelera.GestorRevisionCartelera;
+import ar.uade.cine.service.salas.GestorSalas;
+import ar.uade.cine.service.usuarios.GestorClientes;
+import ar.uade.cine.service.ventas.GestorReservas;
 
 class GestorCarteleraTest extends PruebaDeIntegracion {
 
@@ -69,6 +75,12 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
     private DataSource dataSource;
     @Autowired
     private JdbcTemplate jdbc;
+    @Autowired
+    private GestorSalas salas;
+    @Autowired
+    private GestorClientes clientes;
+    @Autowired
+    private GestorReservas reservas;
 
     private Sala sala;
 
@@ -142,6 +154,45 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
                     .getClass(), caso);
             assertEquals(Set.of(Proyeccion.DOS_D, Proyeccion.TRES_D), gestor.obtener(avatar.getId()).getFormatos(),
                     "el rechazo deshace el cambio");
+        }
+    }
+
+    // R33: despublicar se lleva las funciones por delante; con reservas o con una grilla que las regenera, no.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            sin reservas ni grilla,      false, false, ''
+            con una reserva por delante, true,  false, La película Matrix tiene funciones por delante con reservas: no se puede despublicar
+            con una grilla activa,       false, true,  La película Matrix tiene una grilla activa: dala de baja antes de despublicarla
+            """)
+    void despublicarBorraLasFuncionesPorDelante(String caso, boolean conReserva, boolean conGrilla, String mensaje) {
+        Pelicula matrix = gestor.agregar(DatosPelicula.con().titulo("Matrix").duracion(136)
+                .generos(List.of(Genero.ACCION)).clasificacion(Clasificacion.ATP).enCartelera(true).armar());
+        Sala sala1 = salas.agregar("Sala 1", TipoSala.DOS_D, List.of(5, 5));
+        FormatoDeFuncion en2D = new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000));
+        funcionRepository.save(new Funcion(matrix, sala1, reloj.ahora().minusDays(1), en2D));
+        Funcion proxima = funcionRepository.save(new Funcion(matrix, sala1, reloj.ahora().plusDays(3), en2D));
+        funcionRepository.save(new Funcion(matrix, sala1, reloj.ahora().plusDays(7), en2D));
+        if (conReserva) {
+            Cliente ana = clientes.ingresarConGoogle("Ana", "ana@uade.edu.ar");
+            reservas.reservar(proxima.getId(), ana.getId(), Map.of("A1", TipoTarifa.GENERAL), null);
+        }
+        if (conGrilla) {
+            programacionRepository.save(new Programacion(matrix, sala1, reloj.hoy().plusDays(1), null,
+                    LocalTime.of(20, 0), Set.of(), en2D));
+        }
+        DatosPelicula despublicada = DatosPelicula.con().enCartelera(false).armar();
+
+        if (mensaje.isEmpty()) {
+            gestor.editar(matrix.getId(), despublicada);
+            assertFalse(gestor.obtener(matrix.getId()).estaEnCartelera(), caso);
+            assertEquals(1, funcionRepository.findByPelicula_IdOrderByInicioAsc(matrix.getId()).size(),
+                    "queda solo la que ya pasó");
+        } else {
+            assertEquals(ConflictoDeNegocio.class,
+                    rechaza(mensaje, () -> gestor.editar(matrix.getId(), despublicada)).getClass(), caso);
+            assertTrue(gestor.obtener(matrix.getId()).estaEnCartelera(), "el rechazo deshace el cambio");
+            assertEquals(3, funcionRepository.findByPelicula_IdOrderByInicioAsc(matrix.getId()).size(),
+                    "el rechazo no borra ninguna");
         }
     }
 
