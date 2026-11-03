@@ -266,6 +266,27 @@ class PagoControllerTest extends PruebaDeApi {
         assertFalse(pagada.has("venceEn"), "la pagada ya no vence");
     }
 
+    // R32: Matrix dura 136 minutos; a las 22:16 la paga sin usar sale NO_USADA, la puerta la rechaza y se filtra.
+    @Test
+    void laEntradaPagaSinUsarVenceAlTerminarLaFuncion() {
+        String ticket = "/api/reservas/codigo/" + reserva.getCodigo();
+        post("/api/reservas/" + reserva.getId() + "/pago", "{\"medio\":\"EFECTIVO\"}");
+        reloj.mover(LocalDateTime.of(2026, 8, 20, 22, 15));
+        JsonNode durante = get(ticket).json();
+
+        reloj.mover(LocalDateTime.of(2026, 8, 20, 22, 16));
+        JsonNode terminada = get(ticket).json();
+        Respuesta puerta = post("/api/acceso", "{\"codigo\":\"" + reserva.getCodigo() + "\"}");
+        JsonNode filtradas = get("/api/reservas?estado=NO_USADA").json();
+
+        assertEquals("PAGADA", durante.get("estado").asText());
+        assertEquals("NO_USADA", terminada.get("estado").asText());
+        assertEquals(400, puerta.estado());
+        assertEquals("La función ya terminó: la entrada no sirve más", puerta.error());
+        assertEquals(1, filtradas.size());
+        assertEquals(reserva.getId(), filtradas.get(0).get("id").asInt());
+    }
+
     // Como los demás enums: en minúsculas se entiende, y una que no existe dice de qué butaca es.
     @Test
     void laTarifaDeCadaButacaSeEscribeComoLosDemasEnums() {

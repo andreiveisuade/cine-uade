@@ -519,6 +519,21 @@ class GestorCandyTest extends PruebaDeIntegracion {
         rechaza("El candy de esa entrada ya se retiró el 14/08 10:00", () -> candy.retirar(reserva.getCodigo()));
     }
 
+    // R32: Matrix dura 136 minutos. Terminada la función la entrada vence, pero el candy no: lo cobrado se retira
+    // igual con el QR; lo que ya no se puede es sumarle candy nuevo a la entrada.
+    @Test
+    void terminadaLaFuncionElCandyCobradoSeRetiraPeroNoSeVendeMasConLaEntrada() {
+        Reserva reserva = reservarYCobrar();
+        candy.venderParaReserva(reserva.getId(), null, pedido(pochoclos, 1), MedioPago.EFECTIVO, "");
+        reloj.mover(reloj.ahora().plusDays(3));
+
+        DatoInvalido venta = assertThrows(DatoInvalido.class,
+                () -> candy.venderParaReserva(reserva.getId(), null, pedido(gaseosa, 1), MedioPago.EFECTIVO, ""));
+
+        assertEquals("La función ya terminó: el candy se compra sin la entrada", venta.getMessage());
+        assertEquals(1, candy.retirar(reserva.getCodigo()).size());
+    }
+
     @ParameterizedTest(name = "{0}")
     @CsvSource(textBlock = """
             sin candy,           false

@@ -2,7 +2,7 @@ package ar.uade.cine.model.ventas;
 
 import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
 
-// Estados de una reserva y sus transiciones (R5, R13, R17, R18), una constante por estado.
+// Estados de una reserva y sus transiciones (R5, R13, R17, R18, R32), una constante por estado.
 // Patrón State (GoF): la regla de qué se puede hacer en cada estado vive en la constante, no en Reserva.
 // Cada constante sobrescribe lo que permite; el resto rechaza con «La reserva está <etiqueta>: ...». La etiqueta es para mensajes.
 public enum EstadoReserva {
@@ -41,6 +41,11 @@ public enum EstadoReserva {
         }
 
         @Override
+        EstadoReserva terminarLaFuncion() {
+            return NO_USADA;
+        }
+
+        @Override
         public boolean ocupaButacas() {
             return true;
         }
@@ -52,7 +57,10 @@ public enum EstadoReserva {
     },
 
     CANCELADA("cancelada"),
-    EXPIRADA("vencida");
+    EXPIRADA("vencida"),
+
+    // R32: solo efectivo, como la vencida sin expirar; en la base sigue PAGADA y cuenta como cobrada.
+    NO_USADA("vencida sin usarse");
 
     static final String NO_SE_PUEDE_COBRAR = "no se puede cobrar";
 
@@ -80,6 +88,11 @@ public enum EstadoReserva {
     // R18: a la sala se entra con una reserva pagada.
     EstadoReserva ingresar() {
         throw rechazo("solo se ingresa con una reserva pagada");
+    }
+
+    // R32: al terminar la función vence la entrada paga que nadie usó; los demás estados no cambian.
+    EstadoReserva terminarLaFuncion() {
+        return this;
     }
 
     // Todavía se puede cobrar o cancelar, y todavía puede vencer.

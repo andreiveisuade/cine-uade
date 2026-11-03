@@ -24,6 +24,7 @@ import ar.uade.cine.model.funciones.FormatoDeFuncion;
 import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
+import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
 import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.model.salas.Asiento;
 import ar.uade.cine.model.salas.Sala;
@@ -159,6 +160,7 @@ class ReservaTest {
             a primera hora,          2026-08-20T00:00
             antes de empezar,        2026-08-20T19:45
             con la función empezada, 2026-08-20T20:15
+            un minuto antes del fin, 2026-08-20T22:15
             """)
     void elDiaDeLaFuncionSeEntra(String caso, LocalDateTime cuando) {
         Reserva reserva = pagada();
@@ -170,8 +172,8 @@ class ReservaTest {
 
     @ParameterizedTest(name = "{0}")
     @CsvSource(textBlock = """
+            dos días antes, 2026-08-18T20:00
             la víspera,     2026-08-19T23:59
-            el día después, 2026-08-21T00:00
             """)
     void otroDiaNoSeEntraNiSeGastaLaEntrada(String caso, LocalDateTime cuando) {
         Reserva reserva = pagada();
@@ -180,6 +182,54 @@ class ReservaTest {
 
         assertEquals("La función es el 20/08: se entra solo ese día", error.getMessage());
         assertNull(reserva.getIngresadaEn());
+    }
+
+    // R32: Matrix dura 136 minutos, así que la función del 20/08 a las 20 termina a las 22:16.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            paga antes del inicio,     PAGA,      2026-08-20T19:00, PAGADA
+            paga durante la función,   PAGA,      2026-08-20T22:15, PAGADA
+            paga justo al fin,         PAGA,      2026-08-20T22:16, NO_USADA
+            paga días después,         PAGA,      2026-08-23T14:00, NO_USADA
+            usada después del fin,     USADA,     2026-08-23T14:00, PAGADA
+            sin pagar después del fin, SIN_PAGAR, 2026-08-23T14:00, EXPIRADA
+            """)
+    void laEntradaPagaQueNadieUsoVenceAlTerminarLaFuncion(String caso, String situacion, LocalDateTime ahora,
+                                                         EstadoReserva esperado) {
+        Reserva reserva = situacion.equals("SIN_PAGAR") ? new Reserva(FUNCION, CLIENTE, butacas("A1"), CREADA)
+                : pagada();
+        if (situacion.equals("USADA")) {
+            reserva.registrarIngreso(LocalDateTime.of(2026, 8, 20, 19, 50));
+        }
+
+        assertEquals(esperado, reserva.estadoA(ahora));
+    }
+
+    // R32: la de ayer ya terminó, y lo dice antes que el día; la usada sigue diciendo cuándo se usó.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            justo al fin,   2026-08-20T22:16
+            a la noche,     2026-08-20T23:30
+            el día después, 2026-08-21T00:00
+            """)
+    void terminadaLaFuncionNoSeEntraNiSeGastaLaEntrada(String caso, LocalDateTime cuando) {
+        Reserva reserva = pagada();
+
+        DatoInvalido error = assertThrows(DatoInvalido.class, () -> reserva.registrarIngreso(cuando));
+
+        assertEquals("La función ya terminó: la entrada no sirve más", error.getMessage());
+        assertNull(reserva.getIngresadaEn());
+    }
+
+    @Test
+    void laUsadaDiceCuandoSeUsoAunqueLaFuncionHayaTerminado() {
+        Reserva reserva = pagada();
+        reserva.registrarIngreso(LocalDateTime.of(2026, 8, 20, 19, 50));
+
+        ConflictoDeNegocio error = assertThrows(ConflictoDeNegocio.class,
+                () -> reserva.registrarIngreso(LocalDateTime.of(2026, 8, 21, 10, 0)));
+
+        assertEquals("Esa entrada ya se usó el 20/08 19:50", error.getMessage());
     }
 
     private static Reserva pagada() {
