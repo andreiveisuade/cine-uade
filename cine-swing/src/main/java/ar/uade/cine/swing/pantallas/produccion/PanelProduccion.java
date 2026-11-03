@@ -14,11 +14,9 @@ import ar.uade.cine.swing.comun.Tarea;
 
 import javax.swing.JButton;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
-import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -238,9 +236,7 @@ public final class PanelProduccion extends JPanel {
                 .ancho(Componentes.nota(actual.tokenDelSistema() ? "El token sale de AIVEN_TOKEN"
                         : actual.conToken() ? "Hay un token guardado: dejalo vacío para conservarlo"
                         : "Se guarda en esta compu, no en el repo"));
-        int respuesta = JOptionPane.showConfirmDialog(SwingUtilities.getWindowAncestor(this), formulario,
-                "Cuenta de Aiven", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
-        if (respuesta != JOptionPane.OK_OPTION) return;
+        if (!Mensajes.aceptar(this, formulario, "Cuenta de Aiven")) return;
         CuentaAiven.guardar(preferencias, proyecto.getText(), servicio.getText(), new String(token.getPassword()));
         actualizar();
     }

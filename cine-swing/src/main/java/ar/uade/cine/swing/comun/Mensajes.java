@@ -3,6 +3,7 @@ package ar.uade.cine.swing.comun;
 import ar.uade.cine.swing.api.ErrorApi;
 
 import javax.swing.BorderFactory;
+import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JRootPane;
@@ -21,8 +22,8 @@ public final class Mensajes {
 
     public static void error(Component origen, ErrorApi error) {
         if (error.esSesionVencida()) return;
-        JOptionPane.showMessageDialog(SwingUtilities.getWindowAncestor(origen), error.getMessage(),
-                error.esSinConexion() ? "Sin conexión con el servidor" : "Error", JOptionPane.ERROR_MESSAGE);
+        mostrar(origen, new JOptionPane(error.getMessage(), JOptionPane.ERROR_MESSAGE),
+                error.esSinConexion() ? "Sin conexión con el servidor" : "Error");
     }
 
     /** Un error de este lado y no del servidor: un archivo que no se pudo escribir, una importación que falló. */
@@ -38,8 +39,27 @@ public final class Mensajes {
     /** Con el botón de no propio, para cuando la acción misma se llama "cancelar". */
     public static boolean confirmar(Component origen, String pregunta, String si, String no) {
         Object[] opciones = {si, no};
-        return JOptionPane.showOptionDialog(SwingUtilities.getWindowAncestor(origen), pregunta, "Confirmar",
-                JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, null, opciones, no) == 0;
+        return si.equals(mostrar(origen, new JOptionPane(pregunta, JOptionPane.WARNING_MESSAGE,
+                JOptionPane.YES_NO_OPTION, null, opciones, no), "Confirmar"));
+    }
+
+    /** Un formulario en diálogo con Aceptar y Cancelar; true si se aceptó. */
+    public static boolean aceptar(Component origen, Object formulario, String titulo) {
+        Object valor = mostrar(origen, new JOptionPane(formulario, JOptionPane.PLAIN_MESSAGE,
+                JOptionPane.OK_CANCEL_OPTION), titulo);
+        return valor instanceof Integer opcion && opcion == JOptionPane.OK_OPTION;
+    }
+
+    // Un gestor de ventanas en mosaico (AeroSpace) dejaba el diálogo en 80×33, sin contenido y sin poder
+    // agrandarlo: el mínimo es lo que el contenido necesita, y redimensionable por si igual sale corto.
+    private static Object mostrar(Component origen, JOptionPane panel, String titulo) {
+        JDialog dialogo = panel.createDialog(SwingUtilities.getWindowAncestor(origen), titulo);
+        dialogo.setResizable(true);
+        dialogo.pack();
+        dialogo.setMinimumSize(dialogo.getSize());
+        dialogo.setVisible(true);
+        dialogo.dispose();
+        return panel.getValue();
     }
 
     /** La barra de abajo de la ventana. Se crea una por ventana y {@link #exito} la encuentra desde cualquier hijo. */

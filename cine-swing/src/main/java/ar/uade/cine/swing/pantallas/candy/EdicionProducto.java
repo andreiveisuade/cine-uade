@@ -15,7 +15,6 @@ import ar.uade.cine.swing.comun.Tarea;
 import ar.uade.cine.swing.comun.Validacion;
 
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JTextField;
 import java.awt.Component;
 
@@ -66,9 +65,7 @@ final class EdicionProducto {
             v.mostrarError(rechazo);
         }
         while (true) {
-            int opcion = JOptionPane.showConfirmDialog(origen, formulario, "Editar " + producto.nombre(),
-                    JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
-            if (opcion != JOptionPane.OK_OPTION) return;
+            if (!Mensajes.aceptar(origen, formulario, "Editar " + producto.nombre())) return;
             Validacion v = new Validacion(error);
             String nuevoNombre = v.texto(nombre, "Nombre", true);
             Double nuevoPrecio = v.decimal(precio, "Precio", true);
