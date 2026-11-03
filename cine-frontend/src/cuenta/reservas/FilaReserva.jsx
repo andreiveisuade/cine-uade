@@ -2,13 +2,13 @@ import { Badge, Button, Group, Paper, Stack, Text } from "@mantine/core";
 import { Link } from "react-router";
 import { etiqueta } from "@/api/etiquetas.js";
 import { cantidad, fechaHora, hora, precio } from "@/compartido/formato.js";
-import { COLOR_ESTADO } from "@/compartido/estadoReserva.js";
+import { cerrada, COLOR_ESTADO } from "@/compartido/estadoReserva.js";
 import { FechaEnBloque } from "./FechaEnBloque.jsx";
 
 // Una fila por reserva: la fecha como bloque a la izquierda, lo que es en el medio y lo que se puede hacer a la derecha.
 export function FilaReserva({ reserva: r, cancelando, alCancelar }) {
   return (
-    <Paper withBorder p="md" style={{ opacity: ["EXPIRADA", "CANCELADA"].includes(r.estado) ? 0.65 : 1 }}>
+    <Paper withBorder p="md" style={{ opacity: cerrada(r) ? 0.65 : 1 }}>
       <Group justify="space-between" align="center" gap="md">
         <Group gap="md" wrap="nowrap" align="center">
           <FechaEnBloque iso={r.funcion.inicio} />

@@ -24,6 +24,7 @@ const ETIQUETAS = {
   PAGADA: "Pagada",
   CANCELADA: "Cancelada",
   EXPIRADA: "Vencida",
+  NO_USADA: "Vencida sin usar",
   GENERAL: "General",
   MENOR: "Menor",
   JUBILADO: "Jubilado",

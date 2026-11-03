@@ -1,7 +1,7 @@
 import { Box, Group, SimpleGrid, Stack, Text } from "@mantine/core";
 import { etiqueta } from "@/api/etiquetas.js";
 import { dia, hora, precio } from "@/compartido/formato.js";
-import { renglonesDelCandy, totalDeLaEntrada, vigente } from "@/compartido/estadoReserva.js";
+import { qrSoloParaElCandy, renglonesDelCandy, totalDeLaEntrada, vigente } from "@/compartido/estadoReserva.js";
 import { ButacaEntrada } from "./ButacaEntrada.jsx";
 import { CabeceraEntrada } from "./CabeceraEntrada.jsx";
 import { CandyEntrada } from "./CandyEntrada.jsx";
@@ -30,7 +30,7 @@ export function EntradaTicket({ reserva, pagoEnVivo }) {
 
         <Box>
           {reserva.entradas.map((e) => <ButacaEntrada key={e.codigo} entrada={e} />)}
-          {items.length > 0 && <CandyEntrada renglones={items} />}
+          {items.length > 0 && <CandyEntrada renglones={items} aunqueLaEntradaNoSirva={qrSoloParaElCandy(reserva)} />}
           <Group justify="space-between" align="baseline" pt="sm">
             <Text fw={650}>{total.texto}</Text>
             <Text className="cine-display cine-cifras" fz={36} fw={850} lh={1}>{precio(total.importe)}</Text>

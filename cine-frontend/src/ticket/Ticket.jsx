@@ -6,7 +6,6 @@ import { EsperaOError } from "@/compartido/estado/EsperaOError.jsx";
 import { useCargar } from "@/compartido/hooks/useCargar.js";
 import { useTitulo } from "@/compartido/hooks/useTitulo.js";
 import { AccionesTicket } from "./AccionesTicket.jsx";
-import { ComprobanteTexto } from "./ComprobanteTexto.jsx";
 import { EnLaPuerta } from "./EnLaPuerta.jsx";
 import { EntradaTicket } from "@/ticket/entrada/EntradaTicket.jsx";
 import { vigente } from "@/compartido/estadoReserva.js";
@@ -41,7 +40,6 @@ export function Ticket() {
         {aviso && <Alert color="yellow" title="El pago no se completó">{aviso}</Alert>}
         <EntradaTicket reserva={reserva} pagoEnVivo={pagoEnVivo} />
         <AccionesTicket reserva={reserva} alMostrarEnPuerta={() => setEnPuerta(true)} />
-        <ComprobanteTexto reserva={reserva} />
       </Stack>
 
       {vigente(reserva) && <VentaCruzada reserva={reserva} productos={productos} promos={promos} />}

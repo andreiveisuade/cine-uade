@@ -1,7 +1,7 @@
 import { cantidad, hora } from "@/compartido/formato.js";
 
 // Presentación del estado que manda el backend; el front no decide vencimientos: la hora límite viene en venceEn.
-export const COLOR_ESTADO = { RESERVADA: "ambar", PAGADA: "green", EXPIRADA: "gray", CANCELADA: "gray" };
+export const COLOR_ESTADO = { RESERVADA: "ambar", PAGADA: "green", EXPIRADA: "gray", CANCELADA: "gray", NO_USADA: "gray" };
 
 // Qué le decimos al comprador según el estado, en la cabecera de la entrada.
 const AVISO_POR_ESTADO = {
@@ -9,6 +9,7 @@ const AVISO_POR_ESTADO = {
   PAGADA: () => "Entrada paga. Mostrá el código en la puerta.",
   EXPIRADA: () => "Esta reserva venció. Las butacas ya se liberaron.",
   CANCELADA: () => "Esta reserva está cancelada.",
+  NO_USADA: () => "La función ya terminó: esta entrada venció sin usarse.",
 };
 
 export const avisoDe = (reserva) => AVISO_POR_ESTADO[reserva.estado]?.(reserva);
@@ -19,7 +20,14 @@ export const CODIGO_POR_ESTADO = {
   PAGADA: "Mostralo en la puerta. Sirve una sola vez.",
   EXPIRADA: "Ya no sirve: la reserva venció.",
   CANCELADA: "Ya no sirve: la reserva se canceló.",
+  NO_USADA: "La entrada ya no sirve: la función terminó.",
 };
+
+// Las que ya no sirven: cancelada, vencida y (R32) la paga que nadie usó con la función terminada.
+export const cerrada = (reserva) => ["EXPIRADA", "CANCELADA", "NO_USADA"].includes(reserva.estado);
+
+// Paga aunque la entrada ya no sirva: lo que se cobró sigue cobrado.
+const paga = (reserva) => ["PAGADA", "NO_USADA"].includes(reserva.estado);
 
 export const vigente = (reserva) => ["RESERVADA", "PAGADA"].includes(reserva.estado) && !reserva.ingresadaEn;
 
@@ -43,10 +51,13 @@ export const pedidoPendiente = (reserva) => (reserva.candy ?? []).find((c) => c.
 
 export const comprasCobradas = (reserva) => (reserva.candy ?? []).filter((c) => c.estado === "COBRADA");
 
+// El candy no vence (R32): con la entrada usada o vencida sin usar, el QR sigue sirviendo para retirar lo cobrado.
+export const qrSoloParaElCandy = (reserva) => !entradaValida(reserva) && comprasCobradas(reserva).some((c) => !c.retiradaEn);
+
 // Antes de pagar suma el candy pendiente, que se cobra con la reserva; ya paga, solo lo cobrado: lo pendiente se
 // paga aparte y figura «sin pagar». La pantalla y el PDF lo cuentan igual.
 export function totalDeLaEntrada(reserva) {
-  const candy = renglonesDelCandy(reserva).filter((r) => r.cobrado || reserva.estado !== "PAGADA");
+  const candy = renglonesDelCandy(reserva).filter((r) => r.cobrado || !paga(reserva));
   return {
     texto: `Total · ${cantidad(reserva.entradas.length, "entrada")}${candy.length ? " y candy" : ""}`,
     importe: reserva.total + candy.reduce((suma, r) => suma + r.subtotal, 0),

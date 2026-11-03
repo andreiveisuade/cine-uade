@@ -6,7 +6,7 @@ import { useAvisar } from "@/compartido/estado/Avisos.jsx";
 import { descargarEntradaPdf } from "./entradaPdf.js";
 
 // La entrada en PDF, armada en el navegador con lo que la pantalla ya tiene. El QR oculto es el mismo del talón.
-export function DescargarEntrada({ reserva }) {
+export function DescargarEntrada({ reserva, ...boton }) {
   const qr = useRef(null);
   const [armando, setArmando] = useState(false);
   const avisar = useAvisar();
@@ -24,7 +24,7 @@ export function DescargarEntrada({ reserva }) {
 
   return (
     <>
-      <Button variant="default" leftSection={<IconDownload size={16} />} loading={armando} onClick={descargar}>
+      <Button {...boton} variant="default" leftSection={<IconDownload size={16} />} loading={armando} onClick={descargar}>
         Descargar entrada
       </Button>
       <QRCodeSVG ref={qr} value={reserva.codigo} level="M" aria-hidden style={{ display: "none" }} />

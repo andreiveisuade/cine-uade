@@ -81,6 +81,7 @@ describe("MisReservas con sesión: las reservas de la cuenta", () => {
     api.obtenerMisReservas.mockResolvedValue([
       reserva(1, "AAAA1111", "PAGADA"),
       reserva(2, "BBBB2222", "EXPIRADA", { cantidadEntradas: 1, total: 1000 }),
+      reserva(3, "CCCC3333", "NO_USADA"),
     ]);
 
     abrir();
@@ -90,6 +91,10 @@ describe("MisReservas con sesión: las reservas de la cuenta", () => {
     expect(within(fila("AAAA1111")).getByText(/Sala 1 · 2 entradas · \$ 2\.000/)).toBeInTheDocument();
     expect(within(fila("BBBB2222")).getByText("Vencida")).toBeInTheDocument();
     expect(within(fila("BBBB2222")).getByText(/1 entrada · \$ 1\.000/)).toBeInTheDocument();
+    // R32: la paga que nadie usó se atenúa como la vencida; el estado lo manda el backend.
+    expect(within(fila("CCCC3333")).getByText("Vencida sin usar")).toBeInTheDocument();
+    expect(fila("CCCC3333")).toHaveStyle({ opacity: "0.65" });
+    expect(fila("AAAA1111")).toHaveStyle({ opacity: "1" });
     expect(screen.getByRole("link", { name: "AAAA1111" })).toHaveAttribute("href", "/ticket/AAAA1111");
   });
 
