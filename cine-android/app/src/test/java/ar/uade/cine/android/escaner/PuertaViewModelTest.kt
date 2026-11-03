@@ -41,8 +41,10 @@ class PuertaViewModelTest {
         Dispatchers.resetMain()
     }
 
-    private fun viewModel() =
-        PuertaViewModel(ApiPuerta(servidor.url("/api").toString(), "p", "c", despachador)) { ahora }
+    private val guardados = mutableListOf<Modo>()
+
+    private fun viewModel(modo: Modo = Modo.ENTRADA) =
+        PuertaViewModel(ApiPuerta(servidor.url("/api").toString(), "p", "c", despachador), modo, guardados::add) { ahora }
 
     private fun TestScope.leer(vm: PuertaViewModel, codigo: String) {
         vm.codigoLeido(codigo)
@@ -50,15 +52,63 @@ class PuertaViewModelTest {
     }
 
     @Test
-    fun conUn200DiceAdelanteConLaReserva() = runTest(despachador) {
+    fun conUn200DiceEntradaValidaConLaReserva() = runTest(despachador) {
         servidor.enqueue(MockResponse().setBody(Ejemplos.RESERVA))
         val vm = viewModel()
 
         leer(vm, "K7M2 P9XQ")
 
-        val estado = vm.estado.value as EstadoPuerta.Adelante
+        val estado = vm.estado.value as EstadoPuerta.EntradaValida
         assertEquals("Hablan las aves", estado.reserva.pelicula?.titulo)
-        assertEquals("""{"codigo":"K7M2 P9XQ"}""", servidor.takeRequest().body.readUtf8())
+        val pedido = servidor.takeRequest()
+        assertEquals("/api/acceso", pedido.path)
+        assertEquals("""{"codigo":"K7M2 P9XQ"}""", pedido.body.readUtf8())
+    }
+
+    @Test
+    fun enModoCandyEntregaElCandyYNoRegistraElIngreso() = runTest(despachador) {
+        servidor.enqueue(MockResponse().setBody(Ejemplos.CANDY_RETIRADO))
+        val vm = viewModel(Modo.CANDY)
+
+        leer(vm, "K7M2P9XQ")
+
+        val estado = vm.estado.value as EstadoPuerta.CandyEntregado
+        assertEquals(listOf("Agua", "Combo clásico"), estado.compras.single().items.map { it.nombre })
+        assertEquals("/api/candy/retiros", servidor.takeRequest().path)
+        assertEquals(1, servidor.requestCount)
+    }
+
+    @Test
+    fun elCandyYaRetiradoSeRechazaEnModoCandy() = runTest(despachador) {
+        servidor.enqueue(MockResponse().setResponseCode(409).setBody("""{"error":"El candy de esa entrada ya se retiró el 21/10 19:50"}"""))
+        val vm = viewModel(Modo.CANDY)
+
+        leer(vm, "K7M2P9XQ")
+
+        assertEquals(EstadoPuerta.Rechazado(Modo.CANDY, "El candy de esa entrada ya se retiró el 21/10 19:50"), vm.estado.value)
+    }
+
+    @Test
+    fun cambiarDeModoLoGuardaYLeeEnSeguidaElMismoQr() = runTest(despachador) {
+        servidor.enqueue(MockResponse().setBody(Ejemplos.RESERVA))
+        servidor.enqueue(MockResponse().setBody(Ejemplos.CANDY_RETIRADO))
+        val vm = viewModel()
+        leer(vm, "K7M2P9XQ")
+        vm.escanearOtra()
+
+        vm.elegirModo(Modo.CANDY)
+        leer(vm, "K7M2P9XQ")
+
+        assertEquals(Modo.CANDY, vm.modo.value)
+        assertEquals(listOf(Modo.CANDY), guardados)
+        assertInstanceOf(EstadoPuerta.CandyEntregado::class.java, vm.estado.value)
+        assertEquals(listOf("/api/acceso", "/api/candy/retiros"), List(2) { servidor.takeRequest().path })
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @CsvSource("guardado, CANDY, CANDY", "nunca elegido, , ENTRADA", "valor viejo, OTRO, ENTRADA")
+    fun elModoGuardadoSeLeeOArrancaEnEntrada(caso: String, guardado: String?, esperado: Modo) {
+        assertEquals(esperado, Modo.de(guardado))
     }
 
     @ParameterizedTest(name = "{0}")
@@ -71,13 +121,13 @@ class PuertaViewModelTest {
             "demasiados intentos | 429 | {\"error\":\"Demasiados intentos\"} | Demasiados intentos",
         ],
     )
-    fun conUnErrorDiceNoPasaConElMensaje(caso: String, status: Int, cuerpo: String, mensaje: String) = runTest(despachador) {
+    fun conUnErrorRechazaLaEntradaConElMensaje(caso: String, status: Int, cuerpo: String, mensaje: String) = runTest(despachador) {
         servidor.enqueue(MockResponse().setResponseCode(status).setBody(cuerpo))
         val vm = viewModel()
 
         leer(vm, "K7M2P9XQ")
 
-        assertEquals(EstadoPuerta.NoPasa(mensaje), vm.estado.value)
+        assertEquals(EstadoPuerta.Rechazado(Modo.ENTRADA, mensaje), vm.estado.value)
     }
 
     @Test
@@ -104,7 +154,7 @@ class PuertaViewModelTest {
 
         vm.escanearOtra()
         leer(vm, "K7M2P9XQ")
-        assertInstanceOf(EstadoPuerta.Adelante::class.java, vm.estado.value)
+        assertInstanceOf(EstadoPuerta.EntradaValida::class.java, vm.estado.value)
     }
 
     @Test
@@ -134,6 +184,6 @@ class PuertaViewModelTest {
 
         ahora += PuertaViewModel.GRACIA_MS
         leer(vm, "K7M2P9XQ")
-        assertInstanceOf(EstadoPuerta.Adelante::class.java, vm.estado.value)
+        assertInstanceOf(EstadoPuerta.EntradaValida::class.java, vm.estado.value)
     }
 }

@@ -39,6 +39,21 @@ class ApiPuertaTest {
         assertEquals("Sala 2", reserva.sala?.nombre)
         assertEquals("2026-10-22T20:30:00", reserva.funcion?.inicio)
         assertEquals(listOf(Entrada("C5", "GENERAL", false), Entrada("C6", "JUBILADO", true)), reserva.entradas)
+        assertEquals(listOf(true, false), reserva.candy.map { it.aRetirar }, "la segunda ya se retiró")
+    }
+
+    @Test
+    fun retirarCandyMandaElMismoCodigoAOtroCanjeYLeeLoEntregado() = runTest {
+        servidor.enqueue(MockResponse().setBody(Ejemplos.CANDY_RETIRADO))
+        val compras = ApiPuerta(servidor.url("/api").toString(), "puerta", "clave", StandardTestDispatcher(testScheduler))
+            .retirarCandy("K7M2P9XQ")
+
+        val pedido = servidor.takeRequest()
+        assertEquals("/api/candy/retiros", pedido.path)
+        assertEquals("POST", pedido.method)
+        assertEquals(Credentials.basic("puerta", "clave"), pedido.getHeader("Authorization"))
+        assertEquals("""{"codigo":"K7M2P9XQ"}""", pedido.body.readUtf8())
+        assertEquals(listOf(ItemCompra("Agua", 2), ItemCompra("Combo clásico", 1)), compras.single().items)
     }
 
     @Test

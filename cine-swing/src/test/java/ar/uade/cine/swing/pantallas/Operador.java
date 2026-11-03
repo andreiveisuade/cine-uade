@@ -113,6 +113,13 @@ public final class Operador {
         return this;
     }
 
+    /** El Enter de ese mismo campo, como lo manda el lector de QR al terminar el código. */
+    public Operador enter() {
+        enEdt(() -> buscar(JTextField.class, JTextField::isEditable)
+                .orElseThrow(() -> new AssertionError("No hay campo de texto")).postActionEvent());
+        return this;
+    }
+
     public Operador elegir(String etiqueta, String opcion) {
         enEdt(() -> {
             JComboBox<?> combo = (JComboBox<?>) campo(etiqueta);

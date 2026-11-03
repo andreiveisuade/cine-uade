@@ -27,8 +27,12 @@ class ApiPuerta(
 
     suspend fun iniciarSesion(): Usuario = pedir("/sesion", "")
 
-    suspend fun registrarAcceso(codigo: String): Reserva =
-        pedir("/acceso", json.encodeToString(PedidoAcceso.serializer(), PedidoAcceso(codigo)))
+    suspend fun registrarAcceso(codigo: String): Reserva = pedir("/acceso", cuerpoCon(codigo))
+
+    // El mismo QR que /acceso, pero otro canje: no registra el ingreso y devuelve lo que hay que entregar.
+    suspend fun retirarCandy(codigo: String): List<CompraCandy> = pedir("/candy/retiros", cuerpoCon(codigo))
+
+    private fun cuerpoCon(codigo: String) = json.encodeToString(PedidoCodigo.serializer(), PedidoCodigo(codigo))
 
     private suspend inline fun <reified T> pedir(ruta: String, cuerpo: String): T = withContext(io) {
         val pedido = Request.Builder()
