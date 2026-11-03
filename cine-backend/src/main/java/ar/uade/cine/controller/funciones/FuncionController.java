@@ -25,8 +25,12 @@ import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
 import ar.uade.cine.model.tiempo.Periodo;
+import ar.uade.cine.dto.funciones.BorradoVistaDTO;
+import ar.uade.cine.dto.funciones.FuncionRechazadaVistaDTO;
 import ar.uade.cine.dto.funciones.FuncionVistaDTO;
+import ar.uade.cine.dto.funciones.PedidoBorradoDTO;
 import ar.uade.cine.dto.funciones.PedidoFuncionDTO;
+import ar.uade.cine.service.funciones.GestorBorradoDeFunciones;
 import ar.uade.cine.service.funciones.GestorFunciones;
 
 import jakarta.validation.Valid;
@@ -34,13 +38,14 @@ import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-// Rutas de /api/funciones: busca, programa, edita y borra vía GestorFunciones; responde con VistasCartelera.
+// Rutas de /api/funciones: busca, programa, edita y borra (también en lote); responde con VistasCartelera.
 @Tag(name = "Funciones", description = "La programación de una función y su mapa de butacas")
 @RestController
 @RequiredArgsConstructor
 public class FuncionController {
 
     private final GestorFunciones funciones;
+    private final GestorBorradoDeFunciones borrado;
     private final VistasCartelera vistas;
 
     @Operation(summary = "Buscar funciones por película, sala y rango de fechas")
@@ -88,6 +93,16 @@ public class FuncionController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void eliminar(@PathVariable int id) {
         funciones.eliminar(id);
+    }
+
+    // 200 aunque no se borre ninguna: cada rechazo viaja en el cuerpo con el error del DELETE de a una.
+    @Operation(summary = "Borrar varias funciones: borra las que puede y dice por qué no las otras")
+    @PostMapping("/api/funciones/borrado")
+    public BorradoVistaDTO borrar(@Valid @RequestBody PedidoBorradoDTO pedido) {
+        GestorBorradoDeFunciones.Resultado resultado = borrado.borrar(pedido.ids());
+        return new BorradoVistaDTO(resultado.borradas(), resultado.rechazadas().stream()
+                .map(rechazada -> new FuncionRechazadaVistaDTO(rechazada.id(), rechazada.motivo()))
+                .toList());
     }
 
     // El precio llega ya convertido: se valida antes que el resto del pedido.

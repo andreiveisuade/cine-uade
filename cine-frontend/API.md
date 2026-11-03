@@ -336,7 +336,8 @@ deducirlo del nombre del rol. Clave mala y email inexistente dan el mismo `401`.
 | `GET /funciones?peliculaId=&salaId=&desde=&hasta=` | Con película y sala, por `inicio`. `hasta` incluye todo el día |
 | `POST /funciones` | Película confirmada, sin superposición en la sala (R3), 3D solo en sala que lo soporta (R8), `inicio` futuro (R20), sin segundos y dentro del próximo año. Dos pedidos a la vez sobre la misma sala y hora: el segundo da `409 Ya hay una función en esa sala a esa hora` |
 | `PUT /funciones/{id}` | Mismo cuerpo, validaciones y mensajes que el alta; R3 no cuenta la función misma. `409` si tiene reservas, aun canceladas (R12). La generada por una programación se desprende y queda suelta: la grilla no vuelve a generar ese pase |
-| `DELETE /funciones/{id}` | `409` si tiene reservas, aun canceladas (R12) |
+| `DELETE /funciones/{id}` | `409` si tiene reservas, aun canceladas (R12). La de una programación no vuelve: la grilla avanza por fecha procesada |
+| `POST /funciones/borrado` | `{ids}`, de 1 a 500 (vacía o más es `400`). Borra las que puede, cada una como el `DELETE`, y da `200 {borradas: [ids], rechazadas: [{id, error}]}` con el mismo `error` que el `DELETE` (`409` de R12, `404`). Un id repetido cuenta una vez |
 
 ## Programaciones (CU-03b)
 

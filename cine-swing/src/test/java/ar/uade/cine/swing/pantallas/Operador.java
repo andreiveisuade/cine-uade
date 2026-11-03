@@ -24,6 +24,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -168,6 +169,12 @@ public final class Operador {
         return this;
     }
 
+    /** Como Shift‑clic: de {@code desde} a {@code hasta}, las dos incluidas. */
+    public Operador elegirFilas(int desde, int hasta) {
+        enEdt(() -> tabla().setRowSelectionInterval(desde, hasta));
+        return this;
+    }
+
     // --- lo que se ve ---
 
     /** Espera a que se cumpla, mirando desde el EDT: los pedidos vuelven en SwingWorker. */
@@ -250,6 +257,12 @@ public final class Operador {
             leida.set(String.valueOf(t.getValueAt(fila, t.getColumnModel().getColumnIndex(columna))));
         });
         return leida.get();
+    }
+
+    public List<Integer> filasElegidas() {
+        AtomicReference<List<Integer>> elegidas = new AtomicReference<>();
+        enEdt(() -> elegidas.set(Arrays.stream(tabla().getSelectedRows()).boxed().toList()));
+        return elegidas.get();
     }
 
     public int filas() {
