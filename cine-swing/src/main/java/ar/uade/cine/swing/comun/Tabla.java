@@ -21,6 +21,7 @@ import java.awt.Rectangle;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -118,6 +119,12 @@ public final class Tabla<T> {
         return this;
     }
 
+    /** Shift/Cmd‑clic y Cmd/Ctrl+A eligen varias; las demás tablas siguen de a una. */
+    public Tabla<T> multiple() {
+        tabla.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        return this;
+    }
+
     public void mostrar(List<T> nuevas) {
         filas.clear();
         filas.addAll(nuevas);
@@ -125,9 +132,26 @@ public final class Tabla<T> {
         ajustar();
     }
 
+    /** La única elegida: con varias, ninguna, así lo que actúa sobre una (editar, doble clic) no adivina cuál. */
     public Optional<T> seleccionada() {
         int fila = tabla.getSelectedRow();
-        return fila < 0 ? Optional.empty() : Optional.of(filas.get(fila));
+        return fila < 0 || tabla.getSelectedRowCount() > 1 ? Optional.empty() : Optional.of(filas.get(fila));
+    }
+
+    public List<T> seleccionadas() {
+        return Arrays.stream(tabla.getSelectedRows()).mapToObj(filas::get).toList();
+    }
+
+    public void seleccionarTodas() {
+        tabla.selectAll();
+    }
+
+    /** Vuelve a elegir las filas que cumplen, como las que el backend no dejó borrar. */
+    public void seleccionar(Predicate<T> cuales) {
+        tabla.clearSelection();
+        for (int i = 0; i < filas.size(); i++) {
+            if (cuales.test(filas.get(i))) tabla.addRowSelectionInterval(i, i);
+        }
     }
 
     public void alDobleClic(Consumer<T> accion) {

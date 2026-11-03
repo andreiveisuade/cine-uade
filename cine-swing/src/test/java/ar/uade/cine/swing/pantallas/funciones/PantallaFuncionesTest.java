@@ -12,6 +12,8 @@ import ar.uade.cine.swing.pantallas.Operador;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.io.IOException;
 import java.time.LocalDate;
@@ -23,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-// Programar, editar una función suelta y filtrar el listado: qué manda, qué muestra y qué rechaza antes de pedir.
+// Programar, editar, filtrar y borrar varias: qué manda, qué muestra y qué rechaza antes de pedir.
 class PantallaFuncionesTest {
 
     static final String SALA = "{\"id\":1,\"nombre\":\"Sala 1\",\"tipo\":\"DOS_D\",\"butacasPorFila\":[10],"
@@ -40,6 +42,9 @@ class PantallaFuncionesTest {
     private ServidorFalso servidor;
     private Operador encargado;
     private final List<Integer> informesAbiertos = new ArrayList<>();
+    private final List<String> preguntas = new ArrayList<>();
+    private final List<String> rechazos = new ArrayList<>();
+    private boolean confirma = true;
 
     @BeforeEach
     void levantar() throws IOException {
@@ -74,7 +79,10 @@ class PantallaFuncionesTest {
             }
         };
         encargado = Operador.en(() -> new PantallaFunciones(new ApiCartelera(http), new ApiCatalogos(http),
-                new ApiFunciones(http), new ApiSalas(http), navegacion));
+                new ApiFunciones(http), new ApiSalas(http), navegacion, p -> {
+                    preguntas.add(p.texto());
+                    return confirma;
+                }, rechazos::add));
         encargado.esperarFilas(2);
     }
 
@@ -183,5 +191,57 @@ class PantallaFuncionesTest {
         encargado.elegirFila(1).clic("Borderó e informe");
 
         assertEquals(List.of(2), informesAbiertos);
+    }
+
+    @Test
+    void conVariasElegidasSoloSePuedeBorrar() {
+        encargado.elegirFilas(0, 1);
+
+        assertFalse(encargado.habilitado("Editar"), "editar es de a una");
+        assertFalse(encargado.habilitado("Borderó e informe"), "el informe es de una función");
+        assertTrue(encargado.habilitado("Borrar"));
+    }
+
+    // Con una, la pregunta de siempre (el día es relativo a hoy); con varias, la cantidad.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(delimiter = ';', textBlock = """
+            una;   0; ¿Borrar la función de Matrix del; [1];   Función borrada
+            todas; 1; ¿Borrar 2 funciones?;             [1,2]; Se borraron 2 funciones
+            """)
+    void borrarPreguntaYMandaUnSoloPedido(String caso, int hasta, String pregunta, String ids, String aviso) {
+        servidor.responder("POST /api/funciones/borrado", 200, "{\"borradas\":" + ids + ",\"rechazadas\":[]}");
+
+        encargado.elegirFilas(0, hasta).clic("Borrar");
+
+        encargado.esperarTexto(aviso);
+        assertEquals(1, preguntas.size());
+        assertTrue(preguntas.get(0).startsWith(pregunta), preguntas.get(0));
+        assertEquals("{\"ids\":" + ids + "}", servidor.ultimo("POST /api/funciones/borrado").cuerpo());
+        assertEquals(0, servidor.veces("DELETE /api/funciones/1"), "un pedido para todas, no uno por función");
+    }
+
+    @Test
+    void seleccionarTodasEligeLasDeLaListaYSinConfirmarNoSeBorra() {
+        confirma = false;
+
+        encargado.clic("Seleccionar todas").clic("Borrar");
+
+        assertEquals(List.of(0, 1), encargado.filasElegidas());
+        assertEquals(List.of("¿Borrar 2 funciones?"), preguntas);
+        assertEquals(0, servidor.veces("POST /api/funciones/borrado"));
+    }
+
+    @Test
+    void lasQueTienenReservasQuedanElegidasConElPorqueDelBackend() {
+        servidor.responder("POST /api/funciones/borrado", 200, "{\"borradas\":[1],\"rechazadas\":"
+                + "[{\"id\":2,\"error\":\"La función 2 tiene reservas: no se puede eliminar\"}]}");
+        servidor.responder("GET /api/funciones", 200, "[" + funcion(2, "2026-11-05T18:00:00") + "]");
+
+        encargado.clic("Seleccionar todas").clic("Borrar");
+
+        encargado.esperarTexto("Se borró 1 función; 1 no se pudo borrar y quedó seleccionada");
+        encargado.esperar(() -> encargado.filas() == 1 && !encargado.filasElegidas().isEmpty());
+        assertEquals(List.of(0), encargado.filasElegidas());
+        assertEquals(List.of("La función 2 tiene reservas: no se puede eliminar"), rechazos);
     }
 }

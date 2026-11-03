@@ -224,6 +224,10 @@ class SeguridadTest extends PruebaDeApi {
             el acomodador no importa cartelera      | GET  | /api/importaciones              | ACOMODADOR    | 403
             el encargado importa cartelera          | GET  | /api/importaciones              | ADMINISTRADOR | 200
             el cliente no da de alta salas          | POST | /api/salas                      | CLIENTE       | 403
+            el cliente no borra funciones           | POST | /api/funciones/borrado          | CLIENTE       | 403
+            el acomodador no borra funciones        | POST | /api/funciones/borrado          | ACOMODADOR    | 403
+            el encargado borra funciones            | POST | /api/funciones/borrado          | ADMINISTRADOR | 200
+            el borrado sin credenciales             | POST | /api/funciones/borrado          | ANONIMO       | 401
             el cliente abre su sesion               | POST | /api/sesion                     | CLIENTE       | 200
             el acomodador abre su sesion            | POST | /api/sesion                     | ACOMODADOR    | 200
             el encargado abre su sesion             | POST | /api/sesion                     | ADMINISTRADOR | 200
@@ -243,6 +247,9 @@ class SeguridadTest extends PruebaDeApi {
     }
 
     private static String cuerpoPara(String ruta) {
+        if (ruta.equals("/api/funciones/borrado")) {
+            return "{\"ids\":[999]}";
+        }
         return ruta.equals("/api/acceso") || ruta.equals("/api/candy/retiros") ? "{\"codigo\":\"NOEXISTE\"}" : SALA;
     }
 

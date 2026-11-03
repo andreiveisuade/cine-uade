@@ -282,6 +282,19 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
                 "sin transacción, el avance se guarda aparte de las funciones");
     }
 
+    // La grilla avanza por fecha procesada: lo que se borró a mano, uno o en lote, no vuelve al extender.
+    @Test
+    void unaFuncionBorradaDeLaGrillaNoVuelveAlExtender() {
+        crearAbierta();
+        int despuesDelAlta = funcionRepository.findAll().size();
+        funciones.eliminar(funcionRepository.findAll().get(0).getId());
+
+        int generadas = programaciones.extenderActivas(reloj.hoy().plusDays(3));
+
+        assertEquals(3, generadas);
+        assertEquals(despuesDelAlta - 1 + 3, funcionRepository.findAll().size());
+    }
+
     @Test
     void unaGrillaDadaDeBajaNoExtiende() {
         PlanProgramacion plan = crearAbierta();

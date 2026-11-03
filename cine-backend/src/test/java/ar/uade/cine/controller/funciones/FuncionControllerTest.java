@@ -2,8 +2,11 @@ package ar.uade.cine.controller.funciones;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,7 +25,7 @@ import ar.uade.cine.service.salas.GestorSalas;
 import ar.uade.cine.service.usuarios.GestorClientes;
 import ar.uade.cine.service.ventas.GestorReservas;
 
-// R20 y R12 por HTTP: el reloj de test está en el 14/08/2026 a las 10:00.
+// R20 y R12 por HTTP, también en el borrado en lote: el reloj de test está en el 14/08/2026 a las 10:00.
 class FuncionControllerTest extends PruebaDeApi {
 
     @Autowired
@@ -176,5 +179,67 @@ class FuncionControllerTest extends PruebaDeApi {
 
         assertEquals(404, respuesta.estado());
         assertEquals("No existe la función 99", respuesta.error());
+    }
+
+    // Funciones 1, 2 y 3; la 2 con una reserva cancelada, que igual cuenta para R12.
+    private void tresFuncionesYLaSegundaConReservas() {
+        programar("2026-08-14T20:30:00");
+        programar("2026-08-15T20:30:00");
+        programar("2026-08-16T20:30:00");
+        int cliente = clientes.ingresarConGoogle("Andrei", "andrei@uade.edu.ar").getId();
+        reservas.cancelar(reservas.reservar(2, cliente, Map.of("A1", TipoTarifa.GENERAL), null).getId());
+    }
+
+    // Rechazadas como id:error separadas por |; el error es el mismo del DELETE de a una.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(delimiter = ';', textBlock = """
+            todas borrables;     [1,3];   [1,3]; ;                                                    1
+            mezcla con reservas; [1,2,3]; [1,3]; 2:La función 2 tiene reservas: no se puede eliminar; 1
+            id inexistente;      [3,99];  [3];   99:No existe la función 99;                          2
+            un id repetido;      [1,1];   [1];   ;                                                    2
+            ninguna borrable;    [2,99];  [];    2:La función 2 tiene reservas: no se puede eliminar|99:No existe la función 99; 3
+            """)
+    void elBorradoEnLoteBorraLasQuePuedeYDiceCualesNo(String caso, String ids, String borradas, String rechazadas,
+            int quedan) {
+        tresFuncionesYLaSegundaConReservas();
+
+        Respuesta respuesta = post("/api/funciones/borrado", "{\"ids\":" + ids + "}");
+
+        assertEquals(200, respuesta.estado());
+        assertEquals(borradas, respuesta.json().get("borradas").toString());
+        List<String> obtenidas = new ArrayList<>();
+        respuesta.json().get("rechazadas")
+                .forEach(r -> obtenidas.add(r.get("id").asInt() + ":" + r.get("error").asText()));
+        assertEquals(rechazadas == null ? List.of() : List.of(rechazadas.split("\\|")), obtenidas);
+        assertEquals(quedan, get("/api/funciones").json().size());
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(delimiter = ';', textBlock = """
+            sin la lista; {};               Faltan las funciones a borrar
+            lista vacía;  {"ids":[]};       Hay que elegir al menos una función
+            un id nulo;   {"ids":[1,null]}; Falta el id de la función
+            """)
+    void unBorradoEnLoteSinFuncionesEs400(String caso, String cuerpo, String mensaje) {
+        programar("2026-08-14T20:30:00");
+
+        Respuesta respuesta = post("/api/funciones/borrado", cuerpo);
+
+        assertEquals(400, respuesta.estado());
+        assertEquals(mensaje, respuesta.error());
+        assertEquals(1, get("/api/funciones").json().size());
+    }
+
+    @ParameterizedTest(name = "{0} ids")
+    @CsvSource({"500, 200", "501, 400"})
+    void elBorradoEnLoteTieneTope(int cuantos, int estado) {
+        String ids = IntStream.rangeClosed(1, cuantos).mapToObj(String::valueOf).collect(Collectors.joining(","));
+
+        Respuesta respuesta = post("/api/funciones/borrado", "{\"ids\":[" + ids + "]}");
+
+        assertEquals(estado, respuesta.estado());
+        if (estado == 400) {
+            assertEquals("Un borrado tiene que tener como máximo 500 funciones", respuesta.error());
+        }
     }
 }
