@@ -58,8 +58,12 @@ public class PlanificadorGrilla {
         VentanaDelDia ventana = new VentanaDelDia(criterios, reloj.ahora());
         List<PaseSugerido> pases = new RepartoDePases(elenco, new PuntajeConfiable(elenco))
                 .repartir(salas, agendasDe(salas, criterios), ventana);
+        // La sala que el reparto deja libre a propósito no cuenta como tiempo sin usar.
+        List<Sala> usadas = salas.stream()
+                .filter(sala -> pases.stream().anyMatch(pase -> pase.salaId() == sala.getId()))
+                .toList();
         return new PropuestaGrilla(elenco, pases,
-                IndicadoresGrilla.de(elenco, pases, minutosLibres(salas, ventana, criterios)));
+                IndicadoresGrilla.de(elenco, pases, minutosLibres(usadas, ventana, criterios)));
     }
 
     // Se recalcula en vez de recibirla del cliente, que podría mandar una vieja o adulterada.
