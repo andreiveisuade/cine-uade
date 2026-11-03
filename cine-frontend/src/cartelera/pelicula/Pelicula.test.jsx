@@ -79,6 +79,29 @@ describe("Pelicula", () => {
     expect(screen.getByTitle("Trailer de Dune")).toBeInTheDocument();
   });
 
+  it("muestra el puntaje con sus votos al lado del año y la duración", async () => {
+    api.obtenerPelicula.mockResolvedValue(pelicula({ anio: 2024, puntaje: 7.3, votos: 1088 }));
+    abrir();
+
+    const puntaje = await screen.findByRole("img", { name: "Puntaje 7,3 de 10, 1.088 votos" });
+    expect(puntaje).toHaveTextContent("★ 7,3 · 1.088 votos");
+    expect(puntaje.parentElement).toHaveTextContent("2024 · 2h 35m · ★ 7,3 · 1.088 votos");
+  });
+
+  it("sin votos o sin puntaje no muestra el puntaje", async () => {
+    api.obtenerPelicula.mockResolvedValue(pelicula({ puntaje: 7.3, votos: 0 }));
+    const { unmount } = abrir();
+    await screen.findByRole("heading", { name: "Dune" });
+    expect(screen.queryByRole("img", { name: /Puntaje/ })).not.toBeInTheDocument();
+    expect(screen.queryByText(/★/)).not.toBeInTheDocument();
+    unmount();
+
+    api.obtenerPelicula.mockResolvedValue(pelicula({ puntaje: 0, votos: 12 }));
+    abrir();
+    await screen.findByRole("heading", { name: "Dune" });
+    expect(screen.queryByText(/★/)).not.toBeInTheDocument();
+  });
+
   it("abre el primer día, pliega el resto y cada encabezado cuenta sus funciones", async () => {
     api.obtenerPelicula.mockResolvedValue(pelicula());
     api.obtenerFuncionesDePelicula.mockResolvedValue([funcion(1, 0, "18:00"), funcion(2, 0, "21:30"), funcion(3, 1, "20:00")]);

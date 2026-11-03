@@ -98,7 +98,8 @@ public class TmdbHttp implements CatalogoExterno {
         JsonNode estrenos = SIN_RESPUESTA;
         String trailer = null;
         try {
-            detalle = pedir("/movie/" + id);
+            // Los créditos vienen en el mismo pedido del detalle: el director no suma una llamada por película.
+            detalle = pedir("/movie/" + id, "append_to_response", "credits");
             estrenos = pedir("/movie/" + id + "/release_dates");
             trailer = trailer(id);
         } catch (ImportadorError e) {
