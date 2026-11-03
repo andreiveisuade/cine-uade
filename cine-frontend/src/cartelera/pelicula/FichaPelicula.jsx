@@ -2,6 +2,14 @@ import { Button, Group, Stack, Text, Title } from "@mantine/core";
 import { duracion } from "@/compartido/formato.js";
 import { Chip, ChipClasificacion } from "@/compartido/ui/Chips.jsx";
 
+// Sin votos un puntaje no dice nada: TMDB pone 0 a lo que nadie votó todavía.
+function Puntaje({ puntaje, votos }) {
+  if (!puntaje || !votos) return null;
+  const valor = puntaje.toLocaleString("es-AR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  const cuantos = `${votos.toLocaleString("es-AR")} ${votos === 1 ? "voto" : "votos"}`;
+  return <> · <span role="img" aria-label={`Puntaje ${valor} de 10, ${cuantos}`}>★ {valor} · {cuantos}</span></>;
+}
+
 export function FichaPelicula({ pelicula, hayFunciones }) {
   return (
     <Stack gap="sm">
@@ -10,6 +18,7 @@ export function FichaPelicula({ pelicula, hayFunciones }) {
         <ChipClasificacion valor={pelicula.clasificacion} />
         <Text size="sm" c="dimmed">
           {[pelicula.anio || null, duracion(pelicula.duracionMinutos), pelicula.idiomaOriginal || null].filter(Boolean).join(" · ")}
+          <Puntaje puntaje={pelicula.puntaje} votos={pelicula.votos} />
         </Text>
       </Group>
       <Group gap={6}>{pelicula.generos.map((g) => <Chip key={g} valor={g} />)}</Group>
