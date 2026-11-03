@@ -64,6 +64,6 @@ credenciales() {
 
 if $abrir; then
   credenciales
-  info "Abriendo el panel: elegí Local o Producción al ingresar"
-  exec java "${java_args[@]+"${java_args[@]}"}" -jar "$JAR"
+  info "Abriendo el panel: elegí Local o Producción al ingresar. Acá vas a ver cada pedido a la API"
+  exec java -Dcine.consola=true "${java_args[@]+"${java_args[@]}"}" -jar "$JAR"
 fi

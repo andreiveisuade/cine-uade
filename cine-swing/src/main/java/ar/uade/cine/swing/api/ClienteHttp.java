@@ -16,6 +16,8 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
@@ -169,11 +171,15 @@ public final class ClienteHttp {
         pedido.method(metodo, cuerpo);
 
         HttpResponse<byte[]> respuesta;
+        long desde = System.nanoTime();
         try {
             respuesta = http.send(pedido.build(), HttpResponse.BodyHandlers.ofByteArray());
+            registrar(metodo, ruta, String.valueOf(respuesta.statusCode()), desde);
         } catch (HttpTimeoutException e) {
+            registrar(metodo, ruta, "tardó", desde);
             throw new ErrorApi(0, "El servidor tardó demasiado en responder");
         } catch (IOException e) {
+            registrar(metodo, ruta, "sin red", desde);
             throw new ErrorApi(0, "No se pudo conectar con el servidor en " + base + ". ¿Está levantado?");
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -188,6 +194,18 @@ public final class ClienteHttp {
         }
         if (estado >= 400) throw new ErrorApi(estado, MensajeDeError.de(estado, respuesta.body()));
         return respuesta;
+    }
+
+    // Con -Dcine.consola=true (lo pone setup.sh), la terminal muestra cada pedido: se ve que el panel es un
+    // cliente más de la API. Los valores de la query no se imprimen: ahí viaja, por ejemplo, el email de un cliente.
+    private static final boolean CONSOLA = Boolean.getBoolean("cine.consola");
+    private static final DateTimeFormatter HORA = DateTimeFormatter.ofPattern("HH:mm:ss");
+
+    private static void registrar(String metodo, String ruta, String estado, long desde) {
+        if (!CONSOLA) return;
+        String sinDatos = ruta.replaceAll("=[^&]*", "=…");
+        System.out.printf("  %s  %-6s %-48s %-7s %5d ms%n", LocalTime.now().format(HORA), metodo, sinDatos, estado,
+                (System.nanoTime() - desde) / 1_000_000);
     }
 
     private String escribir(Object cuerpo) {
