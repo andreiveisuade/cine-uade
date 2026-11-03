@@ -10,6 +10,7 @@ import ar.uade.cine.swing.comun.Etiquetas;
 import ar.uade.cine.swing.comun.Mensajes;
 import ar.uade.cine.swing.pantallas.Destino;
 import ar.uade.cine.swing.pantallas.Navegacion;
+import ar.uade.cine.swing.pantallas.pedidos.PanelDePedidos;
 import ar.uade.cine.swing.pantallas.produccion.VentanaProduccion;
 import com.formdev.flatlaf.FlatClientProperties;
 
@@ -58,6 +59,7 @@ public final class VentanaPrincipal extends JFrame implements Navegacion {
     private final Preferences preferencias;
     private final Runnable alSalir;
     private final JPanel contenido = new JPanel(new BorderLayout());
+    private final PanelDePedidos pedidos;
     private final Map<Destino, JToggleButton> botones = new EnumMap<>(Destino.class);
     private Destino destino;
     public VentanaPrincipal(Apis apis, Servidor servidor, Empleado empleado, Preferences preferencias,
@@ -68,6 +70,7 @@ public final class VentanaPrincipal extends JFrame implements Navegacion {
         this.empleado = empleado;
         this.preferencias = preferencias;
         this.alSalir = alSalir;
+        this.pedidos = new PanelDePedidos(apis.pedidos());
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         armar();
         setSize(1280, 800);
@@ -154,8 +157,11 @@ public final class VentanaPrincipal extends JFrame implements Navegacion {
         donde.setForeground(Colores.secundario());
         donde.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, Escala.APARTE));
         pie.add(barra, BorderLayout.CENTER);
-        pie.add(donde, BorderLayout.EAST);
-        return pie;
+        pie.add(Componentes.aLaDerecha(donde, pedidos.boton()), BorderLayout.EAST);
+        JPanel abajo = new JPanel(new BorderLayout());
+        abajo.add(pedidos, BorderLayout.NORTH);
+        abajo.add(pie, BorderLayout.SOUTH);
+        return abajo;
     }
 
     // Producción salta a la vista: un alta de prueba ahí la ve el público.

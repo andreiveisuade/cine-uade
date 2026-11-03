@@ -1,5 +1,6 @@
 package ar.uade.cine.swing.api;
 
+import ar.uade.cine.swing.api.RegistroDePedidos.Resultado;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -31,6 +32,7 @@ public final class ClienteHttp {
     private final String base;
     private final HttpClient http;
     private final ObjectMapper json;
+    private final RegistroDePedidos pedidos = new RegistroDePedidos();
     // El backend no guarda sesión: cada pedido lleva Basic. Vive en memoria y se va al cerrar la app.
     private volatile String credenciales;
     private volatile Runnable alVencerSesion = () -> { };
@@ -47,6 +49,10 @@ public final class ClienteHttp {
 
     public String urlBase() {
         return base;
+    }
+
+    public RegistroDePedidos pedidos() {
+        return pedidos;
     }
 
     /** Se llama ante un 401 fuera del login, desde el hilo del pedido: quien lo registra salta al EDT. */
@@ -119,14 +125,18 @@ public final class ClienteHttp {
 
     /** Una imagen de otro sitio, como un póster de TMDB: sin credenciales, que son solo para el backend. */
     byte[] bytesDeAfuera(String url) {
+        RegistroDePedidos.Pedido pedido = pedidos.empezar("GET", url, url, 0);
         try {
             HttpResponse<byte[]> respuesta = http.send(HttpRequest.newBuilder(URI.create(url)).timeout(ESPERA)
                     .GET().build(), HttpResponse.BodyHandlers.ofByteArray());
+            registrar(pedido, resultado(respuesta, respuesta.statusCode() >= 400 ? "No se pudo bajar la imagen" : null));
             if (respuesta.statusCode() >= 400) throw new ErrorApi(respuesta.statusCode(), "No se pudo bajar la imagen");
             return respuesta.body();
         } catch (IOException | IllegalArgumentException e) {
+            registrar(pedido, Resultado.sinRespuesta("sin red", "No se pudo bajar la imagen"));
             throw new ErrorApi(0, "No se pudo bajar la imagen");
         } catch (InterruptedException e) {
+            registrar(pedido, Resultado.sinRespuesta("cancelado", "Se canceló la descarga de la imagen"));
             Thread.currentThread().interrupt();
             throw new ErrorApi(0, "Se canceló la descarga de la imagen");
         }
@@ -171,20 +181,24 @@ public final class ClienteHttp {
         pedido.method(metodo, cuerpo);
 
         HttpResponse<byte[]> respuesta;
-        long desde = System.nanoTime();
+        RegistroDePedidos.Pedido enCurso = pedidos.empezar(metodo, ruta, base + ruta, Math.max(cuerpo.contentLength(), 0));
         try {
             respuesta = http.send(pedido.build(), HttpResponse.BodyHandlers.ofByteArray());
-            registrar(metodo, ruta, String.valueOf(respuesta.statusCode()), desde);
+            registrar(enCurso, resultado(respuesta, respuesta.statusCode() >= 400
+                    ? MensajeDeError.de(respuesta.statusCode(), respuesta.body()) : null));
         } catch (HttpTimeoutException e) {
-            registrar(metodo, ruta, "tardó", desde);
             // Una escritura cortada pudo haberse hecho igual del otro lado: repetirla a ciegas puede duplicarla.
-            throw new ErrorApi(0, "GET".equals(metodo)
+            String mensaje = "GET".equals(metodo)
                     ? "El servidor tardó demasiado en responder: probá de nuevo"
-                    : "El servidor tardó demasiado en responder: puede que se haya hecho, revisá antes de repetirlo");
+                    : "El servidor tardó demasiado en responder: puede que se haya hecho, revisá antes de repetirlo";
+            registrar(enCurso, Resultado.sinRespuesta("tardó", mensaje));
+            throw new ErrorApi(0, mensaje);
         } catch (IOException e) {
-            registrar(metodo, ruta, "sin red", desde);
-            throw new ErrorApi(0, "No se pudo conectar con el servidor en " + base + ". ¿Está levantado?");
+            String mensaje = "No se pudo conectar con el servidor en " + base + ". ¿Está levantado?";
+            registrar(enCurso, Resultado.sinRespuesta("sin red", mensaje));
+            throw new ErrorApi(0, mensaje);
         } catch (InterruptedException e) {
+            registrar(enCurso, Resultado.sinRespuesta("cancelado", "Se canceló el pedido al servidor"));
             Thread.currentThread().interrupt();
             throw new ErrorApi(0, "Se canceló el pedido al servidor");
         }
@@ -200,15 +214,20 @@ public final class ClienteHttp {
     }
 
     // Con -Dcine.consola=true (lo pone setup.sh), la terminal muestra cada pedido: se ve que el panel es un
-    // cliente más de la API. Los valores de la query no se imprimen: ahí viaja, por ejemplo, el email de un cliente.
+    // cliente más de la API.
     private static final boolean CONSOLA = Boolean.getBoolean("cine.consola");
     private static final DateTimeFormatter HORA = DateTimeFormatter.ofPattern("HH:mm:ss");
 
-    private static void registrar(String metodo, String ruta, String estado, long desde) {
+    private static Resultado resultado(HttpResponse<byte[]> respuesta, String mensaje) {
+        return new Resultado(String.valueOf(respuesta.statusCode()), respuesta.body().length,
+                respuesta.headers().firstValue("Content-Type").orElse(null), mensaje);
+    }
+
+    private void registrar(RegistroDePedidos.Pedido pedido, Resultado resultado) {
+        RegistroDePedidos.Pedido terminado = pedidos.terminar(pedido, resultado);
         if (!CONSOLA) return;
-        String sinDatos = ruta.replaceAll("=[^&]*", "=…");
-        System.out.printf("  %s  %-6s %-48s %-7s %5d ms%n", LocalTime.now().format(HORA), metodo, sinDatos, estado,
-                (System.nanoTime() - desde) / 1_000_000);
+        System.out.printf("  %s  %-6s %-48s %-7s %5d ms%n", LocalTime.now().format(HORA), terminado.metodo(),
+                terminado.ruta(), resultado.estado(), terminado.ms());
     }
 
     private String escribir(Object cuerpo) {
