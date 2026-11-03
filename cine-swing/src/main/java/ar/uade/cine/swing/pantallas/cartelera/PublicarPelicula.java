@@ -8,29 +8,35 @@ import ar.uade.cine.swing.pantallas.acciones.Pregunta;
 
 import java.util.Optional;
 
-// Publicar o despublicar la película elegida. ConcreteCommand de AccionDeFila; Receiver: ApiCartelera.
-record PublicarPelicula(ApiCartelera api) implements AccionDeFila<Pelicula> {
+// Publicar o despublicar las películas elegidas. ConcreteCommand de AccionDeFila; Receiver: ApiCartelera.
+record PublicarPelicula(ApiCartelera api, boolean publicar) implements AccionDeFila<Pelicula> {
 
     @Override
     public String texto() {
-        return "Publicar / despublicar";
+        return publicar ? "Publicar" : "Despublicar";
+    }
+
+    // Con varias elegidas, cada botón actúa solo sobre las que cambian: no alterna a ciegas.
+    @Override
+    public boolean habilitada(Pelicula p) {
+        return p.enCartelera() != publicar;
     }
 
     // Despublicar la baja de la cartelera del cliente aunque tenga funciones: se pregunta. Publicar no.
     @Override
     public Optional<Pregunta> pregunta(Pelicula p) {
-        if (!p.enCartelera()) return Optional.empty();
+        if (publicar) return Optional.empty();
         return Optional.of(new Pregunta("¿Despublicar " + p.titulo() + "? Deja de verse en la cartelera "
                 + "aunque tenga funciones.", "Sí, despublicar"));
     }
 
     @Override
     public void ejecutar(Pelicula p) {
-        api.actualizarPelicula(p.id(), PedidoPelicula.soloPublicacion(!p.enCartelera()));
+        api.actualizarPelicula(p.id(), PedidoPelicula.soloPublicacion(publicar));
     }
 
     @Override
     public String hecho(Pelicula p) {
-        return p.enCartelera() ? "Despublicada" : "Publicada";
+        return publicar ? "Publicada" : "Despublicada";
     }
 }

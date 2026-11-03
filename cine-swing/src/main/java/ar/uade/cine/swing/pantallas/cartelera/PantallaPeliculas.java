@@ -51,7 +51,8 @@ public final class PantallaPeliculas extends PantallaListado<Pelicula> {
             Columna.<Pelicula>de("Géneros", p -> p.generos().stream().map(g -> etiqueta(g))
                     .collect(Collectors.joining(", "))).ancho(180),
             Columna.estado("Estado", Pelicula::enCartelera, "Publicada", "Despublicada").ancho(110))
-            .vacia("Ninguna película con esos filtros");
+            .vacia("Ninguna película con esos filtros")
+            .multiple();
 
     public PantallaPeliculas(ApiCartelera apiCartelera, ApiCatalogos apiCatalogos, ApiImagenes apiImagenes) {
         super("Películas", "Una película llega a la cartelera cuando tiene funciones por delante; "
@@ -116,12 +117,24 @@ public final class PantallaPeliculas extends PantallaListado<Pelicula> {
     }
 
     private JPanel accionesDeFila() {
+        JButton todas = Componentes.deTexto(new JButton("Seleccionar todas"));
+        todas.setToolTipText("Las de la lista, como Cmd/Ctrl+A");
+        todas.addActionListener(e -> tabla.seleccionarTodas());
+        // Editar es de a una: cada película tiene sus datos.
         JButton editar = new JButton("Editar");
         editar.addActionListener(e -> tabla.seleccionada().ifPresent(formulario::editar));
-        JPanel acciones = Componentes.aLaDerecha(editar);
-        // Command: cada operación es un objeto y BotonesDeFila la dispara (ver AccionDeFila).
-        new BotonesDeFila<>(this, tabla, this::recargar, new PublicarPelicula(apiCartelera),
-                new BorrarPelicula(apiCartelera)).agregarA(acciones);
+        JPanel acciones = Componentes.aLaDerecha(todas, editar);
+        // Command: cada operación es un objeto y BotonesDeFila la dispara sobre lo elegido (ver AccionDeFila).
+        BotonesDeFila<Pelicula> botones = new BotonesDeFila<>(this, tabla, this::recargar,
+                new PublicarPelicula(apiCartelera, true), new PublicarPelicula(apiCartelera, false),
+                new BorrarPelicula(apiCartelera));
+        botones.agregarA(acciones);
+        tabla.tabla().getSelectionModel().addListSelectionListener(e -> {
+            editar.setEnabled(tabla.seleccionada().isPresent());
+            botones.refrescar();
+        });
+        editar.setEnabled(false);
+        botones.refrescar();
         return acciones;
     }
 }

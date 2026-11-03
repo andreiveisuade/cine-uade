@@ -20,12 +20,12 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 class PublicarPeliculaTest {
 
     private ServidorFalso servidor;
-    private PublicarPelicula accion;
+    private ApiCartelera api;
 
     @BeforeEach
     void levantar() throws IOException {
         servidor = new ServidorFalso();
-        accion = new PublicarPelicula(new ApiCartelera(new ClienteHttp(servidor.url())));
+        api = new ApiCartelera(new ClienteHttp(servidor.url()));
     }
 
     @AfterEach
@@ -40,7 +40,10 @@ class PublicarPeliculaTest {
     void alternaLaPublicacion(String caso, boolean enCartelera, boolean pregunta, boolean pide, String hecho) {
         servidor.responder("PUT /api/peliculas/7", 200, "{\"id\":7}");
         Pelicula p = Json.leer("{\"id\":7,\"titulo\":\"Matrix\",\"enCartelera\":" + enCartelera + "}", Pelicula.class);
+        PublicarPelicula accion = new PublicarPelicula(api, pide);
 
+        assertEquals(true, accion.habilitada(p));
+        assertEquals(false, new PublicarPelicula(api, !pide).habilitada(p));
         assertEquals(pregunta, accion.pregunta(p).isPresent());
         accion.ejecutar(p);
 
@@ -53,6 +56,7 @@ class PublicarPeliculaTest {
     @Test
     void laPreguntaDiceQueDejaDeVerse() {
         Pelicula p = Json.leer("{\"id\":7,\"titulo\":\"Matrix\",\"enCartelera\":true}", Pelicula.class);
+        PublicarPelicula accion = new PublicarPelicula(api, false);
 
         var pregunta = accion.pregunta(p).orElseThrow();
 

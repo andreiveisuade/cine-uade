@@ -125,6 +125,25 @@ class BotonesDeFilaTest {
         assertEquals(pregunta ? 1 : 0, preguntadas.size());
     }
 
+    @Test
+    void conVariasElegidasPreguntaLaCantidadYSalteaLasQueNoAplican() throws Exception {
+        Tabla<String> varias = new Tabla<>(Columna.<String>de("Fila", s -> s)).multiple();
+        varias.mostrar(List.of("una", "bloqueada", "otra"));
+        Alternar accion = new Alternar(true);
+        JPanel panel = new JPanel();
+        new BotonesDeFila<>(panel, varias, recargo::countDown, p -> {
+            preguntadas.add(p);
+            return true;
+        }, List.of(accion)).agregarA(panel);
+        varias.seleccionarTodas();
+
+        SwingUtilities.invokeAndWait(((JButton) panel.getComponent(0))::doClick);
+
+        assertTrue(recargo.await(5, TimeUnit.SECONDS));
+        assertEquals(List.of("una", "otra"), accion.ejecutadas);
+        assertEquals("¿Alternar 2 elegidas?", preguntadas.get(0).texto());
+    }
+
     @ParameterizedTest(name = "{0}")
     @CsvSource({
             "sin fila apagado con el texto de siempre,  -1, false, Alternar",

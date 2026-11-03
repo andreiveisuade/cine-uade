@@ -1,5 +1,6 @@
 package ar.uade.cine.swing.pantallas.acciones;
 
+import ar.uade.cine.swing.api.ErrorApi;
 import ar.uade.cine.swing.comun.Componentes;
 import ar.uade.cine.swing.comun.Mensajes;
 import ar.uade.cine.swing.comun.Tabla;
@@ -8,6 +9,7 @@ import ar.uade.cine.swing.comun.Tarea;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import java.awt.Component;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
 
@@ -53,24 +55,57 @@ public final class BotonesDeFila<T> {
 
     /** Texto y habilitación según la fila elegida; sin fila, apagados. La pantalla lo llama al cambiar la fila. */
     public void refrescar() {
-        var elegida = tabla.seleccionada();
+        List<T> elegidas = tabla.seleccionadas();
         for (Boton<T> b : botones) {
-            b.boton().setEnabled(elegida.map(b.accion()::habilitada).orElse(false));
-            b.boton().setText(elegida.map(b.accion()::texto).orElse(b.accion().texto()));
+            b.boton().setEnabled(elegidas.stream().anyMatch(b.accion()::habilitada));
+            b.boton().setText(elegidas.size() == 1 ? b.accion().texto(elegidas.get(0)) : b.accion().texto());
         }
     }
 
     private void disparar(AccionDeFila<T> accion) {
-        tabla.seleccionada().ifPresent(fila -> {
-            if (accion.pregunta(fila).map(p -> !confirmar.test(p)).orElse(false)) return;
-            String hecho = accion.hecho(fila);
-            Tarea.ejecutar(origen, () -> {
-                accion.ejecutar(fila);
-                return null;
-            }, resultado -> {
-                Mensajes.exito(origen, hecho);
-                alTerminar.run();
-            });
+        List<T> filas = tabla.seleccionadas().stream().filter(accion::habilitada).toList();
+        if (filas.size() == 1) {
+            dispararUna(accion, filas.get(0));
+        } else if (filas.size() > 1) {
+            dispararVarias(accion, filas);
+        }
+    }
+
+    private void dispararUna(AccionDeFila<T> accion, T fila) {
+        if (accion.pregunta(fila).map(p -> !confirmar.test(p)).orElse(false)) return;
+        String hecho = accion.hecho(fila);
+        Tarea.ejecutar(origen, () -> {
+            accion.ejecutar(fila);
+            return null;
+        }, resultado -> {
+            Mensajes.exito(origen, hecho);
+            alTerminar.run();
+        });
+    }
+
+    // Una por una: lo que el backend rechaza no frena al resto, y su motivo se muestra tal cual al terminar.
+    private void dispararVarias(AccionDeFila<T> accion, List<T> filas) {
+        String verbo = accion.texto();
+        boolean pregunta = accion.pregunta(filas.get(0)).isPresent();
+        if (pregunta && !confirmar.test(new Pregunta("¿" + verbo + " " + filas.size() + " elegidas?",
+                "Sí, " + verbo.toLowerCase()))) return;
+        Tarea.ejecutar(origen, () -> {
+            List<String> rechazos = new ArrayList<>();
+            for (T fila : filas) {
+                try {
+                    accion.ejecutar(fila);
+                } catch (ErrorApi e) {
+                    // Sin sesión las demás fallarían igual, y la app ya vuelve al ingreso.
+                    if (e.esSesionVencida()) throw e;
+                    rechazos.add(e.getMessage());
+                }
+            }
+            return rechazos;
+        }, rechazos -> {
+            Mensajes.exito(origen, verbo + ": " + (filas.size() - rechazos.size()) + " hechas"
+                    + (rechazos.isEmpty() ? "" : ", " + rechazos.size() + " no se pudieron"));
+            if (!rechazos.isEmpty()) Mensajes.error(origen, String.join("\n", rechazos.stream().limit(10).toList()));
+            alTerminar.run();
         });
     }
 }
