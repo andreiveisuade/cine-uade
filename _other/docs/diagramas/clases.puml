@@ -19,12 +19,17 @@ package "model.cartelera" {
     - duracionMinutos : int
     - clasificacion : Clasificacion
     - generos : List<Genero>
+    - formatos : Set<Proyeccion>
     - catalogo : CatalogoPelicula
     - enCartelera : boolean
     - trailerYoutube : String
     - estadoRevision : EstadoRevision
     + Pelicula(titulo : String, duracionMinutos : Integer, generos : List<Genero>, clasificacion : Clasificacion)
     + actualizar(titulo : String, duracionMinutos : Integer, generos : List<Genero>, clasificacion : Clasificacion) : void
+    + getFormatos() : Set<Proyeccion>
+    + cambiarFormatos(formatos : Collection<Proyeccion>) : void
+    + seEstrenaEn(proyeccion : Proyeccion) : boolean
+    + exigirFormato(proyeccion : Proyeccion) : void
     + cambiarCatalogo(catalogo : CatalogoPelicula) : void
     + cambiarTrailer(texto : String) : void
     + completarTrailer(trailer : TrailerYoutube) : void
@@ -158,6 +163,7 @@ package "model.salas" {
     CUATRO_D
     - multiplicadorPrecio : double
     - soportaTresD : boolean
+    - premium : boolean
     + aplicarA(precio : Dinero) : Dinero
   }
   enum TipoAsiento {
@@ -202,7 +208,10 @@ package "model.funciones" {
   enum Proyeccion {
     DOS_D
     TRES_D
+    - etiqueta : String
+    - recargo : Dinero
     + sePuedeProyectarEn(tipo : TipoSala) : boolean
+    + conRecargo(precio : Dinero) : Dinero
   }
   enum Version {
     DOBLADA
@@ -285,7 +294,8 @@ package "model.ventas" {
     - funcionId : Integer
     - tarifa : TipoTarifa
     - precio : Dinero
-    + Entrada(asiento : Asiento, tarifa : TipoTarifa, precioDeLaButaca : Dinero)
+    + Entrada(asiento : Asiento, tarifa : TipoTarifa, precioDeLaButaca : Dinero, proyeccion : Proyeccion)
+    + {static} precioDe(tarifa : TipoTarifa, precioDeLaButaca : Dinero, proyeccion : Proyeccion) : Dinero
     + codigoAsiento() : String
     ~ ocupar(funcionId : int) : void
     ~ liberar() : void
@@ -681,6 +691,7 @@ Rechazo <|-- DemasiadosIntentos : extiende
 Pelicula "1" *--> "1" CatalogoPelicula : se describe con >
 Pelicula "0..*" --> "1" Clasificacion : se clasifica como >
 Pelicula "0..*" --> "1..*" Genero : pertenece a >
+Pelicula "0..*" --> "1..*" Proyeccion : se estrena en >
 Pelicula "0..*" --> "1" EstadoRevision : está en >
 Importacion "0..*" --> "1" EstadoImportacion : está en >
 Importacion "1" *--> "1" ResumenDeCorrida : se resume en >
@@ -706,6 +717,8 @@ Reserva "0..*" --> "1" EstadoReserva : está en >
 Entrada "0..*" --> "1" Asiento : corresponde a >
 Entrada "0..*" --> "1" TipoTarifa : se vende con >
 Entrada "1" *--> "1" Dinero : cuesta >
+Entrada "1" ..> "1" Proyeccion : le suma el recargo de >
+Proyeccion "1" *--> "1" Dinero : recarga >
 ButacaPedida "0..*" --> "1" Asiento : pide >
 ButacaPedida "0..*" --> "0..1" TipoTarifa : elige >
 Pago "0..1" --> "1" Reserva : cobra >

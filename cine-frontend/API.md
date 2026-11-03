@@ -63,7 +63,7 @@ Límites conocidos: el login con Basic (empleados) y cada pedido de Swing compar
 |---|---|
 | `GET /generos` | `["ACCION", "COMEDIA", …]` |
 | `GET /clasificaciones` | `[{"nombre":"ATP","edadMinima":0}, …]` |
-| `GET /tipos-sala` | `[{"nombre":"IMAX","multiplicador":1.6,"soportaTresD":true}, …]` |
+| `GET /tipos-sala` | `[{"nombre":"IMAX","multiplicador":1.6,"soportaTresD":true,"premium":true,"enLaGrilla":"Premium: las mejor puntuadas, en 3D si tienen versión 3D"}, …]`. Son atributos del tipo (Experto): `enLaGrilla` dice qué le toca en la grilla automática y se muestra tal cual |
 | `GET /idiomas` · `GET /proyecciones` | `["DOBLADA","SUBTITULADA"]` · `["DOS_D","TRES_D"]` |
 | `GET /medios-pago` | `[{"nombre":"EFECTIVO","requiereAutorizacion":false}, …]`: los de la boletería. `MERCADO_PAGO` no figura: es solo de la web |
 | `GET /tarifas` | `[{"nombre":"JUBILADO","requiereAcreditacion":true}, …]` |
@@ -116,12 +116,13 @@ son `PUT`, `POST` o `DELETE`: con CSRF apagado, `SameSite=Lax` no manda la cooki
   "clasificacion": "MAS_16", "posterUrl": "…", "director": "…", "anio": 1999,
   "idiomaOriginal": "Inglés", "sinopsis": "…",
   "enCartelera": true, "estadoRevision": "CONFIRMADA", "puntaje": 8.2, "votos": 26000,
-  "trailerYoutube": "vKQi3bBA1y8" }
+  "trailerYoutube": "vKQi3bBA1y8", "formatos": ["DOS_D", "TRES_D"] }
 ```
 
 `estadoRevision` (`PENDIENTE`, `CONFIRMADA`, `DESCARTADA`) dice si entró al catálogo; `enCartelera`, si se
 está dando. `trailerYoutube` es el id del video de YouTube o `null`: se embebe en
-`https://www.youtube.com/embed/{id}`. Una función suma `precioDesde` y la sala con `minutosLimpieza`.
+`https://www.youtube.com/embed/{id}`. `formatos` dice en qué se estrena (R31), `DOS_D` primero. Una función suma
+`precioDesde` (la butaca más barata con tarifa general, anteojos incluidos) y la sala con `minutosLimpieza`.
 
 ## Mapa de butacas
 
@@ -136,7 +137,8 @@ está dando. `trailerYoutube` es el id del video de YouTube o `null`: se embebe 
 
 `ocupado` es de esta función (R4); `estado`, del asiento (R9). Sin `sesion`, los bloqueos propios se ven
 ocupados. `precio` es el de la tarifa general; `precios`, el de cada tarifa con la misma cuenta que la entrada al
-reservar: el cliente los muestra y suma, no los recalcula.
+reservar: base × sala × butaca × tarifa, más $ 1.000 fijos de anteojos si la función es 3D (ni la tarifa ni los
+multiplicadores tocan el recargo). El cliente los muestra y suma, no los recalcula.
 
 `POST /funciones/{id}/bloqueos`: aparta butacas 3 minutos mientras se elige.
 
@@ -323,10 +325,10 @@ deducirlo del nombre del rol. Clave mala y email inexistente dan el mismo `401`.
 |---|---|
 | `GET /peliculas?q=&genero=&publicada=` | Todas. `q` busca en el título; `publicada` es `enCartelera` |
 | `GET /peliculas/pendientes` | El buzón del importador |
-| `POST /peliculas` | Título único (R1, `409`), duración 1 a 600 (R2), al menos un género (R7), clasificación (R10). `puntaje` 0 a 10, `anio` desde 1895, `posterUrl` con `http(s)://`. `trailerYoutube` acepta el id o una URL de YouTube (`watch?v=`, `youtu.be/`, `/embed/`) y guarda el id; otra cosa, `400 El trailer tiene que ser un video de YouTube`. Nace `CONFIRMADA` |
+| `POST /peliculas` | Título único (R1, `409`), duración 1 a 600 (R2), al menos un género (R7), clasificación (R10). `puntaje` 0 a 10, `anio` desde 1895, `posterUrl` con `http(s)://`. `trailerYoutube` acepta el id o una URL de YouTube (`watch?v=`, `youtu.be/`, `/embed/`) y guarda el id; otra cosa, `400 El trailer tiene que ser un video de YouTube`. `formatos`: `DOS_D`, `TRES_D` o los dos; sin el campo, `["DOS_D"]`; vacío, `400 La película tiene que tener al menos un formato` (R31). Nace `CONFIRMADA` |
 | `POST /peliculas/{id}/confirmacion` | `CONFIRMADA` y en cartelera |
 | `POST /peliculas/{id}/descarte` | `DESCARTADA`; `409` si tiene funciones |
-| `PUT /peliculas/{id}` | Parcial: lo que no viaja queda igual. `enCartelera: true` solo publica una `CONFIRMADA`. `trailerYoutube: ""` saca el trailer |
+| `PUT /peliculas/{id}` | Parcial: lo que no viaja queda igual. `enCartelera: true` solo publica una `CONFIRMADA`. `trailerYoutube: ""` saca el trailer. Sacar un formato que usan funciones por delante o una programación activa es `409` (R31) |
 | `DELETE /peliculas/{id}` | `409` si tiene funciones o una programación |
 | `GET /salas` · `GET /salas/{id}` | `{id, nombre, tipo, butacasPorFila, filas, capacidadSala, minutosLimpieza}`; el detalle suma `asientos` |
 | `POST /salas` | `{nombre, tipo, butacasPorFila, codigosVip, codigosPareja, codigosAccesibles, minutosLimpieza}`. 1 a 26 filas, 1 a 40 butacas por fila; cada código especial existe y está en una sola lista. Limpieza 0 a 120, 15 por defecto. Nombre único (`409`) |
@@ -334,7 +336,7 @@ deducirlo del nombre del rol. Clave mala y email inexistente dan el mismo `401`.
 | `DELETE /salas/{id}` | `409` si tiene funciones o una programación |
 | `PATCH /salas/{salaId}/asientos/{codigo}` | `{"estado":"FUERA_DE_SERVICIO"}` o `HABILITADO` (R9) |
 | `GET /funciones?peliculaId=&salaId=&desde=&hasta=` | Con película y sala, por `inicio`. `hasta` incluye todo el día |
-| `POST /funciones` | Película confirmada, sin superposición en la sala (R3), 3D solo en sala que lo soporta (R8), `inicio` futuro (R20), sin segundos y dentro del próximo año. Dos pedidos a la vez sobre la misma sala y hora: el segundo da `409 Ya hay una función en esa sala a esa hora` |
+| `POST /funciones` | Película confirmada, sin superposición en la sala (R3), 3D solo en sala que lo soporta (R8) y de una película con versión 3D (R31: `400 La película Matrix no tiene versión en 3D`; igual con 2D), `inicio` futuro (R20), sin segundos y dentro del próximo año. Dos pedidos a la vez sobre la misma sala y hora: el segundo da `409 Ya hay una función en esa sala a esa hora` |
 | `PUT /funciones/{id}` | Mismo cuerpo, validaciones y mensajes que el alta; R3 no cuenta la función misma. `409` si tiene reservas, aun canceladas (R12). La generada por una programación se desprende y queda suelta: la grilla no vuelve a generar ese pase |
 | `DELETE /funciones/{id}` | `409` si tiene reservas, aun canceladas (R12). La de una programación no vuelve: la grilla avanza por fecha procesada |
 | `POST /funciones/borrado` | `{ids}`, de 1 a 500 (vacía o más es `400`). Borra las que puede, cada una como el `DELETE`, y da `200 {borradas: [ids], rechazadas: [{id, error}]}` con el mismo `error` que el `DELETE` (`409` de R12, `404`). Un id repetido cuenta una vez |
@@ -356,7 +358,7 @@ deducirlo del nombre del rol. Clave mala y email inexistente dan el mismo `401`.
 
 - `diasSemana` vacío es todos. Sin `hasta`, queda abierta y se extiende sola de a 14 días.
 - Los horarios que ya pasaron se saltean sin contar (R20); los que chocan, se saltean y cuentan.
-- `400`: película sin confirmar, R8, rango de más de 366 días o que termina a más de un año, hora con
+- `400`: película sin confirmar, R8, R31, rango de más de 366 días o que termina a más de un año, hora con
   segundos, rango sin ningún día elegido, o todos los horarios ya pasados.
 - `GET /programaciones?peliculaId=&salaId=&activa=`, `GET /programaciones/{id}` (con sus funciones) y
   `PATCH /programaciones/{id}` con `{"activa": false|true}`. No hay `DELETE`.
@@ -364,23 +366,28 @@ deducirlo del nombre del rol. Clave mala y email inexistente dan el mismo `401`.
 ## Grilla automática
 
 `POST /grilla/propuesta` (no crea) y `POST /grilla`, mismo cuerpo. Solo `precio` es obligatorio; por defecto,
-una semana desde hoy, de 14 a 24, ocho títulos, subtitulada en 2D.
+una semana desde hoy, de 14 a 24, ocho títulos, subtitulada. No hay `proyeccion`: el formato de cada pase sale
+de la sala y la película (si viaja, se ignora).
 
 ```json
 { "desde": "2026-09-01", "dias": 7, "apertura": "14:00", "cierre": "00:00",
-  "cuantasPeliculas": 8, "precio": 5000, "idioma": "SUBTITULADA", "proyeccion": "DOS_D" }
+  "cuantasPeliculas": 8, "precio": 5000, "idioma": "SUBTITULADA" }
 → { "elenco": [{ "id": 4, "titulo": "…", "puntaje": 8.2, "pases": 12, "…": "…" }],
-    "pases": [{ "peliculaId": 4, "salaId": 1, "inicio": "2026-09-01T14:00:00", "…": "…" }],
+    "pases": [{ "peliculaId": 4, "salaId": 1, "inicio": "2026-09-01T14:00:00", "proyeccion": "TRES_D", "…": "…" }],
     "indicadores": { "minutosProgramados": 3320, "minutosDisponibles": 4200, "ocupacion": 0.79,
-                     "puntajePromedio": 7.8, "generosCubiertos": 6, "generosTotales": 9 },
+                     "puntajePromedio": 7.8, "generosCubiertos": 6, "generosTotales": 9,
+                     "facturacionEsperada": 1360000.0 },
     "funcionesCreadas": 0 }
 ```
 
 - `cierre: "00:00"` es fin del día. Solo películas confirmadas; no pisa funciones existentes ni propone
-  horarios que ya pasaron (R20). En 3D usa solo las salas que lo proyectan.
-- Llena primero la sala más barata que proyecta el formato (2D, 3D, IMAX, 4D) y abre la siguiente solo si
-  alguna película del elenco quedó sin pase ese día. `minutosDisponibles` y `ocupacion` cuentan solo las
-  salas que la propuesta usa.
+  horarios que ya pasaron (R20).
+- Llena todas las salas, de la más cara a la más barata. Cada una prefiere lo que dice su tipo en
+  `GET /tipos-sala` (`enLaGrilla`): la premium, las mejor puntuadas; la 3D, las versiones 3D; la 2D, las que
+  todavía no tienen pase ese día. En el último turno entra la que deja menos hueco antes del cierre.
+- `proyeccion` de cada pase: `TRES_D` si la sala lo proyecta y la película tiene versión 3D (R8, R31); si no, `DOS_D`.
+- `minutosDisponibles` y `ocupacion` cuentan todas las salas. `facturacionEsperada` es una estimación: cada pase
+  a sala llena con tarifa general (anteojos incluidos), por el puntaje sobre 10.
 - `400`: `desde` en el pasado o fin a más de un año, `dias` fuera de 1 a 31, `cuantasPeliculas` fuera de 1 a
   20, cierre que no es posterior a la apertura, ninguna película o sala posible.
 

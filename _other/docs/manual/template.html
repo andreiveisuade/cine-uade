@@ -500,7 +500,7 @@ body.lightbox-locked { overflow: hidden; }
         <li><strong>Encargado (Swing):</strong> trae la cartelera de TMDB, programa funciones, cobra, vende candy, cierra la caja.</li>
         <li><strong>Acomodador (Swing o Android):</strong> valida entradas en la puerta; en el celular, escaneando el QR.</li>
         <li><strong>El sistema:</strong> no vende dos veces una butaca; calcula precios, tarifas y promociones.</li>
-        <li>Java 21 + Spring Boot + MySQL; React; Swing; Android; Docker Compose. 29 casos de uso, reglas R1 a R28 y R30 (R22, R24, R25 y R27 cayeron con el ingreso con Google).</li>
+        <li>Java 21 + Spring Boot + MySQL; React; Swing; Android; Docker Compose. 29 casos de uso, reglas R1 a R28, R30 y R31 (R22, R24, R25 y R27 cayeron con el ingreso con Google).</li>
       </ul>
     </section>
 
@@ -534,11 +534,11 @@ body.lightbox-locked { overflow: hidden; }
         <table>
           <thead><tr><th>ID</th><th>Actor</th><th>Caso de uso</th><th>Reglas</th></tr></thead>
           <tbody>
-            <tr><td>CU-01</td><td>Admin</td><td>Alta, baja y listado de películas</td><td>R1, R2, R7</td></tr>
+            <tr><td>CU-01</td><td>Admin</td><td>Alta, baja y listado de películas, con sus formatos (2D, 3D)</td><td>R1, R2, R7, R31</td></tr>
             <tr><td>CU-01b</td><td>Ambos</td><td>Filtrar películas por género</td><td>—</td></tr>
             <tr><td>CU-02</td><td>Admin</td><td>Alta, baja y listado de salas con su mapa</td><td>R2</td></tr>
-            <tr><td>CU-03</td><td>Admin</td><td>Programar una función, editarla mientras no tenga reservas y borrar varias juntas</td><td>R3, R8, R12, R20</td></tr>
-            <tr><td>CU-03b</td><td>Admin</td><td>Grilla: previsualizar, aplicar, dar de baja</td><td>R3, R8, R20</td></tr>
+            <tr><td>CU-03</td><td>Admin</td><td>Programar una función, editarla mientras no tenga reservas y borrar varias juntas</td><td>R3, R8, R12, R20, R31</td></tr>
+            <tr><td>CU-03b</td><td>Admin</td><td>Grilla: previsualizar, aplicar, dar de baja</td><td>R3, R8, R20, R31</td></tr>
             <tr><td>CU-03c</td><td>Admin</td><td>Ver la programación como <a href="#agenda">agenda</a></td><td>—</td></tr>
             <tr><td>CU-04</td><td>Ambos</td><td>Consultar cartelera y funciones</td><td>—</td></tr>
             <tr><td>CU-05</td><td>Cliente</td><td><a href="#google">Ingresar con Google</a> y salir</td><td>R28</td></tr>
@@ -851,7 +851,7 @@ docker compose up -d --build
           <thead><tr><th>Clase</th><th>Responsabilidad</th></tr></thead>
           <tbody>
             <tr><td colspan="2" style="font-weight:600"><code>service/</code></td></tr>
-            <tr><td><code>GestorCartelera</code></td><td>ABM de películas y cartelera (R1, R12)</td></tr>
+            <tr><td><code>GestorCartelera</code></td><td>ABM de películas y cartelera (R1, R12); no deja sacar un formato en uso (R31)</td></tr>
             <tr><td><code>GestorRevisionCartelera</code></td><td>Buzón de importadas: alta, confirmar, descartar</td></tr>
             <tr><td><code>GestorImportaciones</code></td><td>Corre el importador de TMDB y guarda el historial</td></tr>
             <tr><td><code>GestorSalas</code></td><td>ABM de salas y fuera de servicio (R9, R12)</td></tr>
@@ -859,7 +859,7 @@ docker compose up -d --build
             <tr><td><code>GestorBorradoDeFunciones</code></td><td>Borrado en lote: cada una por <code>GestorFunciones.eliminar</code>, sin transacción compartida</td></tr>
             <tr><td><code>AgendaDeSala</code></td><td>Tramos ocupados de una sala, leídos una vez; única definición de R3</td></tr>
             <tr><td><code>GestorProgramaciones</code></td><td>Grillas: previsualizar, aplicar, extender, baja; saltea el pasado (R20)</td></tr>
-            <tr><td><code>PlanificadorGrilla</code>, <code>RepartoDePases</code>, <code>VentanaDelDia</code>, <code>ElencoGrilla</code>, <code>IndicadoresGrilla</code>, <code>PuntajeConfiable</code></td><td><a href="#planificador">Planificador</a>: orquesta / elige películas / mide la propuesta / puntaje bayesiano. <code>RepartoDePases</code> reparte los turnos y <code>VentanaDelDia</code> define la ventana horaria (<a href="#it-v8">V8</a>)</td></tr>
+            <tr><td><code>PlanificadorGrilla</code>, <code>RepartoDePases</code>, <code>HuecoAlCierre</code>, <code>PapelEnLaGrilla</code>, <code>VentanaDelDia</code>, <code>ElencoGrilla</code>, <code>IndicadoresGrilla</code>, <code>PuntajeConfiable</code></td><td><a href="#planificador">Planificador</a>: orquesta / elige películas / mide la propuesta / puntaje bayesiano. <code>RepartoDePases</code> reparte los turnos, <code>HuecoAlCierre</code> cierra cada sala con el menor hueco, <code>PapelEnLaGrilla</code> dice qué prefiere cada tipo de sala y <code>VentanaDelDia</code> define la ventana horaria (<a href="#it-v8">V8</a>)</td></tr>
             <tr><td><code>GestorPromociones</code> / <code>PoliticaPromociones</code></td><td>Alta de los tres tipos y la mejor al cobrar (R15, R16) / interfaz de un método que usa el cobro</td></tr>
             <tr><td><code>GestorReservas</code></td><td>Reservar y cancelar (R4, R6, R9, R13, R19); publica <code>ReservaCreada</code></td></tr>
             <tr><td><code>GestorAcceso</code></td><td>Busca la reserva por código y le pide el ingreso (R18)</td></tr>
@@ -902,7 +902,7 @@ docker compose up -d --build
             <tr><td><code>Pelicula</code> / <code>CatalogoPelicula</code></td><td>Título, duración, géneros, clasificación (R2, R7, R10); revisión en <code>EstadoRevision</code> / datos de catálogo embebidos (director, sinopsis, póster, puntaje…)</td></tr>
             <tr><td><code>Importacion</code></td><td>Una corrida del importador; <code>EstadoImportacion</code> decide sus transiciones y <code>ResumenDeCorrida</code> guarda el resultado (<a href="#it-v7">V7</a>)</td></tr>
             <tr><td><code>Sala</code> / <code>Asiento</code></td><td>Crea sus butacas / tipo y estado (R9)</td></tr>
-            <tr><td><code>Funcion</code></td><td>Película en sala a una hora; R8 al nacer, decide R19 y R20, calcula su precio</td></tr>
+            <tr><td><code>Funcion</code></td><td>Película en sala a una hora; R8 y R31 al nacer, decide R19 y R20, calcula su precio</td></tr>
             <tr><td><code>Programacion</code></td><td>La grilla que genera funciones; se activa o desactiva</td></tr>
             <tr><td><code>Reserva</code> / <code>Entrada</code></td><td>1 a 10 butacas con su código, delega en <code>EstadoReserva</code> / butaca con tarifa y precio congelado</td></tr>
             <tr><td><code>Pago</code></td><td>Comprobante del cobro con descuento; autorización según <code>MedioPago</code> (R11)</td></tr>
@@ -1234,7 +1234,7 @@ docker compose up -d --build
       <h3>Validación de formularios: qué mira el cliente y qué el backend</h3>
       <ul>
         <li><strong>Swing:</strong> obligatorios (marcados <code>*</code>) y formato de lo tipeado (número, <code>8,10,12</code>, <code>A1</code>, <code>HH:mm</code>, la URL de Otro… en el ingreso). Si el formato inválido viajara como <code>null</code>, <code>abc</code> en el precio respondería «El precio es obligatorio».</li>
-        <li><strong>Backend:</strong> las reglas R1 a R28 y R30. Un precio cero o negativo pasa a propósito: está bien escrito y lo decide el modelo; duplicarlo daría dos lugares que se contradicen.</li>
+        <li><strong>Backend:</strong> las reglas R1 a R28, R30 y R31. Un precio cero o negativo pasa a propósito: está bien escrito y lo decide el modelo; duplicarlo daría dos lugares que se contradicen.</li>
         <li>Todos los formularios usan <code>comun/Validacion</code>; el formato lo lee <code>Lecturas</code>, sin Swing, testeable sola.</li>
       </ul>
 
@@ -1355,7 +1355,18 @@ docker compose up -d --build
         <li>La distribución (<code>[8,10,12,12,14]</code>) solo se usa al crear: <code>Sala.generarAsientos</code> la valida y crea los <code>Asiento</code> (Creador). La capacidad se cuenta desde ellos.</li>
         <li>«Ocupado» es por función (<a href="#reglas">R4</a>); «fuera de servicio» es del asiento y vale para todas (R9), con el mismo texto al vender y al bloquear.</li>
         <li>La limpieza de la sala se suma a la duración para R3.</li>
-        <li>El recargo premium va solo en <code>TipoAsiento</code>: también en la sala se cobraba dos veces. <code>TipoSala</code> dice si proyecta 3D (R8).</li>
+        <li>El recargo por butaca (VIP, pareja) va solo en <code>TipoAsiento</code>: también en la sala se cobraba dos veces.</li>
+        <li><strong>Las reglas de la sala son atributos de su tipo (Experto):</strong> <code>TipoSala</code> sabe su multiplicador de precio, si proyecta 3D (<a href="#reglas">R8</a>) y si es premium. Del multiplicador sale el precio y el orden de la grilla; de los otros dos, qué le toca en la grilla (<code>PapelEnLaGrilla</code>), sin preguntar el nombre de la constante:
+          <div class="table-wrap"><table>
+            <thead><tr><th>Tipo</th><th>Multiplicador</th><th>3D</th><th>Premium</th><th>En la grilla</th></tr></thead>
+            <tbody>
+              <tr><td>2D</td><td>1,0</td><td>no</td><td>no</td><td>Las películas en 2D, primero las que todavía no tienen pase ese día</td></tr>
+              <tr><td>3D</td><td>1,3</td><td>sí</td><td>no</td><td>Las versiones 3D; si no hay ninguna, en 2D</td></tr>
+              <tr><td>IMAX</td><td>1,6</td><td>sí</td><td>sí</td><td>Las mejor puntuadas, en 3D si tienen versión 3D</td></tr>
+              <tr><td>4D</td><td>1,8</td><td>sí</td><td>sí</td><td>Las mejor puntuadas, en 3D si tienen versión 3D</td></tr>
+            </tbody>
+          </table></div>
+          <code>GET /api/tipos-sala</code> lo publica y la pantalla Salas de Swing lo muestra tal cual: un tipo nuevo es una constante con sus tres atributos.</li>
         <li>El nombre repetido se busca sin contar a la sala misma: renombrarla igual, o cambiarle un acento que la collation ignora, no es un 409 falso.</li>
       </ul>
     </section>
@@ -1463,16 +1474,16 @@ docker compose up -d --build
 
     <section class="doc-section" id="der">
       <h2>Modelo de datos (DER)</h2>
-      <p>MySQL 8.4. Fuente única: <code>cine-backend/src/main/resources/db/schema.sql</code>, 21 tablas.</p>
+      <p>MySQL 8.4. Fuente única: <code>cine-backend/src/main/resources/db/schema.sql</code>, 22 tablas.</p>
       <figure class="diagram">
         {{SVG_DER_DESIGN}}
-        <figcaption>Las 21 tablas de <code>schema.sql</code> con todas sus columnas, tipos, defaults y las 25 FK, agrupadas por subdominio</figcaption>
+        <figcaption>Las 22 tablas de <code>schema.sql</code> con todas sus columnas, tipos, defaults y las 26 FK, agrupadas por subdominio</figcaption>
       </figure>
       <details>
         <summary>Versión completa en PlantUML (<code>der.puml</code>)</summary>
         <figure class="diagram">
           {{SVG_DER}}
-          <figcaption>Las 21 tablas de <code>schema.sql</code> por subdominio, en pata de gallo; <code>*</code> es <code>NOT NULL</code></figcaption>
+          <figcaption>Las 22 tablas de <code>schema.sql</code> por subdominio, en pata de gallo; <code>*</code> es <code>NOT NULL</code></figcaption>
         </figure>
       </details>
       <ul>
@@ -1495,6 +1506,7 @@ docker compose up -d --build
           <thead><tr><th>Resto de las tablas</th><th>Contenido</th></tr></thead>
           <tbody>
             <tr><td><code>pelicula_genero</code></td><td>géneros de cada película (PK compuesta, <code>ON DELETE CASCADE</code>)</td></tr>
+            <tr><td><code>pelicula_formato</code></td><td>en qué formatos se estrena cada película, <code>DOS_D</code> o <code>TRES_D</code> (R31; misma forma que <code>pelicula_genero</code>)</td></tr>
             <tr><td><code>programacion</code>, <code>programacion_dia</code></td><td>grilla y sus días; una <code>funcion</code> generada apunta a su grilla</td></tr>
             <tr><td><code>promocion</code>, <code>promocion_dia</code>, <code>promocion_medio</code></td><td>tabla única con discriminador y condiciones</td></tr>
             <tr><td><code>producto</code>, <code>combo_item</code></td><td>carta y composición de combos</td></tr>
@@ -1623,32 +1635,35 @@ docker compose up -d --build
     <section class="doc-section" id="planificador">
       <h2>El planificador</h2>
       <ul>
-        <li><code>PlanificadorGrilla</code> propone la semana equilibrando puntaje, diversidad de géneros y ocupación. Solos fallan: monotemática / cualquier cosa / siempre la más corta.</li>
-        <li><code>ElencoGrilla</code> elige películas, el planificador reparte, <code>IndicadoresGrilla</code> mide. Las cuentas puras (sin base ni reloj) quedan afuera del planificador.</li>
+        <li><code>PlanificadorGrilla</code> propone la semana con <strong>todas las salas llenas</strong>, en una sola corrida y para los dos formatos. Equilibra facturación, cobertura, puntaje, diversidad de géneros y ocupación. Solos fallan: monotemática / cualquier cosa / siempre la más corta.</li>
+        <li><code>ElencoGrilla</code> elige películas, <code>RepartoDePases</code> reparte, <code>HuecoAlCierre</code> cierra cada sala, <code>IndicadoresGrilla</code> mide. Las cuentas puras (sin base ni reloj) quedan afuera del planificador. Es un solo algoritmo: Fabricación pura y Alta cohesión (<a href="#it-v8">V8</a>), sin Strategy.</li>
       </ul>
       <pre><code>valor(p)  = puntaje(p) + 2,0 × √(géneros de p no cubiertos)
 puntaje   = (v/(v+50)) × nota + (50/(v+50)) × promedio del catálogo</code></pre>
       <ul>
         <li><strong>Elenco:</strong> goloso, explicable elección por elección. El bono inclina, no decide.</li>
         <li><strong>Votos</strong> (<code>PuntajeConfiable</code>): seis votos no valen como miles; cero votos con puntaje es carga manual y vale tal cual.</li>
-        <li><strong>Reparto (algoritmo voraz):</strong> sala por sala y turno por turno, entra la película que todavía no tiene pase ese día; entre ellas, la de más deuda (<code>asignados / puntaje</code>). Si no termina antes del cierre, se descarta y se prueba la siguiente; si no entra ninguna, la sala está completa. No pisa lo programado (<a href="#reglas">R3</a>). Determinista.</li>
-        <li><strong>Sala adecuada primero:</strong> se llena primero la sala más barata que proyecta el formato (2D, después 3D, IMAX y 4D). La siguiente se abre solo si alguna película del elenco quedó sin pase ese día, y la que se abre se llena entera. Así una grilla 2D no ocupa la IMAX ni la 4D si entra en las 2D, y quedan libres para la grilla 3D.</li>
-        <li><strong>Solo salas que pueden (<a href="#reglas">R8</a>):</strong> una grilla en 3D reparte entre las que lo proyectan, o rechaza; si no, la propuesta fallaría al aplicarla.</li>
-        <li><strong>Desde ahora (R20):</strong> hoy arranca en el primer intento de 30 minutos que no pasó.</li>
-        <li><strong>Ocupación:</strong> se mide sobre las salas que la grilla usó; las que deja libres no cuentan como tiempo perdido.</li>
+        <li><strong>El formato sale de la sala y de la película (<a href="#reglas">R8, R31</a>):</strong> el pedido ya no trae proyección. En una sala que proyecta 3D, la película va en 3D si tiene esa versión; si no, en 2D.</li>
+        <li><strong>Qué prefiere cada sala</strong> (<code>PapelEnLaGrilla</code>, de los atributos de <code>TipoSala</code>, <a href="#salas">salas</a>): la 2D, las películas en 2D; la 3D, las versiones 3D (si no hay ninguna, 2D); la premium (IMAX, 4D), la mitad mejor puntuada del elenco. Si al final del día no entra ninguna de las suyas, rellena con otra que pueda dar.</li>
+        <li><strong>La más cara elige primero:</strong> las salas van de la más cara a la más barata (4D, IMAX, 3D, 2D). La premium se lleva las mejores y la 2D, que va última, empieza por las que todavía no tienen pase ese día: así ninguna queda sin pase si entra.</li>
+        <li><strong>Reparto (Greedy):</strong> cada sala se llena entera, turno tras turno con su limpieza. Entra una de las que prefiere la sala; entre ellas, la que no tiene pase ese día; después, la de más deuda (<code>asignados / puntaje</code>), para no repetir siempre la misma. La que no termina antes del cierre se descarta y se prueba la siguiente. No pisa lo programado (<a href="#reglas">R3</a>) ni lo que ya pasó (R20). Determinista.</li>
+        <li><strong>Cierre de la sala (Programación dinámica):</strong> en el último turno, entre las del mismo grupo (las que prefiere la sala y la cobertura), entra la que deja menos tiempo muerto antes del cierre. Es el <em>Problema del Cambio</em>: «pagar» los minutos que quedan con pases de limpieza + duración, quedando lo más cerca posible sin pasarse. Greedy no alcanza, como en la mochila 0/1: la más larga que entra puede bloquear dos cortas que llenan justo. <code>HuecoAlCierre</code> tabula la respuesta de abajo hacia arriba (subestructura óptima), una vez por sala.</li>
+        <li><strong>Lo que gana:</strong> en la semana del seed (6 salas, 6 películas, de 14 a 24) el hueco al cierre baja de 37,9 a 25,7 minutos por sala y día (el peor, de 91 a 55), y entran 175 pases en vez de 168, sin perder la rotación. Solo en el último turno: en una simulación con la programación dinámica en todos, el hueco bajaba un poco más pero la grilla repetía las combinaciones que llenan justo y las peor puntuadas quedaban con un pase por día.</li>
+        <li><strong>Indicadores:</strong> la ocupación se mide sobre todas las salas. La <strong>facturación esperada</strong> suma, por pase, lo que recauda la sala llena con tarifa general (base × sala × butaca + anteojos) por el puntaje sobre 10. Es una estimación: no hay datos de demanda, y se supone que una película de 8 llena el 80 % de la sala.</li>
       </ul>
+      <p><strong>Por qué la mejor va a la sala más cara.</strong> Desigualdad del reordenamiento: si a₁ ≥ … ≥ aₙ son los multiplicadores de las salas y b₁ ≥ … ≥ bₙ la demanda de las películas, Σ aᵢ·b<sub>σ(i)</sub> es máxima cuando σ las empareja en el mismo orden.<br>Argumento de intercambio: si una sala más cara tuviera una película peor que una más barata, cambiarlas no baja la facturación esperada; repitiendo el cambio se llega al orden del voraz.</p>
       <p>La estrategia, en el formato de Programación III:</p>
       <div class="table-wrap"><table>
         <thead><tr><th>Elemento</th><th>En el planificador</th></tr></thead>
         <tbody>
-          <tr><td>Conjunto de candidatos</td><td>Las salas que proyectan el formato, de la más barata a la más cara; en cada turno, las películas del elenco</td></tr>
-          <tr><td>Función selección</td><td>Primero las que no tienen pase ese día; después, la de más deuda; si empatan, por título</td></tr>
-          <tr><td>Función factibilidad</td><td>Termina antes del cierre, no choca con lo programado ni con la limpieza (R3), arranca después de ahora (R20) y la sala proyecta el formato (R8)</td></tr>
-          <tr><td>Función solución</td><td>Sala: no entra ninguna película más. Día: todo el elenco tiene pase, y no se abre otra sala</td></tr>
-          <tr><td>Función objetivo</td><td>Sala adecuada, después cobertura diaria, después pases en proporción al puntaje, después ocupación. El voraz la aproxima, no la garantiza</td></tr>
+          <tr><td>Conjunto de candidatos</td><td>Las salas, de la más cara a la más barata; en cada turno, las películas del elenco que la sala puede dar (R8, R31)</td></tr>
+          <tr><td>Función selección</td><td>Primero las que prefiere la sala (premium: la mitad mejor puntuada; 3D: las versiones 3D; 2D: todas); entre ellas, las que no tienen pase ese día; después, la de más deuda; si empatan, la mejor puntuada. En el último turno, dentro de ese grupo, la que deja menos hueco al cierre</td></tr>
+          <tr><td>Función factibilidad</td><td>Termina antes del cierre, no choca con lo programado ni con la limpieza (R3), arranca después de ahora (R20), la sala proyecta el formato (R8) y la película lo tiene (R31)</td></tr>
+          <tr><td>Función solución</td><td>Sala: no entra ninguna película más. Día: todas las salas llenas</td></tr>
+          <tr><td>Función objetivo</td><td><strong>Maximizar la facturación esperada</strong> (Σ precio × demanda) con las salas siempre llenas: el menor tiempo muerto al cierre, ninguna película sin pase en el día si entra, la mejor en la sala más cara y los pases en proporción al puntaje. El voraz la aproxima, no la garantiza: el problema entero es una mochila múltiple, NP-difícil</td></tr>
         </tbody>
       </table></div>
-      <p>Complejidad: Θ(S log S) para ordenar las salas más O(D·S·T·k), con D días, S salas, T turnos por día y k películas. En el peor caso (31 días, 6 salas, 20 películas) son unos 100 mil pasos: corre en milisegundos. No es mochila fraccionada: una función no se parte.</p>
+      <p>Complejidad: Θ(S log S) para ordenar las salas, Θ(S·W·k) para las tablas del cierre (W minutos del día) y O(D·S·T·k) para el reparto, con D días, S salas, T turnos por día y k películas. En el peor caso (31 días, 6 salas, 20 películas, día de 24 horas) son unos 300 mil pasos: corre en milisegundos.</p>
     </section>
 
     <section class="doc-section" id="reservas">
@@ -1793,7 +1808,7 @@ puntaje   = (v/(v+50)) × nota + (50/(v+50)) × promedio del catálogo</code></p
 
     <section class="doc-section" id="precios">
       <h2>Precios y promociones</h2>
-      <pre><code>Entrada.precio = Funcion.precio × TipoSala × TipoAsiento × TipoTarifa
+      <pre><code>Entrada.precio = Funcion.precio × TipoSala × TipoAsiento × TipoTarifa + recargo de la Proyeccion
 cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</code></pre>
       <figure class="diagram">
         {{SVG_PRECIO_ENTRADA}}
@@ -1802,6 +1817,8 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
       <ul>
         <li><strong>Experto:</strong> cada tipo aplica su <code>aplicarA(Dinero)</code>, sin <code>switch</code>. Se descartó una <code>CalculadoraPrecio</code> que conocía los tres enums y la función.</li>
         <li><strong>Tarifa por persona</strong>, en <code>Entrada</code>: el acomodador ve qué carnet pedir.</li>
+        <li><strong>Recargo 3D, de monto fijo:</strong> los anteojos, $ 1.000 por entrada. Lo sabe <code>Proyeccion.TRES_D</code>, como <code>TipoSala</code> sabe su multiplicador, y va después de la tarifa: ni la sala, ni la butaca, ni la tarifa lo multiplican (un jubilado paga media butaca, no medio anteojo). La cuenta vive una sola vez, en <code>Entrada.precioDe</code>: la usan la venta, los precios por tarifa del mapa y el «desde» de la cartelera, así los clientes no recalculan.</li>
+        <li><strong>El anteojo con un 2x1:</strong> la promo se calcula como siempre, sobre el precio de la entrada (<a href="#reglas">R15</a>), y el anteojo es parte de ese precio: la entrada que se regala va entera, anteojos incluidos. Es lo más simple (la promo no conoce el formato) y lo más defendible (el cliente lee «2x1» y paga una entrada).</li>
         <li><strong>Descuento en <code>Pago</code>:</strong> el 2x1 es del conjunto, <a href="#reglas">R15</a> compara montos y depende del medio. R16 lo dice la tarifa: una tarifa nueva no toca el gestor.</li>
       </ul>
 
@@ -1901,6 +1918,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
             <tr><td><del>R27</del></td><td><del>Solo el ADMINISTRADOR asigna una clave temporal</del>. Cayó: no hay clave que asignar</td></tr>
             <tr><td>R28</td><td>El cliente entra a la web solo con su cuenta de Google y con el email verificado. Si ya hay un cliente con ese email —compró sin cuenta o tenía clave— es el mismo cliente: conserva su nombre y ve sus reservas. Si no, se lo da de alta con el nombre de Google. El email de un empleado no entra por Google: el panel es la aplicación de escritorio, con su clave. En la web se compra con esa sesión: la reserva es del cliente de la sesión, nunca del email que viaje en el pedido</td></tr>
             <tr><td>R30</td><td>El candy que se pide en la web viaja con la reserva y se cobra en el mismo pago, nunca antes: mismo medio y misma autorización, en caja, por checkout o por la conciliación. Se pide mientras la reserva se puede cobrar o, ya pagada, hasta que empieza la función: ahí se cobra solo el candy, en un checkout aparte que no vuelve a cobrar las entradas. Pedir de nuevo reemplaza el pedido. Si la reserva se cancela o vence, el pedido queda anulado. Las promos siguen siendo solo de entradas (R15, R16) y el candy conserva el ahorro de sus combos (R14). Convive con «candy de mostrador con una reserva sin pagar = 409»: las dos aseguran que nunca hay candy cobrado de una reserva sin cobrar. El candy cobrado se entrega con el QR de la entrada, una sola vez (409 la segunda, con la hora del retiro)</td></tr>
+            <tr><td>R31</td><td>Una función se proyecta solo en un formato en que se estrena su película. La película dice sus formatos (2D, 3D o los dos; al menos uno; sin decirlo, solo 2D, como lo que trae TMDB). Vale en el alta y la edición de funciones, en las grillas y en la grilla automática (400); sacarle a una película un formato que usan funciones por delante o una grilla activa es 409</td></tr>
           </tbody>
         </table>
       </div>
@@ -2032,6 +2050,9 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
             <tr><td>R1, R2, R7, R10</td><td><code>GestorCarteleraTest</code>, <code>PeliculaTest</code>, <code>SalaTest</code></td></tr>
             <tr><td>R3, R8, R12</td><td><code>FuncionTest</code>, <code>GestorFuncionesTest</code>, <code>GestorProgramacionesTest</code>, <code>FuncionControllerTest</code> (también el borrado en lote), <code>PantallaFuncionesTest</code>, <code>BorrarFuncionesTest</code></td></tr>
             <tr><td>R20</td><td><code>GestorFuncionesTest</code>, <code>PlanificadorGrillaTest</code></td></tr>
+            <tr><td>R31</td><td><code>PeliculaTest</code> (<code>soloSeProgramaEnLosFormatosEnQueSeEstrena</code>, <code>unaPeliculaSinFormatosNoSeAcepta</code>), <code>FuncionTest</code>, <code>ProgramacionTest.unaGrillaEn3DDeUnaPeliculaSinVersion3DNoSeConstruye</code>, <code>GestorCarteleraTest.sacarleUnFormatoEnUsoEsUnConflicto</code>, <code>FuncionControllerTest.unaFuncion3DDeUnaPeliculaSinVersion3DEs400ConElMensaje</code>, <code>PeliculaControllerTest.losFormatosViajanConElNombreDeLaConstante</code>, <code>RepartoDePasesTest.elFormatoDeCadaPaseSaleDeLaSalaYDeLaPelicula</code>, <code>PlanificadorGrillaTest.aplicarCreaCadaFuncionEnElFormatoDeSuPase</code>, <code>PantallaPeliculasTest.sinNingunFormatoNoSeManda</code> (Swing)</td></tr>
+            <tr><td><a href="#planificador">Grilla</a></td><td><code>PlanificadorGrillaTest</code> (<code>cadaSalaQuedaLlenaHastaQueNoEntraNingunaMas</code>, <code>laSalaPremiumDaLasMejorPuntuadas</code>, <code>laSala3DDaLasVersiones3DEn3D</code>, <code>sinVersiones3DLaSala3DDa2D</code>, <code>ningunaPeliculaQuedaSinPaseEnElDiaSiEntra</code>, <code>noPisaLasFuncionesQueYaEstabanCargadas</code>, <code>enElUltimoTurnoVaLaQueMenosHuecoDejaAlCierre</code>, <code>laOcupacionSeMideSobreTodasLasSalas</code>, <code>laFacturacionEsperadaEsLaSalaLlenaPorElPuntaje</code>), <code>HuecoAlCierreTest</code>, <code>RepartoDePasesTest</code>, <code>CatalogoControllerTest</code> (tipos de sala)</td></tr>
+            <tr><td><a href="#precios">Recargo 3D</a></td><td><code>EntradaTest</code>, <code>VistasSalasTest.enUnaFuncion3DElMapaYaSumaLosAnteojos</code>, <code>PromocionTest.el2x1En3DRegalaLaEntradaConSusAnteojos</code></td></tr>
             <tr><td>R21</td><td><code>CuentaDelClienteTest</code></td></tr>
             <tr><td>R23, R26</td><td><code>CuentaControllerTest</code> (<code>laBajaSeReabreConGoogle</code>), <code>GestorClientesTest</code>, <code>MiCuenta.test.jsx</code></td></tr>
             <tr><td>R28</td><td><code>ClientesDeGoogleTest</code>, <code>GestorClientesTest</code> (<code>conGoogle*</code>), <code>IngresoConGoogleTest</code>, <code>SinGoogleTest</code>, <code>CuentaDelClienteTest.elQueReservoSinCuentaEntraConGoogleYVeSusReservas</code>, <code>Ingresar.test.jsx</code>, <code>PagoControllerTest.laReservaEsDelClienteDeLaSesionAunqueElPedidoNombreAOtro</code>, <code>SeguridadTest.reservarPideLaSesionDeUnCliente</code></td></tr>
@@ -2107,9 +2128,9 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
         <table>
           <thead><tr><th>Patrón</th><th>Dónde</th></tr></thead>
           <tbody>
-            <tr><td><strong>Experto</strong> <a href="#d-experto">(diagrama)</a> · <a href="#it-v13">V13</a></td><td>Cada entidad responde y valida lo suyo: <code>Reserva.getTotal()</code>, <code>Funcion.precioDe</code> (con el precio de su <code>FormatoDeFuncion</code>), <code>TipoTarifa.requiereAcreditacion</code>, R8 en <code>Funcion</code>, R9 en <code>Asiento</code>; pagar, cancelar y expirar en <code>Reserva</code>; qué autorización exige un medio, <code>MedioPago</code>. El gestor se queda con lo que pide la base o el reloj: <code>Reserva</code> no sabe si sus butacas están libres</td></tr>
+            <tr><td><strong>Experto</strong> <a href="#d-experto">(diagrama)</a> · <a href="#it-v13">V13</a></td><td>Cada entidad responde y valida lo suyo: <code>Reserva.getTotal()</code>, <code>Funcion.precioDe</code> (con el precio de su <code>FormatoDeFuncion</code>), <code>TipoTarifa.requiereAcreditacion</code>, R8 en <code>Funcion</code>, R31 en <code>Pelicula</code>, R9 en <code>Asiento</code>; el recargo 3D en <code>Proyeccion</code>; multiplicador, 3D y premium en <code>TipoSala</code>; pagar, cancelar y expirar en <code>Reserva</code>; qué autorización exige un medio, <code>MedioPago</code>. El gestor se queda con lo que pide la base o el reloj: <code>Reserva</code> no sabe si sus butacas están libres</td></tr>
             <tr><td><strong>Creador</strong> <a href="#d-creador">(diagrama)</a> · <a href="#it-v9">V9</a></td><td>Quien contiene crea: <code>Sala.generarAsientos</code> → <code>Asiento</code>, <code>Combo.armar</code> → <code>ItemCombo</code>, <code>Reserva</code> → <code>Entrada</code> (<a href="#it-v9">V9</a>), <code>CompraCandy</code> → <code>ItemCompra</code> (constructores de paquete); <code>TipoPromocion</code> tiene los datos para crear su subclase</td></tr>
-            <tr><td><strong>Fabricación pura</strong> <a href="#d-fabricacion-pura">(diagrama)</a> · <a href="#it-v8">V8</a></td><td><code>Ocupacion</code>, <code>BloqueoDeButacas</code>, <code>RepartoDePases</code>, <code>AgendaDeSala</code>, <code>PuntajeConfiable</code>, <code>Validador*</code>, observadores de comprobantes, <code>Repositorio.exigir</code>, <code>Regla</code>: no pertenecen a ninguna entidad</td></tr>
+            <tr><td><strong>Fabricación pura</strong> <a href="#d-fabricacion-pura">(diagrama)</a> · <a href="#it-v8">V8</a></td><td><code>Ocupacion</code>, <code>BloqueoDeButacas</code>, <code>RepartoDePases</code>, <code>HuecoAlCierre</code>, <code>AgendaDeSala</code>, <code>PuntajeConfiable</code>, <code>Validador*</code>, observadores de comprobantes, <code>Repositorio.exigir</code>, <code>Regla</code>: no pertenecen a ninguna entidad</td></tr>
             <tr><td><strong>Controlador</strong> <a href="#d-controlador">(diagrama)</a></td><td><code>Gestor*</code> reciben cada operación; <code>*Controller</code> solo traduce HTTP. Los tests llaman a los gestores sin HTTP</td></tr>
             <tr><td><strong>Indirección</strong> <a href="#d-indireccion">(diagrama)</a></td><td><code>*Repository</code> entre el gestor y la base; <code>Api&lt;Subdominio&gt;</code> entre las pantallas Swing y HTTP; <code>Adaptadores</code> entre el gestor y la implementación</td></tr>
             <tr><td><strong>Polimorfismo</strong> <a href="#d-polimorfismo">(diagrama)</a></td><td><code>aplicarA(Dinero)</code> en <code>TipoSala</code>, <code>TipoAsiento</code>, <code>TipoTarifa</code>; subclases de <code>Promocion</code>; constantes de <code>TipoPromocion</code>, <code>EstadoReserva</code>, <code>EstadoRevision</code></td></tr>
@@ -2693,7 +2714,7 @@ export const put = (ruta, cuerpo) =&gt; pedir("PUT", ruta, cuerpo);</code></pre>
       <h2>Estado y pendientes</h2>
       <p>
         <strong>Hecho:</strong> los 27 <a href="#casos-de-uso">casos de uso</a> y las <a href="#reglas">reglas</a>
-        R1 a R28 y R30, cada una con su prueba (<a href="#probar">trazabilidad</a>).
+        R1 a R28, R30 y R31, cada una con su prueba (<a href="#probar">trazabilidad</a>).
       </p>
       <p><strong>Pendiente:</strong></p>
       <ul>

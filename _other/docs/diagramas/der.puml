@@ -1,5 +1,5 @@
 @startuml der
-title Modelo de datos (DER) - las 21 tablas de schema.sql
+title Modelo de datos (DER) - las 22 tablas de schema.sql
 
 skinparam classAttributeIconSize 0
 skinparam packageStyle rectangle
@@ -28,6 +28,11 @@ package "cartelera" #F2F0ED {
   }
   entity pelicula_genero {
     * **(pelicula_id, genero) <<PK>>**
+    --
+    * pelicula_id <<FK>> ON DELETE CASCADE
+  }
+  entity pelicula_formato {
+    * **(pelicula_id, formato) <<PK>>**
     --
     * pelicula_id <<FK>> ON DELETE CASCADE
   }
@@ -215,6 +220,7 @@ package "imagenes" #ECECEC {
 }
 
 pelicula ||--o{ pelicula_genero
+pelicula ||--|{ pelicula_formato
 sala ||--o{ asiento
 
 pelicula ||--o{ programacion
