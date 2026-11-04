@@ -7,17 +7,29 @@ import ar.uade.cine.swing.pantallas.Operador;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
 
 import java.io.IOException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-// Buscar un cliente por email antes de asignarle clave temporal: qué busca, qué muestra y qué rechaza sin pedir.
+// El listado de clientes y, al elegir uno, sus transacciones: qué pide, cómo las ordena y qué total muestra.
 class PantallaClientesTest {
+
+    private static final String ANA = "{\"id\":5,\"nombre\":\"Ana Prueba\",\"email\":\"ana@mail.com\"}";
+    private static final String ZOE = "{\"id\":6,\"nombre\":\"Zoe\",\"email\":\"zoe@mail.com\"}";
+    private static final String RESERVA_PAGA = """
+            {"id":9,"estado":"PAGADA","creadaEn":"2026-10-02T10:00:00","codigo":"ABC123","total":5000,
+             "entradas":[{"codigo":"A1"},{"codigo":"A2"}],
+             "pelicula":{"titulo":"Matrix"},"funcion":{"inicio":"2026-10-03T20:00:00"},"sala":{"nombre":"Sala 1"},
+             "pago":{"monto":4500,"medio":"EFECTIVO","fecha":"2026-10-02T10:05:00"},
+             "candy":[{"id":1,"estado":"COBRADA","total":1000,"items":[{"nombre":"Pochoclos","cantidad":1}]}]}""";
+    private static final String RESERVA_CANCELADA = """
+            {"id":8,"estado":"CANCELADA","creadaEn":"2026-09-01T10:00:00","codigo":"DEF456","total":3000,
+             "entradas":[{"codigo":"B1"}],"pelicula":{"titulo":"Alien"}}""";
+    private static final String CANDY_SUELTO = """
+            {"id":2,"estado":"COBRADA","fecha":"2026-09-15T18:00:00","cobradaEn":"2026-09-15T18:00:00","total":7000,
+             "items":[{"nombre":"Gaseosa","cantidad":2}]}""";
 
     private ServidorFalso servidor;
     private Operador encargado;
@@ -25,7 +37,9 @@ class PantallaClientesTest {
     @BeforeEach
     void levantar() throws IOException {
         servidor = new ServidorFalso();
+        servidor.responder("GET /api/clientes", 200, "[" + ANA + "," + ZOE + "]");
         encargado = Operador.en(() -> new PantallaClientes(new ApiClientes(new ClienteHttp(servidor.url()))));
+        encargado.esperarFilas(2);
     }
 
     @AfterEach
@@ -35,33 +49,55 @@ class PantallaClientesTest {
     }
 
     @Test
-    void elEncontradoSeMuestraConSuNombre() {
-        servidor.responder("GET /api/clientes?email=ana%40mail.com", 200,
-                "[{\"id\":5,\"nombre\":\"Ana Prueba\",\"email\":\"ana@mail.com\"}]");
-        encargado.tipear("Email", " ana@mail.com ").clic("Buscar");
-
-        encargado.esperarTexto("Ana Prueba");
-        assertFalse(encargado.hayBoton("Asignar clave temporal"), "el cliente entra con Google: no tiene clave");
+    void alEntrarListaATodosConSuEmail() {
+        assertEquals("Ana Prueba", encargado.celda(0, "Nombre"));
+        assertEquals("zoe@mail.com", encargado.celda(1, "Email"));
+        encargado.esperarTexto("2 clientes");
     }
 
     @Test
-    void sinClienteConEseEmailLoDiceJuntoAlCampo() {
-        servidor.responder("GET /api/clientes?email=nadie%40mail.com", 200, "[]");
+    void elFiltroLePideAlBackendPorNombreOEmail() {
+        servidor.responder("GET /api/clientes?q=ana", 200, "[" + ANA + "]");
 
-        encargado.tipear("Email", "nadie@mail.com").clic("Buscar");
+        encargado.tipear("Buscar", "ana");
 
-        encargado.esperarTexto("No hay ningún cliente con el email nadie@mail.com");
-        assertFalse(encargado.hayBoton("Asignar clave temporal"));
+        encargado.esperarFilas(1);
+        encargado.esperarTexto("mostrando 1 de 2");
     }
 
-    @ParameterizedTest(name = "{0}")
-    @CsvSource(delimiter = '|', value = {
-            "vacío        | ''          | Falta completar «Email»",
-            "sin dominio  | ana@mail    | «Email»: «ana@mail» no es un email"})
-    void unEmailMalEscritoNoSeBusca(String caso, String tipeado, String mensaje) {
-        encargado.tipear("Email", tipeado).clic("Buscar");
+    @Test
+    void alElegirUnoMuestraSusTransaccionesLaMasNuevaPrimeroConElTotalDelBackend() {
+        servidor.responder("GET /api/clientes/5/transacciones", 200,
+                "{\"reservas\":[" + RESERVA_PAGA + "," + RESERVA_CANCELADA + "],\"comprasCandy\":[" + CANDY_SUELTO + "]}");
 
-        encargado.esperarTexto(mensaje);
-        assertEquals(0, servidor.veces("GET /api/clientes?email=" + tipeado));
+        encargado.elegirFila(0);
+        Operador transacciones = encargado.seccion("Transacciones");
+        transacciones.esperarFilas(3);
+
+        assertTrue(transacciones.celda(0, "Película o función").startsWith("Matrix"));
+        assertEquals("A1, A2", transacciones.celda(0, "Butacas"));
+        assertEquals("1× Pochoclos", transacciones.celda(0, "Candy"));
+        assertEquals("Pagada", transacciones.celda(0, "Estado"));
+        assertEquals("$ 5.500", transacciones.celda(0, "Total").replace('\u00a0', ' '));
+        assertEquals("Candy", transacciones.celda(1, "Tipo"));
+        assertEquals("2× Gaseosa", transacciones.celda(1, "Candy"));
+        assertEquals("—", transacciones.celda(1, "Butacas"));
+        assertEquals("Cancelada", transacciones.celda(2, "Estado"));
+        encargado.esperarTexto("Ana Prueba · ana@mail.com · 3 transacciones");
+    }
+
+    @Test
+    void elErrorDelBackendSeMuestraYNoQuedanLasDelClienteAnterior() {
+        servidor.responder("GET /api/clientes/5/transacciones", 200,
+                "{\"reservas\":[" + RESERVA_CANCELADA + "],\"comprasCandy\":[]}");
+        servidor.responder("GET /api/clientes/6/transacciones", 404, "{\"error\":\"No existe el cliente 6\"}");
+        encargado.elegirFila(0);
+        Operador transacciones = encargado.seccion("Transacciones");
+        transacciones.esperarFilas(1);
+
+        encargado.elegirFila(1);
+
+        transacciones.esperarFilas(0);
+        encargado.esperarTexto("No existe el cliente 6");
     }
 }

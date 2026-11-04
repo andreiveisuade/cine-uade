@@ -83,6 +83,8 @@ Los clientes deciden con estos campos, nunca por el nombre de una constante: ped
 | `GET /peliculas/{id}` | Una película |
 | `GET /peliculas/{id}/funciones` | Sus funciones que todavía no empezaron (R19), por `inicio`, con la sala |
 | `GET /clientes?email=` | `[cliente]` o `[]`. Solo `ADMINISTRADOR` |
+| `GET /clientes?q=` | Todos los clientes por nombre, con el email completo; `q` busca en nombre y email. Solo `ADMINISTRADOR` |
+| `GET /clientes/{id}/transacciones` | `{reservas, comprasCandy}`: sus reservas con cualquier estado, con pago y candy, y el candy que no va con una reserva, lo más nuevo primero. Inexistente: `404`. Solo `ADMINISTRADOR` |
 
 ### El ingreso con Google (R28)
 

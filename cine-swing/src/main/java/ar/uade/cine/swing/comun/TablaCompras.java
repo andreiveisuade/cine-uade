@@ -3,6 +3,7 @@ package ar.uade.cine.swing.comun;
 import ar.uade.cine.swing.api.dto.candy.CompraCandy;
 import ar.uade.cine.swing.comun.Tabla.Columna;
 
+import java.awt.Color;
 import java.util.stream.Collectors;
 
 import static ar.uade.cine.swing.comun.Etiquetas.etiqueta;
@@ -29,10 +30,14 @@ public final class TablaCompras {
                 Columna.<CompraCandy>numero("Ahorro", c -> c.ahorro() > 0 ? precio(c.ahorro()) : "—"),
                 Columna.<CompraCandy>numero("Total", c -> precio(c.total())),
                 // Lo cobrado se entrega en la Puerta con el QR: quien atiende ve qué falta retirar.
-                Columna.<CompraCandy>de("Retiro", c -> c.situacion().texto()).comoEstado(c -> switch (c.situacion()) {
-                    case A_RETIRAR -> Colores.aviso();
-                    case RETIRADO -> Colores.exito();
-                    case SIN_COBRAR -> Colores.secundario();
-                }));
+                Columna.<CompraCandy>de("Retiro", c -> c.situacion().texto()).comoEstado(TablaCompras::color));
+    }
+
+    public static Color color(CompraCandy c) {
+        return switch (c.situacion()) {
+            case A_RETIRAR -> Colores.aviso();
+            case RETIRADO -> Colores.exito();
+            case SIN_COBRAR -> Colores.secundario();
+        };
     }
 }

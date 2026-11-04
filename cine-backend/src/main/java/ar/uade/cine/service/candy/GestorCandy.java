@@ -175,6 +175,12 @@ public class GestorCandy {
         return compraCandyRepository.findByDia(fecha);
     }
 
+    // Las que no van con una reserva: las otras ya figuran en ella (comprasDeReservas).
+    @Transactional(readOnly = true)
+    public List<CompraCandy> comprasSueltasDe(int clienteId) {
+        return compraCandyRepository.findByClienteIdAndReservaIdIsNullOrderByIdDesc(clienteId);
+    }
+
     @Transactional(readOnly = true)
     public List<CompraCandy> listarComprasDe(int clienteId) {
         return compraCandyRepository.findByClienteId(clienteId);

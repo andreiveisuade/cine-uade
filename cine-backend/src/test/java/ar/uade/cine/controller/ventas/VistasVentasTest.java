@@ -25,6 +25,7 @@ import ar.uade.cine.model.imagenes.ImagenUrl;
 import ar.uade.cine.service.candy.GestorCandy;
 import ar.uade.cine.service.candy.GestorProductos;
 import ar.uade.cine.controller.informes.CajaController;
+import ar.uade.cine.controller.usuarios.ClienteController;
 import ar.uade.cine.service.ventas.Ocupacion;
 import ar.uade.cine.service.ventas.GestorPagos;
 import ar.uade.cine.service.ventas.ConsultasReservas;
@@ -91,6 +92,12 @@ class VistasVentasTest extends PruebaDeIntegracion {
 
     @Autowired
     private CajaController cajaController;
+
+    @Autowired
+    private TransaccionesClienteController transaccionesController;
+
+    @Autowired
+    private ClienteController clienteController;
 
     @Autowired
     private EntityManagerFactory emf;
@@ -260,6 +267,8 @@ class VistasVentasTest extends PruebaDeIntegracion {
         vender(2);
         long reservasConDos = consultasDe(() -> reservaController.listar(null, null, null));
         long delClienteConDos = consultasDe(() -> reservaController.mias(cliente::getEmail));
+        long transaccionesConDos = consultasDe(() -> transaccionesController.deCliente(cliente.getId()));
+        long clientesConDos = consultasDe(() -> clienteController.listar(null));
         long arqueoConDos = consultasDe(() -> cajaController.arqueo(reloj.ahora().toLocalDate().toString()));
 
         vender(6);
@@ -270,6 +279,9 @@ class VistasVentasTest extends PruebaDeIntegracion {
         assertEquals(delClienteConDos,
                 consultasDe(() -> reservaController.mias(cliente::getEmail)),
                 "GET /api/reservas/mias");
+        assertEquals(transaccionesConDos, consultasDe(() -> transaccionesController.deCliente(cliente.getId())),
+                "GET /api/clientes/{id}/transacciones");
+        assertEquals(clientesConDos, consultasDe(() -> clienteController.listar(null)), "GET /api/clientes");
         assertEquals(arqueoConDos,
                 consultasDe(() -> cajaController.arqueo(reloj.ahora().toLocalDate().toString())),
                 "GET /api/arqueo");
@@ -293,6 +305,7 @@ class VistasVentasTest extends PruebaDeIntegracion {
                 candy.pedirParaReserva(reserva.getId(), Map.of(pochoclos, 1));
                 pagos.cobrar(reserva.getId(), MedioPago.EFECTIVO, "");
             }
+            candy.vender(cliente.getId(), Map.of(pochoclos, 1), MedioPago.EFECTIVO, "");
         }
     }
 
