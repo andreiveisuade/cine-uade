@@ -121,14 +121,14 @@ public final class PantallaReservas extends PantallaListado<Reserva> {
         habilitar();
     }
 
-    private static String funcion(Reserva r) {
+    public static String funcion(Reserva r) {
         String titulo = r.pelicula() == null ? "—" : r.pelicula().titulo();
         if (r.funcion() == null) return titulo;
         return titulo + " · " + dia(r.funcion().inicio()) + " " + hora(r.funcion().inicio())
                 + (r.sala() == null ? "" : " · " + r.sala().nombre());
     }
 
-    private static String candy(Reserva r) {
+    public static String candy(Reserva r) {
         if (r.candy().isEmpty()) return "—";
         return r.candy().stream().flatMap(c -> c.items().stream())
                 .map(i -> i.cantidad() + "× " + i.nombre()).collect(Collectors.joining(", "));
@@ -142,7 +142,7 @@ public final class PantallaReservas extends PantallaListado<Reserva> {
         return r.ingresadaEn() == null ? pago : pago + " · entró " + hora(r.ingresadaEn());
     }
 
-    static Color color(Reserva r) {
+    public static Color color(Reserva r) {
         return switch (r.estado()) {
             case "RESERVADA" -> Colores.aviso();
             case "PAGADA" -> Colores.exito();
