@@ -2,6 +2,7 @@ package ar.uade.cine.swing.pantallas.funciones;
 
 import ar.uade.cine.swing.api.ApiFunciones;
 import ar.uade.cine.swing.api.dto.cartelera.Pelicula;
+import ar.uade.cine.swing.api.dto.catalogos.TipoSala;
 import ar.uade.cine.swing.api.dto.funciones.Funcion;
 import ar.uade.cine.swing.api.dto.funciones.PedidoFuncion;
 import ar.uade.cine.swing.api.dto.salas.Sala;
@@ -12,6 +13,7 @@ import ar.uade.cine.swing.comun.Fechas;
 import ar.uade.cine.swing.comun.Formulario;
 import ar.uade.cine.swing.comun.Opcion;
 import ar.uade.cine.swing.comun.Opciones;
+import ar.uade.cine.swing.comun.SelectorProyeccion;
 import ar.uade.cine.swing.comun.Tarea;
 import ar.uade.cine.swing.comun.Validacion;
 import ar.uade.cine.swing.pantallas.Seccion;
@@ -30,7 +32,7 @@ import java.util.List;
 
 import static ar.uade.cine.swing.comun.Formato.numero;
 
-// El alta y la edición de una función suelta, al costado del listado; R3 y R8 no se anticipan: el backend las valida.
+// El alta y la edición de una función suelta, al costado del listado; R3 no se anticipa: el backend la valida.
 final class FormularioFuncion extends Seccion {
 
     private final ApiFunciones apiFunciones;
@@ -42,6 +44,7 @@ final class FormularioFuncion extends Seccion {
     private final JSpinner hora = Fechas.hora(proximaHora());
     private final JComboBox<Opcion<String>> idioma = new JComboBox<>();
     private final JComboBox<Opcion<String>> proyeccion = new JComboBox<>();
+    private final SelectorProyeccion proyecciones = new SelectorProyeccion(pelicula, sala, proyeccion);
     private final JTextField precioBase = Campos.soloDecimal(new JTextField());
     private final JButton guardar = Componentes.primario(new JButton("Programar"));
     private final JButton cancelar = new JButton("Cancelar");
@@ -64,17 +67,18 @@ final class FormularioFuncion extends Seccion {
                 .obligatorio("Hora", hora)
                 .obligatorio("Idioma", idioma)
                 .obligatorio("Proyección", proyeccion)
+                .ancho(proyecciones.aviso())
                 .obligatorio("Precio base", precioBase)
                 .ancho(Componentes.aLaDerecha(cancelar, guardar))
                 .ancho(error)
                 .cerrar())));
     }
 
-    void llenar(List<Pelicula> peliculas, List<Sala> salas, List<String> idiomas, List<String> proyecciones) {
+    void llenar(List<Pelicula> peliculas, List<Sala> salas, List<String> idiomas, List<TipoSala> tipos) {
+        proyecciones.conocer(peliculas, salas, tipos);
         Campos.llenar(pelicula, Opciones.peliculasConDuracion(peliculas));
         Campos.llenar(sala, Opciones.salasConTipo(salas));
         Campos.llenar(idioma, Opciones.etiquetadas(idiomas));
-        Campos.llenar(proyeccion, Opciones.etiquetadas(proyecciones));
     }
 
     /** Precarga la función; guardar la edita en vez de programar otra. */

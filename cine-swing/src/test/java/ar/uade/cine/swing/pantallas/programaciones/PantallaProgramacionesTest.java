@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -39,11 +40,14 @@ class PantallaProgramacionesTest {
     void levantar() throws IOException {
         servidor = new ServidorFalso();
         servidor.responder("GET /api/peliculas", 200, "[{\"id\":7,\"titulo\":\"Matrix\",\"duracionMinutos\":136,"
-                + "\"generos\":[],\"clasificacion\":\"ATP\",\"enCartelera\":true}]");
+                + "\"generos\":[],\"clasificacion\":\"ATP\",\"enCartelera\":true,\"formatos\":[\"DOS_D\"]}]");
         servidor.responder("GET /api/salas", 200, "[{\"id\":1,\"nombre\":\"Sala 1\",\"tipo\":\"DOS_D\","
+                + "\"butacasPorFila\":[10],\"filas\":1,\"capacidadSala\":10,\"minutosLimpieza\":15},"
+                + "{\"id\":6,\"nombre\":\"Sala 6\",\"tipo\":\"CUATRO_D\","
                 + "\"butacasPorFila\":[10],\"filas\":1,\"capacidadSala\":10,\"minutosLimpieza\":15}]");
         servidor.responder("GET /api/idiomas", 200, "[\"DOBLADA\"]");
-        servidor.responder("GET /api/proyecciones", 200, "[\"DOS_D\"]");
+        servidor.responder("GET /api/tipos-sala", 200, "[{\"nombre\":\"DOS_D\",\"proyecciones\":[\"DOS_D\"]},"
+                + "{\"nombre\":\"CUATRO_D\",\"proyecciones\":[\"TRES_D\"]}]");
         servidor.responder("GET /api/programaciones", 200, "[" + GRILLA_ABIERTA + "," + GRILLA_CERRADA + "]");
         ClienteHttp http = new ClienteHttp(servidor.url());
         encargado = Operador.en(() -> new PantallaProgramaciones(new ApiCartelera(http), new ApiCatalogos(http),
@@ -119,6 +123,17 @@ class PantallaProgramacionesTest {
 
         assertFalse(encargado.habilitado("Confirmar"));
         assertEquals("", encargado.areas().get(0));
+    }
+
+    // R35: Matrix se estrena solo en 2D y la sala 4D solo proyecta en 3D, así que no hay nada que ofrecer.
+    @Test
+    void unaGrillaSoloOfreceLasProyeccionesQueCorresponden() {
+        assertEquals(List.of("2D"), encargado.opciones("Proyección"));
+
+        encargado.elegir("Sala *", "Sala 6 — 4D");
+
+        assertEquals(List.of(), encargado.opciones("Proyección"));
+        encargado.esperarTexto("Esta sala no proyecta ninguna versión de esta película");
     }
 
     @Test

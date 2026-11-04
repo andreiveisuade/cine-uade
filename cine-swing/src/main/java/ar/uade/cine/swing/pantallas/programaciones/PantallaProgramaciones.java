@@ -5,6 +5,7 @@ import ar.uade.cine.swing.api.ApiCatalogos;
 import ar.uade.cine.swing.api.ApiProgramaciones;
 import ar.uade.cine.swing.api.ApiSalas;
 import ar.uade.cine.swing.api.dto.cartelera.Pelicula;
+import ar.uade.cine.swing.api.dto.catalogos.TipoSala;
 import ar.uade.cine.swing.api.dto.programaciones.Programacion;
 import ar.uade.cine.swing.api.dto.salas.Sala;
 import ar.uade.cine.swing.comun.Campos;
@@ -39,7 +40,7 @@ import static ar.uade.cine.swing.comun.Formato.precio;
 public final class PantallaProgramaciones extends PantallaListado<Programacion> {
 
     private record Catalogos(List<Pelicula> peliculas, List<Sala> salas,
-                             List<String> idiomas, List<String> proyecciones) {
+                             List<String> idiomas, List<TipoSala> tipos) {
     }
 
     private final ApiProgramaciones apiProgramaciones;
@@ -97,10 +98,10 @@ public final class PantallaProgramaciones extends PantallaListado<Programacion> 
             if (!e.getValueIsAdjusting()) tabla.seleccionada().ifPresent(this::verDetalle);
         });
         cargar(() -> new Catalogos(apiCartelera.obtenerPeliculas(null), apiSalas.obtenerSalas(),
-                apiCatalogos.obtenerIdiomas(), apiCatalogos.obtenerProyecciones()), c -> {
+                apiCatalogos.obtenerIdiomas(), apiCatalogos.obtenerTiposSala()), c -> {
             c.peliculas().forEach(p -> titulos.put(p.id(), p.titulo()));
             c.salas().forEach(s -> nombresSala.put(s.id(), s.nombre()));
-            formulario.llenar(c.peliculas(), c.salas(), c.idiomas(), c.proyecciones());
+            formulario.llenar(c.peliculas(), c.salas(), c.idiomas(), c.tipos());
             filtros.enSilencio(() -> {
                 Campos.llenarConTodas(filtroPelicula, "Todas", Opciones.peliculas(c.peliculas()));
                 Campos.llenarConTodas(filtroSala, "Todas", Opciones.salas(c.salas()));

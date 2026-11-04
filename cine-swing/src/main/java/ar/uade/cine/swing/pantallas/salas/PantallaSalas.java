@@ -7,6 +7,7 @@ import ar.uade.cine.swing.api.dto.salas.PedidoSala;
 import ar.uade.cine.swing.api.dto.salas.Sala;
 import ar.uade.cine.swing.comun.Campos;
 import ar.uade.cine.swing.comun.Componentes;
+import ar.uade.cine.swing.comun.Etiquetas;
 import ar.uade.cine.swing.comun.Escala;
 import ar.uade.cine.swing.comun.Formulario;
 import ar.uade.cine.swing.comun.Lecturas;
@@ -46,13 +47,14 @@ public final class PantallaSalas extends Pantalla {
     private final ApiCatalogos apiCatalogos;
     private final ApiSalas apiSalas;
     private final Navegacion navegacion;
-    // Lo del tipo sale del catálogo, cruzado por nombre: Swing no sabe qué tipo es premium ni qué hace en la grilla.
+    // Lo del tipo sale del catálogo, cruzado por nombre: Swing no sabe qué proyecta cada tipo ni qué hace en la grilla.
     private final Map<String, TipoSala> tipos = new HashMap<>();
     private final Tabla<Sala> tabla = new Tabla<>(
             Columna.<Sala>de("Sala", Sala::nombre).ancho(160),
             Columna.<Sala>de("Tipo", s -> etiqueta(s.tipo())),
             Columna.<Sala>numero("Precio", s -> "×" + conDecimal(tipos.get(s.tipo()).multiplicador())).ancho(70),
-            Columna.<Sala>de("3D", s -> tipos.get(s.tipo()).soportaTresD() ? "Sí" : "No").ancho(45),
+            Columna.<Sala>de("Proyecta", s -> tipos.get(s.tipo()).proyecciones().stream()
+                    .map(Etiquetas::etiqueta).collect(Collectors.joining(", "))).ancho(70),
             Columna.<Sala>de("Premium", s -> tipos.get(s.tipo()).premium() ? "Sí" : "No").ancho(70),
             Columna.<Sala>de("Distribución", s -> s.butacasPorFila().stream().map(String::valueOf)
                     .collect(Collectors.joining(","))).ancho(180),

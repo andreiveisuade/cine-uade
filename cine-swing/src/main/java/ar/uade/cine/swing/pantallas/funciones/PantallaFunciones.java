@@ -5,6 +5,7 @@ import ar.uade.cine.swing.api.ApiCatalogos;
 import ar.uade.cine.swing.api.ApiFunciones;
 import ar.uade.cine.swing.api.ApiSalas;
 import ar.uade.cine.swing.api.dto.cartelera.Pelicula;
+import ar.uade.cine.swing.api.dto.catalogos.TipoSala;
 import ar.uade.cine.swing.api.dto.funciones.Funcion;
 import ar.uade.cine.swing.api.dto.funciones.FuncionRechazada;
 import ar.uade.cine.swing.api.dto.salas.Sala;
@@ -37,11 +38,11 @@ import static ar.uade.cine.swing.comun.Formato.hora;
 import static ar.uade.cine.swing.comun.Formato.precio;
 
 // Listado con filtros de las funciones, con el alta y la edición al costado; doble clic abre su borderó e informe.
-// Se eligen varias para borrarlas juntas. Sin anticipar R3, R8 ni R12: el backend valida y su mensaje va tal cual.
+// Se eligen varias para borrarlas juntas. Sin anticipar R3 ni R12: el backend valida y su mensaje va tal cual.
 public final class PantallaFunciones extends PantallaListado<Funcion> {
 
     private record Catalogos(List<Pelicula> peliculas, List<Sala> salas, List<String> idiomas,
-                             List<String> proyecciones) {
+                             List<TipoSala> tipos) {
     }
 
     private final ApiFunciones apiFunciones;
@@ -97,13 +98,13 @@ public final class PantallaFunciones extends PantallaListado<Funcion> {
 
         tabla.alDobleClic(this::abrirInformes);
         cargar(() -> new Catalogos(apiCartelera.obtenerPeliculas(null), apiSalas.obtenerSalas(),
-                apiCatalogos.obtenerIdiomas(), apiCatalogos.obtenerProyecciones()), catalogos -> {
+                apiCatalogos.obtenerIdiomas(), apiCatalogos.obtenerTiposSala()), catalogos -> {
             filtros.enSilencio(() -> {
                 Campos.llenarConTodas(filtroPelicula, "Todas", Opciones.peliculas(catalogos.peliculas()));
                 Campos.llenarConTodas(filtroSala, "Todas", Opciones.salas(catalogos.salas()));
             });
             formulario.llenar(catalogos.peliculas(), catalogos.salas(), catalogos.idiomas(),
-                    catalogos.proyecciones());
+                    catalogos.tipos());
             recargar();
         });
     }
