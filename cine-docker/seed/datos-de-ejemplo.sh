@@ -1,6 +1,7 @@
 #!/bin/sh
-# Carga un complejo de ejemplo: seis salas, la carta del candy, seis películas con una semana
-# de funciones y una promoción.
+# Carga un complejo de ejemplo: seis salas, la carta del candy, ocho películas con una semana
+# de funciones y una promoción. Los formatos son inventados, para que se vea cada caso: las hay
+# solo en 2D, en 2D y 3D y solo en 3D, y las de la sala 4D salen de las que tienen 3D (R35).
 #
 # Las películas son clásicos conocidos con el póster de TMDB, para que una instalación nueva no
 # abra con la cartelera vacía. La cartelera real la trae el importador (botón Importador del
@@ -14,8 +15,9 @@
 #     ./seed/datos-de-ejemplo.sh
 #
 # Salas, candy y promo son acumulativos: correrlo dos veces deja errores 409 de nombre repetido,
-# que son inofensivos. Películas y funciones no: si la base ya tiene películas no las toca, porque
-# la grilla sí sumaría funciones nuevas. Para empezar limpio: docker compose down -v.
+# que son inofensivos. Películas y funciones no: si la base ya tiene películas no las toca, y si ya
+# tiene funciones no genera otra grilla, que sumaría más. Para empezar limpio: docker compose down -v,
+# o la migración 22, que borra solo lo programado.
 
 set -e
 API="${API:-http://localhost:8080/api}"
@@ -68,13 +70,13 @@ fi
 echo "Películas"
 # Con Basic, GET /peliculas lista todas, también las pendientes del importador.
 if [ "$(curl -s -u "$ADMIN" "$API/peliculas")" != "[]" ]; then
-    echo "  ya hay películas: no siembro ni películas ni funciones"
+    echo "  ya hay películas: no las toco"
 else
     POSTER=https://image.tmdb.org/t/p/w500
     alta peliculas "{\"titulo\":\"Matrix\",\"duracionMinutos\":136,\"generos\":[\"ACCION\",\"CIENCIA_FICCION\"],
       \"clasificacion\":\"MAS_13\",\"director\":\"Lana y Lilly Wachowski\",\"anio\":1999,\"idiomaOriginal\":\"Inglés\",
       \"sinopsis\":\"Un programador descubre que el mundo en el que vive es una simulación y se suma a la rebelión contra las máquinas.\",
-      \"posterUrl\":\"$POSTER/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg\",\"puntaje\":8.2,\"trailerYoutube\":\"vKQi3bBA1y8\",\"enCartelera\":true}" "Matrix"
+      \"posterUrl\":\"$POSTER/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg\",\"puntaje\":8.2,\"trailerYoutube\":\"vKQi3bBA1y8\",\"enCartelera\":true,\"formatos\":[\"DOS_D\",\"TRES_D\"]}" "Matrix, en 2D y 3D"
     alta peliculas "{\"titulo\":\"Toy Story\",\"duracionMinutos\":81,\"generos\":[\"ANIMACION\",\"COMEDIA\"],
       \"clasificacion\":\"ATP\",\"director\":\"John Lasseter\",\"anio\":1995,\"idiomaOriginal\":\"Inglés\",
       \"sinopsis\":\"Woody, el vaquero preferido de Andy, ve peligrar su lugar cuando llega Buzz Lightyear, un guardián espacial que no sabe que es un juguete.\",
@@ -95,11 +97,23 @@ else
       \"clasificacion\":\"MAS_18\",\"director\":\"Quentin Tarantino\",\"anio\":1994,\"idiomaOriginal\":\"Inglés\",
       \"sinopsis\":\"Dos sicarios, un boxeador, la mujer de un mafioso y una pareja de asaltantes cruzan sus historias en Los Ángeles.\",
       \"posterUrl\":\"$POSTER/d5iIlFn5s0ImszYzBPb8JPIfbXD.jpg\",\"puntaje\":8.5,\"trailerYoutube\":\"s7EdQ4FqbhY\",\"enCartelera\":true}" "Tiempos violentos"
+    alta peliculas "{\"titulo\":\"Avatar\",\"duracionMinutos\":162,\"generos\":[\"ACCION\",\"CIENCIA_FICCION\"],
+      \"clasificacion\":\"MAS_13\",\"director\":\"James Cameron\",\"anio\":2009,\"idiomaOriginal\":\"Inglés\",
+      \"sinopsis\":\"Un exmarine llega a Pandora para infiltrarse entre los na'vi y termina dudando de la misión que lo llevó hasta ahí.\",
+      \"posterUrl\":\"$POSTER/kyeqWdyUXW608qlYkRqosgbbJyK.jpg\",\"puntaje\":7.6,\"enCartelera\":true,\"formatos\":[\"TRES_D\"]}" "Avatar, solo en 3D"
+    alta peliculas "{\"titulo\":\"Coco\",\"duracionMinutos\":105,\"generos\":[\"ANIMACION\",\"COMEDIA\"],
+      \"clasificacion\":\"ATP\",\"director\":\"Lee Unkrich\",\"anio\":2017,\"idiomaOriginal\":\"Inglés\",
+      \"sinopsis\":\"Miguel sueña con ser músico en una familia que lo prohíbe, y en el Día de Muertos termina en la Tierra de los Muertos buscando a su ídolo.\",
+      \"posterUrl\":\"$POSTER/gGEsBPAijhVUFoiNpgZXqRVWJt2.jpg\",\"puntaje\":8.2,\"enCartelera\":true,\"formatos\":[\"DOS_D\",\"TRES_D\"]}" "Coco, en 2D y 3D"
+fi
 
-    echo "Funciones"
+echo "Funciones"
+if [ "$(curl -s -u "$ADMIN" "$API/funciones")" != "[]" ]; then
+    echo "  ya hay funciones: no genero otra grilla"
+else
     # La grilla automática: una semana desde hoy, de 14 a 24, subtitulada, con todas las salas llenas.
-    # El formato de cada pase sale de la sala y la película: Interestelar y Toy Story van en 3D donde se puede.
-    alta grilla '{"dias":7,"cuantasPeliculas":6,"precio":5000}' "Una semana de grilla"
+    # El formato de cada pase sale de la sala y la película: en 3D donde se puede, y la sala 4D solo da las que tienen 3D.
+    alta grilla '{"dias":7,"cuantasPeliculas":8,"precio":5000}' "Una semana de grilla"
 fi
 
 echo "Promociones"
