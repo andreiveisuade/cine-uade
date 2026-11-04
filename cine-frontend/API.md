@@ -166,13 +166,13 @@ multiplicadores tocan el recargo). El cliente los muestra y suma, no los recalcu
 - Con la sesión de Google del cliente (R28): la reserva es suya, y un `nombre` o `email` en el cuerpo se ignora. Sin sesión
   `401`; con la clave de un empleado, `403`. Elegir y bloquear butacas no pide sesión.
 - Orden de los errores: lo que falta y las tarifas (`400`), la función (`404`, empezada `400`),
-  cada butaca (inexistente o fuera de servicio: `400`), el pedido entero (más de 10, repetidas: `400`) y
+  cada butaca (inexistente o fuera de servicio: `400`), el pedido entero (más de 10, repetidas, no contiguas en una misma fila —R34—: `400`) y
   recién al final la ocupación (`409`). Un pedido que no puede pasar nunca da `400` aunque además tenga una butaca ocupada.
 - Devuelve la reserva con `codigo` (el del QR), `entradas[].tarifa` y `entradas[].requiereAcreditacion` (si la puerta
   pide carnet: sale de la tarifa, los clientes no lo deducen del nombre).
 
 Toda reserva trae `cobrable` y `cancelable`, calculados con las mismas reglas que aplica el backend al cobrar
-(R5, R17, R19) y al cancelar (R13, R17), y mientras espera el pago, `venceEn`: hasta cuándo se puede pagar (`creadaEn` + 30 min).
+(R5, R17, R19) y al cancelar (R13, R17), y mientras espera el pago, `venceEn`: hasta cuándo se puede pagar (`creadaEn` + 15 min). `segundosParaPagar` es lo que queda hasta que venza o empiece la función, lo primero (R17, R19), calculado por el servidor para la cuenta regresiva: no viene si ya no se puede pagar.
 El `estado` es el de ahora: pasado `venceEn` sale `EXPIRADA`, aunque en la base siga `RESERVADA` hasta que alguien
 consulte el mapa de la función (R17 no tiene scheduler). Igual con la paga que nadie usó (R32): terminada la función
 (inicio + duración) sale `NO_USADA`, aunque en la base siga `PAGADA` y cuente como cobrada; la usada sigue `PAGADA` con
@@ -237,7 +237,7 @@ en un checkout que lleva únicamente el candy.
   candy en `candy` y `total`. Pagada y sin pedido pendiente: `409` `La reserva está pagada: no se puede cobrar`, como hoy.
 - `POST /reservas/codigo/{codigo}/checkout` `{medio}` con esa reserva abre un checkout solo de candy: `monto` es el
   candy, la preferencia de MP lleva un solo ítem y el `id` termina en `-CANDY` (`<reservaId>-<MEDIO>-<azar>-CANDY`).
-  Vence en 30 minutos desde que se abre.
+  Vence en 15 minutos desde que se abre.
 - La vuelta (`GET /checkouts/{id}/retorno`) y la conciliación lo cobran igual que uno de entradas: el pedido pasa a
   `COBRADA` con el medio y la autorización de MP, sin `Pago` (el borderó no cambia). Vuelve a `/#/ticket/<codigo>`.
   Si el pedido cambió después de abrirlo, el mismo `409` `El monto cambió después de abrir el pago: …`.
@@ -276,7 +276,7 @@ van por `GestorPagos.iniciarCheckout`, así que medio y descuento coinciden. `20
 
 - Si el candy (o la promo) cambia después de abrir el checkout, ese checkout ya no se cobra: `409`
   `El monto cambió después de abrir el pago: acercate a la boletería` (en el retorno, como `aviso`). Se abre otro antes de pagar.
-- Pasarela: Checkout Pro de Mercado Pago (sandbox) si hay `MP_ACCESS_TOKEN`; si no, la emulada. La preferencia lleva un ítem por las entradas (ya con el descuento) y otro por el candy, si hay. `urlPago` lleva a una preferencia que vence con la reserva (30 min) y solo acepta los tipos de pago del medio pedido: DEBITO `debit_card`, CREDITO `credit_card`, QR `account_money`, TRANSFERENCIA `bank_transfer`, MERCADO_PAGO todos; `account_money` se acepta siempre porque MP no deja excluirlo. El pago queda con el medio del checkout: uno de la web, como `MERCADO_PAGO`, aunque se haya pagado con tarjeta.
+- Pasarela: Checkout Pro de Mercado Pago (sandbox) si hay `MP_ACCESS_TOKEN`; si no, la emulada. La preferencia lleva un ítem por las entradas (ya con el descuento) y otro por el candy, si hay. `urlPago` lleva a una preferencia que vence con la reserva (15 min) y solo acepta los tipos de pago del medio pedido: DEBITO `debit_card`, CREDITO `credit_card`, QR `account_money`, TRANSFERENCIA `bank_transfer`, MERCADO_PAGO todos; `account_money` se acepta siempre porque MP no deja excluirlo. El pago queda con el medio del checkout: uno de la web, como `MERCADO_PAGO`, aunque se haya pagado con tarjeta.
   Con la emulada, `urlPago` es relativa al sitio: `/#/pasarela-emulada/<id>?monto=<monto>&medio=<MEDIO>`, una pantalla
   de prueba con Aprobar y Rechazar que vuelve por el retorno con `?status=approved` o `?status=rejected`. `monto` es el total, candy incluido.
 - `id` = `<reservaId>-<MEDIO>-<azar>` (el `external_reference` de MP). Un id con otro formato o que MP no conoce da `404`.
@@ -291,7 +291,7 @@ van por `GestorPagos.iniciarCheckout`, así que medio y descuento coinciden. `20
   `redirect: "manual"`: en localhost MP no redirige al sitio y así no espera a la conciliación.
 - Un `approved` cuenta solo si coincide monto, moneda (ARS) y tipo de pago del medio; si no, `409` en `/confirmacion` y aviso
   «Mercado Pago registró un pago que no coincide con la reserva: acercate a la boletería» en el retorno.
-- Sin webhook (localhost): una tarea del backend (`ConciliacionPagos`, cada 60 s) busca los aprobados de los últimos 30 min
+- Sin webhook (localhost): una tarea del backend (`ConciliacionPagos`, cada 60 s) busca los aprobados de los últimos 15 min
   y cobra los que el comprador no volvió a confirmar. Un pago `pending` se cobra cuando MP lo aprueba.
 
 ### Rutas de la web
