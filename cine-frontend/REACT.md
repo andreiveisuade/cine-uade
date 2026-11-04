@@ -33,7 +33,7 @@ componente con mayúscula es una función nuestra, con minúscula una etiqueta d
 **Qué es.** Las props son los parámetros del componente: bajan del padre al hijo y el hijo no las modifica. Para
 que el hijo avise algo, el padre le pasa una función; en el repo se llaman `alVerbo`.
 
-**Dónde lo usamos.** `compra/funcion/Funcion.jsx:48` y `compra/mapa/BotonButaca.jsx:12`
+**Dónde lo usamos.** `compra/funcion/Funcion.jsx:60` y `compra/mapa/BotonButaca.jsx:12`
 
 ```jsx
           <MapaButacas sala={funcion.sala} asientos={funcion.asientos}
@@ -62,6 +62,7 @@ el componente. React compara por referencia: hay que crear un objeto o arreglo n
       ? sinButacas(butacas, [asiento.codigo])
       : { ...butacas, [asiento.codigo]: "GENERAL" };
     // Se pinta antes del bloqueo para que se vea elegida en el acto.
+    vigentes.current = nuevas;
     setSeleccion({ funcionId: funcion.id, butacas: nuevas });
 ```
 
@@ -82,7 +83,7 @@ referencias; un objeto nuevo es la señal de que algo cambió.
 **Qué es.** Renderizar es llamar a la función del componente. Se repite cuando cambia su estado, cuando el padre se
 vuelve a dibujar o cuando cambia un contexto que lee. El render tiene que ser puro: calcular, no hacer cosas.
 
-**Dónde lo usamos.** `compra/funcion/Funcion.jsx:30`: la selección de otra función se descarta derivándola en el
+**Dónde lo usamos.** `compra/funcion/Funcion.jsx:31`: la selección de otra función se descarta derivándola en el
 render, no con un efecto.
 
 ```jsx
@@ -103,20 +104,20 @@ cambia. Cambiar una variable común o una ref no redibuja.
 **Qué es.** Para dibujar una lista se hace `map` a elementos. Cada uno lleva una `key` estable y única entre
 hermanos, para que React sepa cuál es cuál cuando la lista cambia.
 
-**Dónde lo usamos.** `cartelera/pelicula/ListaFunciones.jsx:10`
+**Dónde lo usamos.** `cartelera/pelicula/ListaFunciones.jsx:15`
 
 ```jsx
-      {porDia(funciones).map(([clave, delDia]) => (
-        <Stack key={clave} gap="xs">
-          <Text size="sm" fw={700} tt="uppercase" c="dimmed" style={{ letterSpacing: "0.04em" }}>{dia(delDia[0].inicio)}</Text>
-          {delDia.map((f) => <Horario key={f.id} funcion={f} />)}
-        </Stack>
-      ))}
+      {dias.map(([clave, delDia]) => (
+        <Accordion.Item key={clave} value={clave}>
+          ...
+            <Stack gap="xs">
+              {delDia.map((f) => <Horario key={f.id} funcion={f} />)}
+            </Stack>
 ```
 
 **Error típico.** Usar el índice como `key` en una lista que se reordena o filtra: el estado interno queda pegado
 al lugar y no al ítem. Lo usamos solo en `compra/mapa/MapaButacas.jsx:25` (`key={i}`), donde las filas de la sala
-son fijas. La `key` también sirve para forzar un remontaje: `app/Rutas.jsx:29` usa `key={seccion}`.
+son fijas. La `key` también sirve para forzar un remontaje: `app/Rutas.jsx:50` usa `key={seccion}`.
 
 **Pregunta del profe.** ¿Por qué no el índice? Porque si la lista cambia de orden, React reutiliza el componente
 equivocado; con el id, cada ítem conserva el suyo.
@@ -126,25 +127,24 @@ equivocado; con el id, cada ítem conserva el suyo.
 **Qué es.** Un input controlado muestra lo que dice el estado y cada tecla actualiza ese estado; el estado es la
 única verdad. El `onSubmit` del `<form>` hace `preventDefault()` para que el navegador no recargue la página.
 
-**Dónde lo usamos.** `compra/confirmar/FormularioCliente.jsx:13` y `:30`
+**Dónde lo usamos.** `cuenta/reservas/BuscarPorCodigo.jsx:13` y `:32`
 
 ```jsx
-  function confirmar(evento) {
+  function buscar(evento) {
     evento.preventDefault();
-    const vacios = faltantes({
-      nombre: { valor: nombre, etiqueta: "tu nombre" },
-      email: { valor: email, etiqueta: "tu email" },
-    });
+    const vacios = faltantes({ codigo: { valor: codigo, etiqueta: "el código de tu ticket" } });
+    setFaltan(vacios);
+    if (vacios.codigo) return;
 ```
 
 ```jsx
-          <TextInput label="Nombre" required value={nombre} error={faltan.nombre}
-            onChange={(e) => setNombre(e.currentTarget.value)} />
+            <TextInput label="Código de acceso" required value={codigo} error={faltan.codigo}
+              onChange={(e) => setCodigo(e.currentTarget.value)} />
 ```
 
-**Error típico.** Olvidar `preventDefault` (la página se recarga y se pierde la selección, que está en memoria) o
-poner `value` sin `onChange` (el campo queda de solo lectura). Nos pasó mandar campos en blanco (`ecf58b8`): por eso
-`faltantes` y el `trim()`. Validar acá es comodidad; la regla la valida el backend.
+**Error típico.** Olvidar `preventDefault` (la página se recarga y se pierde lo que estaba en memoria) o poner
+`value` sin `onChange` (el campo queda de solo lectura). Nos pasó mandar campos en blanco (`ecf58b8`): por eso
+`faltantes`. Validar acá es comodidad; la regla la valida el backend.
 
 **Pregunta del profe.** ¿Controlado o no controlado? Controlado: el valor vive en `useState`, así se puede validar y
 armar el pedido sin leer el DOM.
@@ -202,9 +202,9 @@ export function useTitulo(texto) {
 
 El lint es `eslint.config.js`, solo con `eslint-plugin-react-hooks`; `npm run lint` lo corre.
 
-**Error típico.** Llamar un hook después de un `return` temprano. Por eso en `compra/funcion/Funcion.jsx:31-36`
-`useAlternarButaca`, `useRenovarBloqueo` y `useTitulo` van antes del `if (!funcion) return`, y reciben `undefined`
-mientras carga.
+**Error típico.** Llamar un hook después de un `return` temprano. Por eso en `compra/funcion/Funcion.jsx:34-38`
+`useAlternarButaca`, `useReservar`, `useRenovarBloqueo` y `useTitulo` van antes del `if (!funcion) return` (`:40`),
+y reciben `undefined` mientras carga.
 
 **Pregunta del profe.** ¿Por qué el orden importa? React identifica cada hook por su posición en la llamada; si un
 `if` saltea uno, el siguiente recibe el estado ajeno.
@@ -214,7 +214,7 @@ mientras carga.
 **Qué es.** Un contexto deja un valor disponible para todo el árbol de abajo sin pasarlo de prop en prop. Lo usamos
 para lo que necesitan pantallas lejanas: la sesión, la compra en curso y los avisos.
 
-**Dónde lo usamos.** `cuenta/SesionDelCliente.jsx:8` (`useSesion`); igual en `compra/CompraEnCurso.jsx:7`
+**Dónde lo usamos.** `cuenta/SesionDelCliente.jsx:8` (`useSesion`); igual en `compra/CompraEnCurso.jsx:17`
 (`useCompra`) y `compartido/estado/Avisos.jsx:6` (`useAvisar`).
 
 ```jsx
@@ -282,7 +282,7 @@ funciones que otros ponen en deps de efectos. `useMemo` no lo usamos. Refs en `c
 Otras: `cartelera/Trailer.jsx:11` y `compra/mapa/useScrollCentrado.js:5` (nodo del DOM), `ticket/pago/useFestejarPago.js:7`.
 
 **Error típico.** Envolver todo en `useMemo`/`useCallback` «por las dudas»: suma código sin medir nada. Y leer o
-escribir `ref.current` en el render, porque no redibuja (`compra/confirmar/useReservar.js:16` usa estado por eso).
+escribir `ref.current` en el render, porque no redibuja (`compra/funcion/useReservar.js:14` usa estado por eso).
 
 **Pregunta del profe.** ¿Ref o estado? Si el render lo muestra, estado; si solo lo usan los handlers o efectos (un
 timer), ref.
@@ -340,8 +340,8 @@ errores de render.
 **Qué es.** El router elige qué pantalla mostrar según la URL sin recargar. `HashRouter` pone la ruta después del
 `#`; `useParams` lee los `:parametros`; `useNavigate` cambia de pantalla desde código.
 
-**Dónde lo usamos.** `app/main.jsx:11`, `app/Rutas.jsx:33`, `compra/funcion/Funcion.jsx:22` y
-`compra/confirmar/useReservar.js:33`.
+**Dónde lo usamos.** `app/main.jsx:11`, `app/Rutas.jsx:32`, `compra/funcion/Funcion.jsx:24` y
+`compra/funcion/useReservar.js:26`.
 
 ```jsx
           <Route path="pelicula/:id" element={<Pelicula />} />
@@ -354,14 +354,15 @@ errores de render.
 ```
 
 ```js
-      navegar(`/ticket/${reserva.codigo}`, { state: { reserva } });
+      navegar(`/compra/${reserva.codigo}`);
 ```
 
-**Error típico.** `<a href>` en vez de `<Link>`: recarga la página entera y pierde la compra en memoria. Y que la
+**Error típico.** `<a href>` en vez de `<Link>`: recarga la página entera, vuelve a bajar la app y pierde todo el
+estado en memoria (la selección sobrevive solo porque está en `sessionStorage`). Y que la
 pantalla no se remonte al cambiar `:id`: el estado viejo sigue ahí, por eso `useCargar` compara la `clave`.
 
-**Pregunta del profe.** ¿Por qué `HashRouter`? nginx sirve un solo `index.html`; con `#` el servidor nunca ve la
-ruta y recargar `#/ticket/ABC` no da 404.
+**Pregunta del profe.** ¿Por qué `HashRouter`? El servidor (nginx en Docker, Spring en Render) sirve un solo
+`index.html`; con `#` nunca ve la ruta y recargar `#/ticket/ABC` no da 404.
 
 ## 15. Mantine: componentes y tema
 
@@ -403,7 +404,7 @@ const animaciones = () => import("./animaciones.js").then((m) => m.default);
         <MotionConfig reducedMotion="user">
 ```
 
-Lo usan `app/Rutas.jsx:28` (`AnimatePresence` entre pantallas) y `compra/mapa/MapaButacas.jsx:23` (las filas entran
+Lo usan `app/Rutas.jsx:49` (`AnimatePresence` entre pantallas) y `compra/mapa/MapaButacas.jsx:23` (las filas entran
 de a una).
 
 **Error típico.** Usar `motion.div` con `LazyMotion strict`: tira error, porque cargaría todo de entrada. Y animar
@@ -417,18 +418,19 @@ después en otro chunk.
 **Qué es.** Vitest corre los tests; Testing Library monta el componente en un DOM falso (jsdom) y lo usa como
 una persona: busca por texto o rol, hace clic y mira qué aparece. La API se reemplaza con `vi.mock`.
 
-**Dónde lo usamos.** `compra/funcion/Funcion.test.jsx:8` y `:22`; `test/renderConApp.jsx:11` monta los mismos
-providers que la app, con `MemoryRouter` en vez de `HashRouter`.
+**Dónde lo usamos.** `compra/funcion/Funcion.test.jsx:8`, `:22` y `:24`; `test/renderConApp.jsx:22` monta los
+mismos providers que la app, con `MemoryRouter` en vez de `HashRouter`.
 
 ```jsx
 vi.mock("@/api/api-http.js");
 ```
 
 ```jsx
+const abrir = () => renderConApp(<Funcion />, { ruta: "/funcion/:id", en: "/funcion/5" });
+
 beforeEach(() => {
   api.sesionActual.mockRejectedValue(new Error("401"));
   api.obtenerFuncion.mockResolvedValue(FUNCION);
-  renderConApp(<Funcion />, { ruta: "/funcion/:id", en: "/funcion/5" });
 });
 ```
 
@@ -441,8 +443,8 @@ contesta; `renderConApp` da router, sesión, compra y avisos.
 ## Recorrido de una compra
 
 ```
-Cartelera ──Link──> Pelicula ──Link──> Funcion ──navegar──> Confirmar ──navegar(state)──> Ticket
- #/                 #/pelicula/7       #/funcion/5          #/confirmar/5                  #/ticket/ABC
+Cartelera ──Link──> Pelicula ──Link──> Funcion ──navegar──> TuCompra ──pago──> Ticket
+ #/                 #/pelicula/7       #/funcion/5          #/compra/ABC       #/ticket/ABC
 ```
 
 | Paso | Componente | Estado | Efecto o hook |
@@ -450,11 +452,13 @@ Cartelera ──Link──> Pelicula ──Link──> Funcion ──navegar─�
 | Elegir película | `Cartelera`, `TarjetaPelicula` (`<Link>`) | `genero` de `useParams` | `useCargar` pide cartelera y géneros |
 | Elegir función | `Pelicula`, `ListaFunciones`, `Horario` | `id` de `useParams` | `useCargar` pide película y funciones |
 | Elegir butacas | `Funcion`, `MapaButacas`, `BotonButaca` | `seleccion` en `CompraEnCurso` | `useAlternarButaca` bloquea en el backend; `useRenovarBloqueo` renueva cada minuto |
-| Datos y reserva | `Confirmar`, `FormularioCliente` | `nombre`, `email`; `enviando`, `error`, `reservada` de `useReservar` | `useRenovarBloqueo` sigue; `useReservar` hace el POST y vacía la selección |
-| La entrada | `Ticket`, `EntradaTicket` | reserva de `location.state` o pedida por código | `useEsperarPago` consulta cada 10 s; `useFestejarPago` tira confetti |
+| Reservar | `Funcion`, `TuSeleccion` («Continuar») | `enviando`, `error` de `useReservar` | Sin sesión va a `#/ingresar` y vuelve al mapa con lo elegido; con sesión, `useReservar` hace el POST, vacía la selección y navega a `#/compra/:codigo` |
+| Tu compra | `TuCompra`, `AlgoDulce`, `PagoDeLaCompra` | reserva y candy de `useCargar`; el pedido, de `usePedidoDeLaCompra` | El candy se guarda con debounce; `usePagar` abre el checkout y `useVueltaDelPago` lleva al ticket |
+| La entrada | `Ticket`, `EntradaTicket` | reserva pedida siempre por código | `useEsperarPago` consulta cada 10 s; `useFestejarPago` tira confetti |
 
-Si alguien ganó una butaca: al tocarla vuelve `rechazadas` y se suelta; al reservar vuelve 409 y `useReservar` lleva
-de nuevo al mapa. Si se recarga en `Confirmar`, la selección (en memoria) se perdió y `<Navigate>` vuelve al mapa.
+Si alguien ganó una butaca: al tocarla vuelve `rechazadas` y se suelta; al reservar vuelve 409, `useReservar` avisa y
+recarga el mapa. La selección vive en `sessionStorage` (`cine.compra`): sobrevive a recargar y a la ida a Google, y
+se borra al cerrar la pestaña.
 
 ## Machete
 
