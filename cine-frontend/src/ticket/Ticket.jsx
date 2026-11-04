@@ -12,6 +12,7 @@ import { EntradaTicket } from "@/ticket/entrada/EntradaTicket.jsx";
 import { vigente } from "@/compartido/estadoReserva.js";
 import { TicketEsqueleto } from "./TicketEsqueleto.jsx";
 import { useEsperarPago } from "./pago/useEsperarPago.js";
+import { TiempoParaPagar } from "@/compra/TiempoParaPagar.jsx";
 import { useFestejarPago } from "./pago/useFestejarPago.js";
 import { VentaCruzada } from "./VentaCruzada.jsx";
 
@@ -29,7 +30,7 @@ export function Ticket() {
     api.obtenerProductosCandy().catch(() => []),
   ]), [codigo]);
   const [enPuerta, setEnPuerta] = useState(false);
-  const { reserva, pagoEnVivo } = useEsperarPago(codigo, carga.datos?.[0]);
+  const { reserva, pagoEnVivo, refrescar } = useEsperarPago(codigo, carga.datos?.[0]);
   useFestejarPago(pagoEnVivo, codigo);
 
   if (!carga.datos) return <EsperaOError carga={carga} esqueleto={<TicketEsqueleto />} />;
@@ -39,6 +40,9 @@ export function Ticket() {
     <Stack gap="var(--cine-seccion)">
       <Stack gap="lg">
         {aviso && <Alert color="yellow" title="El pago no se completó">{aviso}</Alert>}
+        {reserva.segundosParaPagar != null && (
+          <TiempoParaPagar key={reserva.segundosParaPagar} segundos={reserva.segundosParaPagar} alVencer={refrescar} />
+        )}
         <EntradaTicket reserva={reserva} pagoEnVivo={pagoEnVivo} />
         <AccionesTicket reserva={reserva} alMostrarEnPuerta={() => setEnPuerta(true)} />
       </Stack>

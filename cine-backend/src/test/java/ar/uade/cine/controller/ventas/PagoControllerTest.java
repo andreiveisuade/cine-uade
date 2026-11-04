@@ -254,9 +254,11 @@ class PagoControllerTest extends PruebaDeApi {
         assertEquals("RESERVADA", recien.get("estado").asText());
         assertEquals(Fechas.texto(reserva.getCreadaEn().plusMinutes(Reserva.MINUTOS_PARA_PAGAR)),
                 recien.get("venceEn").asText());
+        assertTrue(recien.get("segundosParaPagar").asLong() > 0, "mientras se puede pagar, el contador corre");
 
         reloj.mover(reserva.getCreadaEn().plusMinutes(Reserva.MINUTOS_PARA_PAGAR + 1));
         assertEquals("EXPIRADA", get(ticket).json().get("estado").asText());
+        assertFalse(get(ticket).json().has("segundosParaPagar"), "la vencida ya no cuenta");
         assertEquals("EXPIRADA", get("/api/reservas/" + reserva.getId()).json().get("estado").asText());
 
         reloj.reiniciar();

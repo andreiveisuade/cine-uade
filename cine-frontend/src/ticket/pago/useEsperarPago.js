@@ -20,5 +20,7 @@ export function useEsperarPago(codigo, inicial) {
   const reserva = actualizada?.codigo === codigo ? actualizada : inicial;
   // Lo refrescado solo existe si se estaba esperando el pago: si dice PAGADA, el cambio pasó con la pantalla abierta.
   const pagoEnVivo = actualizada?.codigo === codigo && actualizada.estado === "PAGADA";
-  return { reserva, pagoEnVivo };
+  // Al vencer el contador: si no, la copia refrescada seguiría diciendo RESERVADA con la espera ya cortada.
+  const refrescar = () => api.obtenerReservaPorCodigo(codigo).then(setActualizada, () => {});
+  return { reserva, pagoEnVivo, refrescar };
 }

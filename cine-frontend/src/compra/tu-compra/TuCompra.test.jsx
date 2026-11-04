@@ -11,7 +11,7 @@ const ANA = { id: 1, nombre: "Ana", email: "ana@mail.com", rol: "CLIENTE" };
 
 const RESERVA = {
   id: 7, codigo: "ABCD1234", estado: "RESERVADA", cobrable: true, cancelable: true, funcionId: 5, total: 16000,
-  venceEn: "2026-10-21T19:30:00", pelicula: { id: 2, titulo: "Matrix" }, sala: { nombre: "Sala 2", tipo: "IMAX" },
+  venceEn: "2026-10-21T19:30:00", segundosParaPagar: 1500, pelicula: { id: 2, titulo: "Matrix" }, sala: { nombre: "Sala 2", tipo: "IMAX" },
   funcion: { inicio: "2026-10-21T20:30:00", proyeccion: "DOS_D", idioma: "SUBTITULADA" },
   entradas: [
     { codigo: "C5", tarifa: "GENERAL", precio: 8000, requiereAcreditacion: false },
@@ -55,7 +55,7 @@ describe("Tu compra: lo elegido", () => {
     expect(await screen.findByText("C6")).toBeInTheDocument();
     expect(screen.getByText("Jubilado")).toBeInTheDocument();
     expect(screen.getByText("Acordate del carnet")).toBeInTheDocument();
-    expect(screen.getByText("Tus butacas te esperan hasta las 19:30")).toBeInTheDocument();
+    expect(screen.getByRole("timer")).toHaveTextContent("25:00");
   });
 
   it("sin sesión manda a ingresar", async () => {

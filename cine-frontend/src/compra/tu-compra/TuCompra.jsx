@@ -1,16 +1,17 @@
 import { useRef, useState } from "react";
-import { Alert, Badge, Button, Grid, Stack, Text, VisuallyHidden } from "@mantine/core";
+import { Alert, Button, Grid, Stack, Text, VisuallyHidden } from "@mantine/core";
 import { useInViewport, useMergedRef } from "@mantine/hooks";
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from "react-router";
 import * as api from "@/api/api-http.js";
 import { useAvisar } from "@/compartido/estado/Avisos.jsx";
 import { EsperaOError } from "@/compartido/estado/EsperaOError.jsx";
-import { hora, precio } from "@/compartido/formato.js";
+import { precio } from "@/compartido/formato.js";
 import { useCargar } from "@/compartido/hooks/useCargar.js";
 import { useTitulo } from "@/compartido/hooks/useTitulo.js";
 import { Encabezado } from "@/compartido/layout/Encabezado.jsx";
 import { useSesion } from "@/cuenta/SesionDelCliente.jsx";
 import { avisoDe, cerrada } from "@/compartido/estadoReserva.js";
+import { TiempoParaPagar } from "@/compra/TiempoParaPagar.jsx";
 import { AlgoDulce } from "./AlgoDulce.jsx";
 import { BarraDelPedido } from "./BarraDelPedido.jsx";
 import { EntradasDeLaCompra } from "./EntradasDeLaCompra.jsx";
@@ -45,10 +46,10 @@ export function TuCompra() {
   if (reserva.ingresadaEn) return <Navigate to={`/ticket/${codigo}`} replace />;
   const sumar = reserva.estado === "PAGADA";
   if (!sumar && !reserva.cobrable) return <CompraTerminada reserva={reserva} />;
-  return <Compra reserva={reserva} productos={productos} sumar={sumar} productoTocado={productoTocado} />;
+  return <Compra reserva={reserva} productos={productos} sumar={sumar} productoTocado={productoTocado} alVencer={carga.recargar} />;
 }
 
-function Compra({ reserva, productos, sumar, productoTocado }) {
+function Compra({ reserva, productos, sumar, productoTocado, alVencer }) {
   const navegar = useNavigate();
   const avisar = useAvisar();
   const { candy, pedido, cotiza, cotizacion, aPagar, actualizando, total } =
@@ -81,11 +82,7 @@ function Compra({ reserva, productos, sumar, productoTocado }) {
   return (
     <div>
       <Encabezado titulo={sumar ? "Sumá candy a tu entrada" : "Tu compra"}>
-        {!sumar && (
-          <Badge color="ambar" variant="light" size="lg" tt="none" className="cine-cifras" style={{ alignSelf: "flex-start" }}>
-            Tus butacas te esperan hasta las {hora(reserva.venceEn)}
-          </Badge>
-        )}
+        {!sumar && <TiempoParaPagar key={reserva.segundosParaPagar} segundos={reserva.segundosParaPagar} alVencer={alVencer} />}
       </Encabezado>
       <Grid gap="lg" align="flex-start">
         <Grid.Col span={{ base: 12, md: 7 }}>

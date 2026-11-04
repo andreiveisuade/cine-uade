@@ -1,6 +1,7 @@
 package ar.uade.cine.model.ventas;
 
 import java.time.LocalDate;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -232,6 +233,15 @@ public class Reserva {
             return estado.expirar();
         }
         return ingresadaEn == null && funcion.yaTermino(ahora) ? estado.terminarLaFuncion() : estado;
+    }
+
+    // Para la cuenta regresiva: vence (R17) o empieza la función (R19), lo primero; null si ya no se puede pagar.
+    public Long segundosParaPagar(LocalDateTime ahora) {
+        if (!esCobrable(ahora)) {
+            return null;
+        }
+        LocalDateTime inicio = funcion.getInicio();
+        return Duration.between(ahora, getVenceEn().isBefore(inicio) ? getVenceEn() : inicio).toSeconds();
     }
 
     // Hasta cuándo se puede pagar; null si ya no espera el pago.

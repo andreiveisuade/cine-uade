@@ -112,6 +112,28 @@ class ReservaTest {
         assertEquals("Las butacas tienen que ser contiguas y de la misma fila", error.getMessage());
     }
 
+    // El contador tiene que llegar a cero cuando de verdad deja de poder pagarse, no siempre a los 15 minutos.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            recien hecha,                2026-08-14T10:00:00, 2026-08-14T10:00:00, 900
+            a los cinco minutos,         2026-08-14T10:00:00, 2026-08-14T10:05:00, 600
+            la funcion empieza antes,    2026-08-20T19:50:00, 2026-08-20T19:50:00, 600
+            """)
+    void quedaParaPagarLoQuePrimeroLlegue(String caso, LocalDateTime creada, LocalDateTime ahora, long segundos) {
+        Reserva reserva = new Reserva(FUNCION, CLIENTE, butacas("A1"), creada);
+
+        assertEquals(segundos, reserva.segundosParaPagar(ahora));
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            vencida,            2026-08-14T10:00:00, 2026-08-14T10:16:00
+            funcion empezada,   2026-08-20T19:50:00, 2026-08-20T20:01:00
+            """)
+    void sinPoderPagarNoQuedaTiempo(String caso, LocalDateTime creada, LocalDateTime ahora) {
+        assertNull(new Reserva(FUNCION, CLIENTE, butacas("A1"), creada).segundosParaPagar(ahora));
+    }
+
     @Test
     void nacePorPagarConUnCodigoDeAccesoYSusButacasOcupadas() {
         Reserva reserva = new Reserva(FUNCION, CLIENTE, butacas("A1", "A2"), CREADA);

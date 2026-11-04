@@ -35,7 +35,7 @@ export function ReservasDelCliente() {
       {carga.datos.length ? (
         <Stack gap="sm" maw={880}>
           {carga.datos.map((r) => (
-            <FilaReserva key={r.id} reserva={r} cancelando={cancelando === r.codigo} alCancelar={() => cancelar(r.codigo)} />
+            <FilaReserva key={r.id} reserva={r} cancelando={cancelando === r.codigo} alCancelar={() => cancelar(r.codigo)} alVencer={carga.recargar} />
           ))}
         </Stack>
       ) : (

@@ -1,11 +1,12 @@
 import { Badge, Button, Group, Paper, Stack, Text } from "@mantine/core";
 import { Link } from "react-router";
-import { cantidad, fechaHora, hora, precio } from "@/compartido/formato.js";
+import { cantidad, fechaHora, precio } from "@/compartido/formato.js";
 import { cerrada, estadoVisible, importeDeLasEntradas } from "@/compartido/estadoReserva.js";
+import { TiempoParaPagar } from "@/compra/TiempoParaPagar.jsx";
 import { FechaEnBloque } from "./FechaEnBloque.jsx";
 
 // Una fila por reserva: la fecha como bloque a la izquierda, lo que es en el medio y lo que se puede hacer a la derecha.
-export function FilaReserva({ reserva: r, cancelando, alCancelar }) {
+export function FilaReserva({ reserva: r, cancelando, alCancelar, alVencer }) {
   const estado = estadoVisible(r);
   return (
     <Paper withBorder p="md" style={{ opacity: cerrada(r) || r.ingresadaEn ? 0.65 : 1 }}>
@@ -19,8 +20,8 @@ export function FilaReserva({ reserva: r, cancelando, alCancelar }) {
             </Group>
             <Text size="sm" c="dimmed" className="cine-cifras">
               {fechaHora(r.funcion.inicio)} · {r.sala.nombre} · {cantidad(r.cantidadEntradas, "entrada")} · {precio(importeDeLasEntradas(r))}
-              {r.estado === "RESERVADA" && ` · pagala antes de las ${hora(r.venceEn)}`}
             </Text>
+            {r.segundosParaPagar != null && <TiempoParaPagar key={r.segundosParaPagar} segundos={r.segundosParaPagar} alVencer={alVencer} />}
           </Stack>
         </Group>
         <Group gap="xs">
