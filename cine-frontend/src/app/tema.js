@@ -1,4 +1,4 @@
-import { createTheme, v8CssVariablesResolver } from "@mantine/core";
+import { alpha, createTheme, DEFAULT_THEME, v8CssVariablesResolver } from "@mantine/core";
 
 // La luz del proyector: el único color de marca. Con autoContrast el texto sobre él sale oscuro.
 const ambar = ["#fff8e1", "#ffefb8", "#ffe28a", "#ffd45c", "#fbc433", "#f5b301", "#d99a00", "#b07c00", "#8a6100", "#5e4200"];
@@ -38,6 +38,15 @@ export const tema = createTheme({
 
 // Los fondos light de Mantine 9 son sólidos y en oscuro gritan; los de la 8 son translúcidos. Encima, el ámbar
 // como texto en claro baja a un tono que da AA sobre blanco.
+// El primaryShade oscuro (4, por el ámbar) vale para todas las paletas: el light del rojo sale de sus tonos 2 y 0, casi
+// blancos, y se ve gris. Lo que debe alertar usa los tonos con los que el rojo se lee rojo.
+const rojo = DEFAULT_THEME.colors.red;
+const rojoOscuro = {
+  "--mantine-color-red-light": alpha(rojo[6], 0.15),
+  "--mantine-color-red-light-hover": alpha(rojo[6], 0.2),
+  "--mantine-color-red-light-color": rojo[3],
+};
+
 export function variables(theme) {
   const base = v8CssVariablesResolver(theme);
   const textoAmbarClaro = {
@@ -49,6 +58,6 @@ export function variables(theme) {
   return {
     ...base,
     light: { ...base.light, ...textoAmbarClaro, "--mantine-color-body": "#f4f3ef", "--mantine-color-dimmed": "#5b606d" },
-    dark: { ...base.dark, "--mantine-color-anchor": ambar[4], "--mantine-color-body": dark[8], "--mantine-color-dimmed": dark[2] },
+    dark: { ...base.dark, ...rojoOscuro, "--mantine-color-anchor": ambar[4], "--mantine-color-body": dark[8], "--mantine-color-dimmed": dark[2] },
   };
 }
