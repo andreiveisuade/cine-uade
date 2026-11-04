@@ -62,9 +62,9 @@ Límites conocidos: el login con Basic (empleados) y cada pedido de Swing compar
 | Ruta | Devuelve |
 |---|---|
 | `GET /generos` | `["ACCION", "COMEDIA", …]` |
-| `GET /tipos-pelicula` | `["DOS_D","TRES_D","IMAX"]`: los filtros de `GET /cartelera?tipo=` |
+| `GET /tipos-pelicula` | `["DOS_D","TRES_D","IMAX","CUATRO_D"]`: los filtros de `GET /cartelera?tipo=` y el orden de los de cada película |
 | `GET /clasificaciones` | `[{"nombre":"ATP","edadMinima":0}, …]` |
-| `GET /tipos-sala` | `[{"nombre":"IMAX","multiplicador":1.6,"soportaTresD":true,"premium":true,"enLaGrilla":"Premium: las mejor puntuadas, en 3D si tienen versión 3D"}, …]`. Son atributos del tipo (Experto): `enLaGrilla` dice qué le toca en la grilla automática y se muestra tal cual |
+| `GET /tipos-sala` | `[{"nombre":"CUATRO_D","multiplicador":1.8,"proyecciones":["TRES_D"],"premium":true,"enLaGrilla":"Premium: las mejor puntuadas de las que puede proyectar, en 3D si tienen versión 3D"}, …]`. Son atributos del tipo (Experto): `proyecciones` dice qué admite (R8, R35) y `enLaGrilla` dice qué le toca en la grilla automática y se muestra tal cual |
 | `GET /idiomas` · `GET /proyecciones` | `["DOBLADA","SUBTITULADA"]` · `["DOS_D","TRES_D"]` |
 | `GET /medios-pago` | `[{"nombre":"EFECTIVO","requiereAutorizacion":false}, …]`: los de la boletería. `MERCADO_PAGO` no figura: es solo de la web |
 | `GET /tarifas` | `[{"nombre":"JUBILADO","requiereAcreditacion":true}, …]` |
@@ -80,9 +80,9 @@ Los clientes deciden con estos campos, nunca por el nombre de una constante: ped
 
 | Ruta | Qué hace |
 |---|---|
-| `GET /cartelera?genero=&tipo=` | Las películas en exhibición. `tipo` (`DOS_D`, `TRES_D`, `IMAX`) se resuelve por sus funciones por delante: la proyección en 2D y 3D, la sala en IMAX, así que una película puede estar en varios. Con `genero` se combina (y); otro valor es `400` |
+| `GET /cartelera?genero=&tipo=` | Las películas en exhibición. `tipo` (`DOS_D`, `TRES_D`, `IMAX`, `CUATRO_D`) se resuelve por sus funciones por delante: la proyección en 2D y 3D, la sala en IMAX y 4D, así que una película puede estar en varios. Con `genero` se combina (y); otro valor es `400` |
 | `GET /peliculas/{id}` | Una película |
-| `GET /peliculas/{id}/funciones` | Sus funciones que todavía no empezaron (R19), por `inicio`, con la sala |
+| `GET /peliculas/{id}/funciones` | Sus funciones que todavía no empezaron (R19), por `inicio`, con la sala y sus `tipos` |
 | `GET /clientes?email=` | `[cliente]` o `[]`. Solo `ADMINISTRADOR` |
 
 ### El ingreso con Google (R28)
@@ -123,7 +123,9 @@ son `PUT`, `POST` o `DELETE`: con CSRF apagado, `SameSite=Lax` no manda la cooki
 `estadoRevision` (`PENDIENTE`, `CONFIRMADA`, `DESCARTADA`) dice si entró al catálogo; `enCartelera`, si se
 está dando. `trailerYoutube` es el id del video de YouTube o `null`: se embebe en
 `https://www.youtube.com/embed/{id}`. `formatos` dice en qué se estrena (R31), `DOS_D` primero. Una función suma
-`precioDesde` (la butaca más barata con tarifa general, anteojos incluidos) y la sala con `minutosLimpieza`.
+`precioDesde` (la butaca más barata con tarifa general, anteojos incluidos), la sala con `minutosLimpieza` y
+`tipos`: los de `GET /tipos-pelicula` que cumple, con el mismo criterio que `GET /cartelera?tipo=`. La 3D de una sala 4D
+trae `["TRES_D","CUATRO_D"]`; los clientes filtran y muestran con esto, sin deducirlo de la sala.
 
 ## Mapa de butacas
 
@@ -335,11 +337,11 @@ deducirlo del nombre del rol. Clave mala y email inexistente dan el mismo `401`.
 | `DELETE /peliculas/{id}` | `409` si tiene funciones o una programación |
 | `GET /salas` · `GET /salas/{id}` | `{id, nombre, tipo, butacasPorFila, filas, capacidadSala, minutosLimpieza}`; el detalle suma `asientos` |
 | `POST /salas` | `{nombre, tipo, butacasPorFila, codigosVip, codigosPareja, codigosAccesibles, minutosLimpieza}`. 1 a 26 filas, 1 a 40 butacas por fila; cada código especial existe y está en una sola lista. Limpieza 0 a 120, 15 por defecto. Nombre único (`409`) |
-| `PUT /salas/{id}` | `{nombre, tipo, minutosLimpieza}`. Las butacas no se editan; el tipo, tampoco si tiene funciones (`409`). Los datos se validan antes que el nombre repetido |
+| `PUT /salas/{id}` | `{nombre, tipo, minutosLimpieza}`. Las butacas no se editan; el tipo, tampoco si tiene funciones o está en una grilla (`409`). Los datos se validan antes que el nombre repetido |
 | `DELETE /salas/{id}` | `409` si tiene funciones o una programación |
 | `PATCH /salas/{salaId}/asientos/{codigo}` | `{"estado":"FUERA_DE_SERVICIO"}` o `HABILITADO` (R9) |
 | `GET /funciones?peliculaId=&salaId=&desde=&hasta=` | Con película y sala, por `inicio`. `hasta` incluye todo el día |
-| `POST /funciones` | Película confirmada, sin superposición en la sala (R3), 3D solo en sala que lo soporta (R8) y de una película con versión 3D (R31: `400 La película Matrix no tiene versión en 3D`; igual con 2D), `inicio` futuro (R20), sin segundos y dentro del próximo año. Dos pedidos a la vez sobre la misma sala y hora: el segundo da `409 Ya hay una función en esa sala a esa hora` |
+| `POST /funciones` | Película confirmada, sin superposición en la sala (R3), en una proyección que el tipo de sala admite (R8 y R35, la sala 4D solo en 3D: `400 La sala Sala 6 no puede proyectar en 2D`) y de una película con esa versión (R31: `400 La película Matrix no tiene versión en 3D`; igual con 2D), `inicio` futuro (R20), sin segundos y dentro del próximo año. Dos pedidos a la vez sobre la misma sala y hora: el segundo da `409 Ya hay una función en esa sala a esa hora` |
 | `PUT /funciones/{id}` | Mismo cuerpo, validaciones y mensajes que el alta; R3 no cuenta la función misma. `409` si tiene reservas, aun canceladas (R12). La generada por una programación se desprende y queda suelta: la grilla no vuelve a generar ese pase |
 | `DELETE /funciones/{id}` | `409` si tiene reservas, aun canceladas (R12). La de una programación no vuelve: la grilla avanza por fecha procesada |
 | `POST /funciones/borrado` | `{ids}`, de 1 a 500 (vacía o más es `400`). Borra las que puede, cada una como el `DELETE`, y da `200 {borradas: [ids], rechazadas: [{id, error}]}` con el mismo `error` que el `DELETE` (`409` de R12, `404`). Un id repetido cuenta una vez |
@@ -361,10 +363,11 @@ deducirlo del nombre del rol. Clave mala y email inexistente dan el mismo `401`.
 
 - `diasSemana` vacío es todos. Sin `hasta`, queda abierta y se extiende sola de a 14 días.
 - Los horarios que ya pasaron se saltean sin contar (R20); los que chocan, se saltean y cuentan.
-- `400`: película sin confirmar, R8, R31, rango de más de 366 días o que termina a más de un año, hora con
+- `400`: película sin confirmar, R8, R31, R35, rango de más de 366 días o que termina a más de un año, hora con
   segundos, rango sin ningún día elegido, o todos los horarios ya pasados.
 - `GET /programaciones?peliculaId=&salaId=&activa=`, `GET /programaciones/{id}` (con sus funciones) y
-  `PATCH /programaciones/{id}` con `{"activa": false|true}`. No hay `DELETE`.
+  `PATCH /programaciones/{id}` con `{"activa": false|true}`. Reactivar valida el formato otra vez (`400` de R8, R31 o R35): de
+  baja, la película pudo perder esa versión. No hay `DELETE`.
 
 ## Grilla automática
 
@@ -386,9 +389,10 @@ de la sala y la película (si viaja, se ignora).
 - `cierre: "00:00"` es fin del día. Solo películas confirmadas; no pisa funciones existentes ni propone
   horarios que ya pasaron (R20).
 - Llena todas las salas, de la más cara a la más barata. Cada una prefiere lo que dice su tipo en
-  `GET /tipos-sala` (`enLaGrilla`): la premium, las mejor puntuadas; la 3D, las versiones 3D; la 2D, las que
+  `GET /tipos-sala` (`enLaGrilla`): la premium, las mejor puntuadas de las que puede proyectar; la 3D, las versiones 3D; la 2D, las que
   todavía no tienen pase ese día. En el último turno entra la que deja menos hueco antes del cierre.
-- `proyeccion` de cada pase: `TRES_D` si la sala lo proyecta y la película tiene versión 3D (R8, R31); si no, `DOS_D`.
+- `proyeccion` de cada pase: `TRES_D` si la sala lo proyecta y la película tiene versión 3D (R8, R31); si no, `DOS_D` si la
+  sala lo admite. Una película sin versión que la sala proyecte no va en esa sala: sin películas con 3D, la 4D queda vacía (R35).
 - `minutosDisponibles` y `ocupacion` cuentan todas las salas. `facturacionEsperada` es una estimación: cada pase
   a sala llena con tarifa general (anteojos incluidos), por el puntaje sobre 10.
 - `400`: `desde` en el pasado o fin a más de un año, `dias` fuera de 1 a 31, `cuantasPeliculas` fuera de 1 a
