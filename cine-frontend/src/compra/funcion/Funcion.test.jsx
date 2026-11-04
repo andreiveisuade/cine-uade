@@ -13,7 +13,7 @@ const asiento = (codigo, extra = {}) =>
 const FUNCION = {
   id: 5, peliculaId: 2, pelicula: { titulo: "Matrix" }, inicio: "2026-10-21T20:00:00",
   sala: { nombre: "Sala 1", tipo: "DOS_D", filas: 1, capacidadSala: 3 },
-  proyeccion: "DOS_D", idioma: "SUBTITULADA", libres: 2, precio: 1000,
+  proyeccion: "DOS_D", tipos: ["DOS_D"], idioma: "SUBTITULADA", libres: 2, precio: 1000,
   asientos: [asiento("A1"), asiento("A2"), asiento("A3", { ocupado: true })],
 };
 

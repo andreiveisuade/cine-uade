@@ -75,7 +75,7 @@ public class ConfiguracionSeguridad {
             "/api/candy/productos", "/api/candy/productos/*",
             "/api/imagenes/*",
             "/api/promociones/vigentes",
-            "/api/generos", "/api/clasificaciones", "/api/tipos-sala",
+            "/api/generos", "/api/clasificaciones", "/api/tipos-sala", "/api/tipos-pelicula",
             "/api/idiomas", "/api/proyecciones", "/api/medios-pago",
             "/api/tarifas", "/api/tipos-producto", "/api/tipos-promocion"};
 

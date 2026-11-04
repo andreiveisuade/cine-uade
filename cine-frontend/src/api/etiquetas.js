@@ -64,6 +64,11 @@ export function etiqueta(valor) {
   return ETIQUETAS[valor] || valor;
 }
 
+// Los tipos los da la API: es lo mismo que ofrecen los filtros, y la sala ya no hace falta decirla dos veces.
+export function formatoDe(funcion) {
+  return [...funcion.tipos, funcion.idioma].map(etiqueta).join(" · ");
+}
+
 // Nombres de la paleta de Mantine: Chips.jsx resuelve el tono para claro y oscuro.
 export const COLOR_CLASIFICACION = {
   ATP: "green",

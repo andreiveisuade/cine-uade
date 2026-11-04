@@ -1,9 +1,12 @@
 package ar.uade.cine.controller.cartelera;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.StreamSupport;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -15,7 +18,18 @@ import ar.uade.cine.PruebaDeApi;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.EstadoRevision;
 import ar.uade.cine.model.cartelera.Genero;
+import ar.uade.cine.model.cartelera.Pelicula;
+import ar.uade.cine.model.dinero.Dinero;
+import ar.uade.cine.model.funciones.FormatoDeFuncion;
+import ar.uade.cine.model.funciones.Funcion;
+import ar.uade.cine.model.funciones.Proyeccion;
+import ar.uade.cine.model.funciones.Version;
+import ar.uade.cine.model.salas.Sala;
+import ar.uade.cine.model.salas.TipoSala;
 import ar.uade.cine.model.usuarios.Rol;
+import ar.uade.cine.repository.cartelera.PeliculaRepository;
+import ar.uade.cine.repository.funciones.FuncionRepository;
+import ar.uade.cine.repository.salas.SalaRepository;
 import ar.uade.cine.service.cartelera.DatosPelicula;
 import ar.uade.cine.service.cartelera.GestorRevisionCartelera;
 import ar.uade.cine.service.usuarios.GestorEmpleados;
@@ -26,6 +40,12 @@ class PeliculaControllerTest extends PruebaDeApi {
     private GestorRevisionCartelera revision;
     @Autowired
     private GestorEmpleados empleados;
+    @Autowired
+    private PeliculaRepository peliculas;
+    @Autowired
+    private SalaRepository salas;
+    @Autowired
+    private FuncionRepository funciones;
 
     // El controller no busca antes: el 404 lo da el gestor, y esto evita que se vuelva un 400.
     @Test
@@ -182,5 +202,79 @@ class PeliculaControllerTest extends PruebaDeApi {
         assertEquals(400, respuesta.estado());
         assertEquals("La película Dune no está confirmada: revisala antes de publicarla", respuesta.error());
         assertFalse(get("/api/peliculas/" + id).json().get("enCartelera").asBoolean());
+    }
+
+    // El tipo sale de lo que se vende: Alien solo pasó en 3D e IMAX, y una película entra en todos los tipos que tenga.
+    // Gravity va en la sala 4D, que proyecta en 3D (R35): está en los dos filtros.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(delimiter = '|', textBlock = """
+            2D                       | tipo=DOS_D                | [Dune, Interstellar, Alien]
+            3D                       | tipo=TRES_D               | [Avatar, Gravity]
+            IMAX                     | tipo=IMAX                 | [Interstellar]
+            4D                       | tipo=CUATRO_D             | [Gravity]
+            sin distinguir mayúsculas| tipo=imax                 | [Interstellar]
+            combinado con género     | genero=DRAMA&tipo=TRES_D  | [Avatar, Gravity]
+            género sin ese tipo      | genero=ACCION&tipo=TRES_D | []
+            tipo vacío no filtra     | tipo=                     | [Dune, Avatar, Interstellar, Alien, Gravity]
+            """)
+    void laCarteleraFiltraPorTipoSegunLasFuncionesPorDelante(String caso, String consulta, String titulos) {
+        Sala comun = salas.save(new Sala("Sala 2D", TipoSala.DOS_D, 15));
+        Sala tresD = salas.save(new Sala("Sala 3D", TipoSala.TRES_D, 15));
+        Sala imax = salas.save(new Sala("Sala IMAX", TipoSala.IMAX, 15));
+        LocalDateTime proxima = reloj.ahora().plusDays(2);
+        funcion(enCartelera("Dune", Genero.ACCION), comun, proxima, Proyeccion.DOS_D);
+        funcion(enCartelera("Avatar", Genero.DRAMA), tresD, proxima, Proyeccion.TRES_D);
+        funcion(enCartelera("Interstellar", Genero.ACCION), imax, proxima, Proyeccion.DOS_D);
+        Pelicula alien = enCartelera("Alien", Genero.ACCION);
+        funcion(alien, comun, proxima.plusHours(4), Proyeccion.DOS_D);
+        funcion(alien, imax, reloj.ahora().minusDays(1), Proyeccion.TRES_D);
+        funcion(enCartelera("Gravity", Genero.DRAMA), salas.save(new Sala("Sala 4D", TipoSala.CUATRO_D, 15)), proxima,
+                Proyeccion.TRES_D);
+
+        Respuesta respuesta = get("/api/cartelera?" + consulta);
+
+        assertEquals(200, respuesta.estado());
+        assertEquals(titulos, StreamSupport.stream(respuesta.json().spliterator(), false)
+                .map(p -> p.get("titulo").asText()).toList().toString());
+    }
+
+    @Test
+    void unTipoQueNoExisteEs400() {
+        Respuesta respuesta = get("/api/cartelera?tipo=CINE");
+
+        assertEquals(400, respuesta.estado());
+        assertEquals("El tipo de película no es válido: CINE", respuesta.error());
+    }
+
+    // Los tipos de cada función, con el criterio del filtro: la ficha filtra con esto y no deduce nada.
+    @ParameterizedTest(name = "{0} en {1}")
+    @CsvSource(textBlock = """
+            DOS_D,    DOS_D,  DOS_D
+            TRES_D,   DOS_D,  DOS_D
+            TRES_D,   TRES_D, TRES_D
+            IMAX,     DOS_D,  DOS_D IMAX
+            IMAX,     TRES_D, TRES_D IMAX
+            CUATRO_D, TRES_D, TRES_D CUATRO_D
+            """)
+    void cadaFuncionDiceDeQueTiposEs(TipoSala tipoSala, Proyeccion proyeccion, String tipos) {
+        Pelicula pelicula = enCartelera("Dune", Genero.ACCION);
+        funcion(pelicula, salas.save(new Sala("Sala", tipoSala, 15)), reloj.ahora().plusDays(2), proyeccion);
+
+        JsonNode funcion = get("/api/peliculas/" + pelicula.getId() + "/funciones").json().get(0);
+
+        assertEquals(List.of(tipos.split(" ")), StreamSupport.stream(funcion.get("tipos").spliterator(), false)
+                .map(JsonNode::asText).toList());
+    }
+
+    private Pelicula enCartelera(String titulo, Genero genero) {
+        int id = post("/api/peliculas", "{\"titulo\":\"" + titulo + "\",\"duracionMinutos\":120,\"generos\":[\""
+                + genero + "\"],\"clasificacion\":\"ATP\",\"formatos\":[\"DOS_D\",\"TRES_D\"]}")
+                .json().get("id").asInt();
+        return peliculas.findById(id).orElseThrow();
+    }
+
+    private void funcion(Pelicula pelicula, Sala sala, LocalDateTime inicio, Proyeccion proyeccion) {
+        funciones.save(new Funcion(pelicula, sala, inicio,
+                new FormatoDeFuncion(Version.SUBTITULADA, proyeccion, Dinero.de(5000))));
     }
 }

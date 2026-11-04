@@ -6,17 +6,17 @@ import { useCargar } from "@/compartido/hooks/useCargar.js";
 import { useTitulo } from "@/compartido/hooks/useTitulo.js";
 import { Poster } from "@/compartido/ui/Poster.jsx";
 import { FichaPelicula } from "./FichaPelicula.jsx";
-import { ListaFunciones } from "./ListaFunciones.jsx";
+import { FuncionesPorTipo } from "./FuncionesPorTipo.jsx";
 import { PantallaTrailer } from "./PantallaTrailer.jsx";
 import { PeliculaEsqueleto } from "./PeliculaEsqueleto.jsx";
 
 // Trailer arriba; debajo póster, ficha y funciones para elegir.
 export function Pelicula() {
   const { id } = useParams();
-  const carga = useCargar(() => Promise.all([api.obtenerPelicula(id), api.obtenerFuncionesDePelicula(id)]), [id]);
+  const carga = useCargar(() => Promise.all([api.obtenerPelicula(id), api.obtenerFuncionesDePelicula(id), api.obtenerTiposPelicula()]), [id]);
   useTitulo(carga.datos?.[0].titulo);
   if (!carga.datos) return <EsperaOError carga={carga} esqueleto={<PeliculaEsqueleto />} />;
-  const [pelicula, funciones] = carga.datos;
+  const [pelicula, funciones, tipos] = carga.datos;
 
   return (
     <Stack gap="xl">
@@ -33,7 +33,7 @@ export function Pelicula() {
         <Grid.Col span={{ base: 12, md: 4 }} id="funciones">
           <Box pos={{ md: "sticky" }} top={88}>
             <Title order={2} fz="h3" mb="md">Funciones</Title>
-            <ListaFunciones funciones={funciones} />
+            <FuncionesPorTipo funciones={funciones} catalogo={tipos} />
           </Box>
         </Grid.Col>
       </Grid>

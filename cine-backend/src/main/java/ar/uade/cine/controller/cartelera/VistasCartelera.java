@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 import ar.uade.cine.model.cartelera.CatalogoPelicula;
 import ar.uade.cine.model.cartelera.Importacion;
 import ar.uade.cine.model.cartelera.Pelicula;
+import ar.uade.cine.model.cartelera.TipoPelicula;
 import ar.uade.cine.model.cartelera.RenglonDeCorrida;
 import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.ventas.Entrada;
@@ -137,6 +138,7 @@ public class VistasCartelera {
                                   List<AsientoVistaDTO> butacas, Integer libres) {
         return new FuncionVistaDTO(f.getId(), f.getPeliculaId(), f.getSalaId(),
                 Fechas.texto(f.getInicio()), f.getVersion().name(), f.getProyeccion().name(),
+                TipoPelicula.de(f.getProyeccion(), sala.getTipo()).stream().map(Enum::name).toList(),
                 f.getFormato().precio().aPesos(),
                 Entrada.precioDe(TipoTarifa.GENERAL, f.precioEn(sala), f.getProyeccion()).aPesos(),
                 vistasSalas.sala(sala, asientos), pelicula, butacas, libres);

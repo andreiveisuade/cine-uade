@@ -24,6 +24,9 @@ import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.funciones.FormatoDeFuncion;
 import ar.uade.cine.model.funciones.Funcion;
+import ar.uade.cine.model.cartelera.Pelicula;
+import ar.uade.cine.model.salas.Sala;
+import ar.uade.cine.service.cartelera.DatosPelicula;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
 import ar.uade.cine.model.programaciones.Programacion;
@@ -193,6 +196,23 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
         assertTrue(programaciones.obtener(id).estaActiva());
     }
 
+    // R31: de baja, la película pudo perder la versión; activa, la grilla fallaría en silencio en cada extensión.
+    @Test
+    void noSeReactivaUnaGrillaEnUnFormatoQueLaPeliculaYaNoTiene() {
+        Pelicula en3D = cartelera.agregar(DatosPelicula.con().titulo("Avatar").duracion(162)
+                .generos(List.of(Genero.ACCION)).clasificacion(Clasificacion.ATP)
+                .formatos(List.of(Proyeccion.DOS_D, Proyeccion.TRES_D)).armar());
+        int id = programaciones.crear(new DatosGrilla(en3D.getId(), 2, LUNES, DOMINGO, LAS_2030, Set.of(),
+                new FormatoDeFuncion(Version.DOBLADA, Proyeccion.TRES_D, Dinero.de(5000)))).programacion().getId();
+        programaciones.desactivar(id);
+        programaciones.funcionesDe(id).forEach(f -> funciones.eliminar(f.getId()));
+        cartelera.editar(en3D.getId(), DatosPelicula.con().formatos(List.of(Proyeccion.DOS_D)).armar());
+
+        rechaza("La película Avatar no tiene versión en 3D", () -> programaciones.activar(id));
+
+        assertFalse(programaciones.obtener(id).estaActiva());
+    }
+
     @Test
     void noSeDaDeBajaUnaProgramacionQueNoExiste() {
         rechaza("No existe la programación 99", () -> programaciones.desactivar(99));
@@ -207,6 +227,15 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
                 () -> programaciones.crear(new DatosGrilla(1, 1, LUNES, DOMINGO, LAS_2030, Set.of(),
                         new FormatoDeFuncion(Version.DOBLADA, Proyeccion.TRES_D, Dinero.de(5000)))));
         assertTrue(programaciones.buscar(null, null, null).isEmpty(), "la grilla inválida no se guarda");
+    }
+
+    @Test
+    void previsualizarRechazaUnaGrilla2DEnUnaSala4D() {
+        Sala cuatroD = salas.agregar("Sala 4D", TipoSala.CUATRO_D, List.of(5, 5));
+
+        rechaza("La sala Sala 4D no puede proyectar en 2D",
+                () -> programaciones.previsualizar(new DatosGrilla(1, cuatroD.getId(), LUNES, DOMINGO, LAS_2030, Set.of(),
+                        new FormatoDeFuncion(Version.DOBLADA, Proyeccion.DOS_D, Dinero.de(5000)))));
     }
 
     @Test

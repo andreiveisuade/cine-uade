@@ -93,6 +93,24 @@ class FuncionControllerTest extends PruebaDeApi {
         assertEquals(0, get("/api/funciones").json().size());
     }
 
+    // R35: ni el alta ni la edición aceptan 2D en una sala 4D, y la edición rechazada no cambia nada.
+    @Test
+    void unaFuncion2DEnUnaSala4DEs400AlProgramarYAlEditar() {
+        salas.agregar("Sala 4D", TipoSala.CUATRO_D, List.of(10));
+        String en4D = "{\"peliculaId\":1,\"salaId\":2,\"inicio\":\"2026-08-14T20:30:00\",\"idioma\":\"SUBTITULADA\","
+                + "\"proyeccion\":\"DOS_D\",\"precio\":4500}";
+
+        Respuesta alta = post("/api/funciones", en4D);
+
+        assertEquals(400, alta.estado());
+        assertEquals("La sala Sala 4D no puede proyectar en 2D", alta.error());
+        int id = programar("2026-08-14T20:30:00").json().get("id").asInt();
+        Respuesta edicion = put("/api/funciones/" + id, en4D);
+        assertEquals(400, edicion.estado());
+        assertEquals("La sala Sala 4D no puede proyectar en 2D", edicion.error());
+        assertEquals(1, get("/api/funciones/" + id).json().get("salaId").asInt());
+    }
+
     // DECIMAL(10,2) no guarda cien millones: sin el tope, MySQL rechazaba el INSERT con un 500.
     @Test
     void unPrecioDeCienMillonesEs400() {

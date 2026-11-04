@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 import ar.uade.cine.model.candy.TipoProducto;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
+import ar.uade.cine.model.cartelera.TipoPelicula;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
 import ar.uade.cine.model.promociones.TipoPromocion;
@@ -45,13 +46,20 @@ public class CatalogoController {
                 .toList();
     }
 
-    @Operation(summary = "Los tipos de sala: multiplicador, 3D, premium y qué les toca en la grilla")
+    @Operation(summary = "Los tipos de sala: multiplicador, qué proyectan, premium y qué les toca en la grilla")
     @GetMapping("/api/tipos-sala")
     public List<TipoSalaVistaDTO> tiposDeSala() {
         return Arrays.stream(TipoSala.values())
-                .map(t -> new TipoSalaVistaDTO(t.name(), t.getMultiplicadorPrecio(), t.soportaTresD(), t.premium(),
+                .map(t -> new TipoSalaVistaDTO(t.name(), t.getMultiplicadorPrecio(),
+                        t.getProyecciones().stream().map(Enum::name).toList(), t.premium(),
                         PapelEnLaGrilla.de(t).getDescripcion()))
                 .toList();
+    }
+
+    @Operation(summary = "Los tipos por los que se filtra la cartelera")
+    @GetMapping("/api/tipos-pelicula")
+    public List<String> tiposDePelicula() {
+        return nombres(TipoPelicula.values());
     }
 
     @Operation(summary = "Subtitulada o doblada")

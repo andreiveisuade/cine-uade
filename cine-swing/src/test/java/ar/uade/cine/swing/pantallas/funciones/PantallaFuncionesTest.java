@@ -31,7 +31,16 @@ class PantallaFuncionesTest {
     static final String SALA = "{\"id\":1,\"nombre\":\"Sala 1\",\"tipo\":\"DOS_D\",\"butacasPorFila\":[10],"
             + "\"filas\":1,\"capacidadSala\":10,\"minutosLimpieza\":15}";
     static final String PELICULA = "{\"id\":7,\"titulo\":\"Matrix\",\"duracionMinutos\":136,\"generos\":[],"
-            + "\"clasificacion\":\"MAS_13\",\"enCartelera\":true}";
+            + "\"clasificacion\":\"MAS_13\",\"enCartelera\":true,\"formatos\":[\"DOS_D\",\"TRES_D\"]}";
+    private static final String SOLO_EN_2D = "{\"id\":9,\"titulo\":\"Coco\",\"duracionMinutos\":105,\"generos\":[],"
+            + "\"clasificacion\":\"ATP\",\"enCartelera\":true,\"formatos\":[\"DOS_D\"]}";
+    private static final String SALA_3D = "{\"id\":3,\"nombre\":\"Sala 3\",\"tipo\":\"TRES_D\",\"butacasPorFila\":[10],"
+            + "\"filas\":1,\"capacidadSala\":10,\"minutosLimpieza\":15}";
+    private static final String SALA_4D = "{\"id\":6,\"nombre\":\"Sala 6\",\"tipo\":\"CUATRO_D\",\"butacasPorFila\":[10],"
+            + "\"filas\":1,\"capacidadSala\":10,\"minutosLimpieza\":15}";
+    private static final String TIPOS = "[{\"nombre\":\"DOS_D\",\"proyecciones\":[\"DOS_D\"]},"
+            + "{\"nombre\":\"TRES_D\",\"proyecciones\":[\"DOS_D\",\"TRES_D\"]},"
+            + "{\"nombre\":\"CUATRO_D\",\"proyecciones\":[\"TRES_D\"]}]";
 
     static String funcion(int id, String inicio) {
         return "{\"id\":" + id + ",\"peliculaId\":7,\"salaId\":1,\"inicio\":\"" + inicio + "\","
@@ -49,10 +58,10 @@ class PantallaFuncionesTest {
     @BeforeEach
     void levantar() throws IOException {
         servidor = new ServidorFalso();
-        servidor.responder("GET /api/peliculas", 200, "[" + PELICULA + "]");
-        servidor.responder("GET /api/salas", 200, "[" + SALA + "]");
+        servidor.responder("GET /api/peliculas", 200, "[" + PELICULA + "," + SOLO_EN_2D + "]");
+        servidor.responder("GET /api/salas", 200, "[" + SALA + "," + SALA_3D + "," + SALA_4D + "]");
         servidor.responder("GET /api/idiomas", 200, "[\"DOBLADA\",\"SUBTITULADA\"]");
-        servidor.responder("GET /api/proyecciones", 200, "[\"DOS_D\",\"TRES_D\"]");
+        servidor.responder("GET /api/tipos-sala", 200, TIPOS);
         servidor.responder("GET /api/funciones", 200,
                 "[" + funcion(1, "2026-11-04T20:30:00") + "," + funcion(2, "2026-11-05T18:00:00") + "]");
         ClienteHttp http = new ClienteHttp(servidor.url());
@@ -98,7 +107,7 @@ class PantallaFuncionesTest {
 
         assertEquals("Matrix", encargado.celda(0, "Película"));
         assertEquals("2D · Subtitulada", encargado.celda(0, "Formato"));
-        assertEquals(List.of("Todas", "Matrix"), encargado.opciones("Película"));
+        assertEquals(List.of("Todas", "Matrix", "Coco"), encargado.opciones("Película"));
     }
 
     @Test
@@ -114,7 +123,7 @@ class PantallaFuncionesTest {
     void programaConElInicioArmadoDelDiaYLaHora() {
         servidor.responder("POST /api/funciones", 201, funcion(3, "2026-11-10T21:15:00"));
         encargado.elegir("Película *", "Matrix (136′)")
-                .elegir("Sala *", "Sala 1 — 2D")
+                .elegir("Sala *", "Sala 3 — 3D")
                 .fecha("Día", LocalDate.of(2026, 11, 10))
                 .hora("Hora", LocalTime.of(21, 15))
                 .elegir("Idioma", "Doblada")
@@ -123,8 +132,47 @@ class PantallaFuncionesTest {
                 .clic("Programar");
 
         encargado.esperarTexto("Función programada");
-        assertEquals("{\"peliculaId\":7,\"salaId\":1,\"inicio\":\"2026-11-10T21:15:00\",\"idioma\":\"DOBLADA\","
+        assertEquals("{\"peliculaId\":7,\"salaId\":3,\"inicio\":\"2026-11-10T21:15:00\",\"idioma\":\"DOBLADA\","
                 + "\"proyeccion\":\"TRES_D\",\"precio\":5500.5}", servidor.ultimo("POST /api/funciones").cuerpo());
+    }
+
+    // R8, R31 y R35: solo lo que la sala admite y la película tiene, las dos cosas según la API.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            sala 2D,                  Matrix (136′), Sala 1 — 2D, 2D
+            sala 3D con las dos,      Matrix (136′), Sala 3 — 3D, 2D 3D
+            sala 4D solo 3D,          Matrix (136′), Sala 6 — 4D, 3D
+            película sin 3D,          Coco (105′),   Sala 3 — 3D, 2D
+            película sin 3D en la 4D, Coco (105′),   Sala 6 — 4D, ''
+            """)
+    void soloOfreceLasProyeccionesQueCorresponden(String caso, String pelicula, String sala, String esperadas) {
+        encargado.elegir("Película *", pelicula).elegir("Sala *", sala);
+
+        assertEquals(esperadas.isBlank() ? List.of() : List.of(esperadas.split(" ")), encargado.opciones("Proyección"), caso);
+    }
+
+    @Test
+    void cambiarLaSalaConservaLaProyeccionSiSigueValiendo() {
+        encargado.elegir("Sala *", "Sala 3 — 3D").elegir("Proyección", "3D");
+
+        encargado.elegir("Sala *", "Sala 6 — 4D");
+
+        assertEquals("3D", encargado.valor("Proyección"));
+    }
+
+    @Test
+    void unaPeliculaSinVersionQueLaSalaProyecteLoAvisaYNoSeManda() {
+        encargado.elegir("Película *", "Coco (105′)").elegir("Sala *", "Sala 6 — 4D")
+                .tipear("Precio base", "5000")
+                .clic("Programar");
+
+        encargado.esperarTexto("Esta sala no proyecta ninguna versión de esta película");
+        encargado.esperarTexto("Falta completar «Proyección»");
+        assertEquals(0, servidor.veces("POST /api/funciones"));
+
+        encargado.elegir("Sala *", "Sala 3 — 3D");
+
+        assertFalse(encargado.textos().contains("Esta sala no proyecta ninguna versión de esta película"));
     }
 
     @Test

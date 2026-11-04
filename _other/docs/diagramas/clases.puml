@@ -57,6 +57,15 @@ package "model.cartelera" {
     + TrailerYoutube(id : String)
     + {static} siEs(texto : String) : Optional<TrailerYoutube>
   }
+  enum TipoPelicula {
+    DOS_D
+    TRES_D
+    IMAX
+    CUATRO_D
+    - proyeccion : Proyeccion
+    - tipoSala : TipoSala
+    + {static} de(proyeccion : Proyeccion, tipoSala : TipoSala) : List<TipoPelicula>
+  }
   enum Clasificacion {
     ATP
     MAS_13
@@ -163,8 +172,9 @@ package "model.salas" {
     IMAX
     CUATRO_D
     - multiplicadorPrecio : double
-    - soportaTresD : boolean
     - premium : boolean
+    - proyecciones : List<Proyeccion>
+    + admite(proyeccion : Proyeccion) : boolean
     + aplicarA(precio : Dinero) : Dinero
   }
   enum TipoAsiento {
@@ -205,14 +215,13 @@ package "model.funciones" {
     - proyeccion : Proyeccion
     - precio : Dinero
     + FormatoDeFuncion(version : Version, proyeccion : Proyeccion, precio : Dinero)
-    + exigirProyectableEn(sala : Sala) : void
+    + exigirProgramable(pelicula : Pelicula, sala : Sala) : void
   }
   enum Proyeccion {
     DOS_D
     TRES_D
     - etiqueta : String
     - recargo : Dinero
-    + sePuedeProyectarEn(tipo : TipoSala) : boolean
     + conRecargo(precio : Dinero) : Dinero
   }
   enum Version {
@@ -704,6 +713,9 @@ Importacion "0..*" --> "1" EstadoImportacion : está en >
 Importacion "1" *--> "1" ResumenDeCorrida : se resume en >
 Sala "1" *-- "1..*" Asiento : se compone de >
 Sala "0..*" --> "1" TipoSala : es del formato >
+TipoSala "0..*" --> "0..*" Proyeccion : admite >
+TipoPelicula "0..*" --> "1" Proyeccion : lo cumple la función en >
+TipoPelicula "0..*" --> "1" TipoSala : lo cumple la función en >
 Asiento "0..*" --> "1" TipoAsiento : es del tipo >
 Asiento "0..*" --> "1" EstadoAsiento : está en >
 Funcion "0..*" --> "1" Pelicula : proyecta >
@@ -757,7 +769,7 @@ NombreDeImagen "0..*" --> "1" FormatoImagen : lleva la extensión de >
 ' ---------- dependencias ----------
 Pelicula "1" ..> "0..1" TrailerYoutube : valida su trailer con >
 FormatoDeFuncion "1" ..> "1" Sala : exige poder proyectarse en >
-Proyeccion "1" ..> "1" TipoSala : pregunta si da 3D a >
+FormatoDeFuncion "1" ..> "1" Pelicula : exige la versión a >
 Funcion "1" ..> "1" Asiento : le pone precio a >
 Sala "1" ..> "0..*" TipoAsiento : marca sus butacas especiales con >
 Reserva "1" ..> "1..10" ButacaPedida : crea sus entradas desde >

@@ -2,6 +2,7 @@ package ar.uade.cine.swing.pantallas.programaciones;
 
 import ar.uade.cine.swing.api.ApiProgramaciones;
 import ar.uade.cine.swing.api.dto.cartelera.Pelicula;
+import ar.uade.cine.swing.api.dto.catalogos.TipoSala;
 import ar.uade.cine.swing.api.dto.programaciones.FuncionPlanificada;
 import ar.uade.cine.swing.api.dto.programaciones.PedidoProgramacion;
 import ar.uade.cine.swing.api.dto.programaciones.Plan;
@@ -14,6 +15,7 @@ import ar.uade.cine.swing.comun.Formulario;
 import ar.uade.cine.swing.comun.Opcion;
 import ar.uade.cine.swing.comun.Opciones;
 import ar.uade.cine.swing.comun.SelectorDias;
+import ar.uade.cine.swing.comun.SelectorProyeccion;
 import ar.uade.cine.swing.comun.Tarea;
 import ar.uade.cine.swing.comun.Validacion;
 import ar.uade.cine.swing.pantallas.Seccion;
@@ -47,6 +49,7 @@ final class FormularioProgramacion extends Seccion {
     private final SelectorDias dias = new SelectorDias();
     private final JComboBox<Opcion<String>> idioma = new JComboBox<>();
     private final JComboBox<Opcion<String>> proyeccion = new JComboBox<>();
+    private final SelectorProyeccion proyecciones = new SelectorProyeccion(pelicula, sala, proyeccion);
     private final JTextField precioBase = Campos.soloDecimal(new JTextField("5000"));
     private final JLabel error = Componentes.texto(" ");
     private final JButton confirmar = Componentes.primario(new JButton("Confirmar"));
@@ -77,6 +80,7 @@ final class FormularioProgramacion extends Seccion {
                 .ancho(dias)
                 .obligatorio("Idioma", idioma)
                 .obligatorio("Proyección", proyeccion)
+                .ancho(proyecciones.aviso())
                 .obligatorio("Precio base", precioBase)
                 .ancho(Componentes.aLaDerecha(previsualizar, confirmar))
                 .ancho(error)
@@ -91,11 +95,11 @@ final class FormularioProgramacion extends Seccion {
                 precioBase);
     }
 
-    void llenar(List<Pelicula> peliculas, List<Sala> salas, List<String> idiomas, List<String> proyecciones) {
+    void llenar(List<Pelicula> peliculas, List<Sala> salas, List<String> idiomas, List<TipoSala> tipos) {
+        proyecciones.conocer(peliculas, salas, tipos);
         Campos.llenar(pelicula, Opciones.peliculasConDuracion(peliculas));
         Campos.llenar(sala, Opciones.salasConTipo(salas));
         Campos.llenar(idioma, Opciones.etiquetadas(idiomas));
-        Campos.llenar(proyeccion, Opciones.etiquetadas(proyecciones));
     }
 
     private void invalidar() {

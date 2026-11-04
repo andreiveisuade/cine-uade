@@ -51,6 +51,8 @@ class RepartoDePasesTest {
             con versión 3D en una sala 2D va en 2D,         DOS_D,    DOS_D;TRES_D, DOS_D
             sin versión 3D una sala 3D la da en 2D,         TRES_D,   DOS_D,        DOS_D
             solo en 3D no entra en una sala 2D,             DOS_D,    TRES_D,       ''
+            R35: con versión 3D en una sala 4D va en 3D,    CUATRO_D, DOS_D;TRES_D, TRES_D
+            R35: sin versión 3D no entra en una sala 4D,    CUATRO_D, DOS_D,        ''
             """)
     void elFormatoDeCadaPaseSaleDeLaSalaYDeLaPelicula(String caso, TipoSala tipo, String formatos, String esperado) {
         Pelicula pelicula = new Pelicula("Una", 100, List.of(Genero.DRAMA), Clasificacion.ATP);

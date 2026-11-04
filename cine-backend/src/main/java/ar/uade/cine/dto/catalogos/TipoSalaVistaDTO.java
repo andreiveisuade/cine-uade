@@ -1,6 +1,8 @@
 package ar.uade.cine.dto.catalogos;
 
-// Un tipo de sala de GET /api/tipos-sala: multiplicador, si da 3D (R8), si es premium y qué le toca en la grilla.
-public record TipoSalaVistaDTO(String nombre, double multiplicador, boolean soportaTresD, boolean premium,
+import java.util.List;
+
+// Un tipo de sala de GET /api/tipos-sala: multiplicador, qué proyecta (R8, R35), si es premium y su papel en la grilla.
+public record TipoSalaVistaDTO(String nombre, double multiplicador, List<String> proyecciones, boolean premium,
                                String enLaGrilla) {
 }

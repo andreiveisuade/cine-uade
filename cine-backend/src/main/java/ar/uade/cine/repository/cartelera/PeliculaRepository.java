@@ -10,6 +10,8 @@ import org.springframework.data.repository.query.Param;
 import ar.uade.cine.model.cartelera.EstadoRevision;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.cartelera.Pelicula;
+import ar.uade.cine.model.funciones.Proyeccion;
+import ar.uade.cine.model.salas.TipoSala;
 import ar.uade.cine.repository.Repositorio;
 
 // Persistencia de películas; Repository de Spring Data, con el título de R1 y los filtros en JPQL.
@@ -32,9 +34,12 @@ public interface PeliculaRepository extends Repositorio<Pelicula> {
             select p from Pelicula p
             where p.enCartelera = true
               and (:genero is null or :genero member of p.generos)
-              and exists (select f from Funcion f where f.pelicula = p and f.inicio > :ahora)
+              and exists (select f from Funcion f where f.pelicula = p and f.inicio > :ahora
+                          and (:proyeccion is null or f.formato.proyeccion = :proyeccion)
+                          and (:tipoSala is null or f.sala.tipo = :tipoSala))
             order by p.id""")
-    List<Pelicula> findEnCartelera(@Param("ahora") LocalDateTime ahora, @Param("genero") Genero genero);
+    List<Pelicula> findEnCartelera(@Param("ahora") LocalDateTime ahora, @Param("genero") Genero genero,
+                                   @Param("proyeccion") Proyeccion proyeccion, @Param("tipoSala") TipoSala tipoSala);
 
     // locate y no like: el texto del usuario puede traer % o _.
     @Query("""
