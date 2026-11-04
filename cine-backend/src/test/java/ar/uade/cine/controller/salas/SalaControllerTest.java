@@ -174,6 +174,22 @@ class SalaControllerTest extends PruebaDeApi {
         assertEquals(200, put("/api/salas/" + sala, "{\"nombre\":\"Sala Uno\",\"tipo\":\"DOS_D\"}").estado());
     }
 
+    // Sin funciones generadas pasaba: la grilla quedaba en un formato que la sala ya no proyecta y no generaba nada más.
+    @Test
+    void conUnaGrillaSinFuncionesTampocoSeLeCambiaElTipo() {
+        Pelicula pelicula = cartelera.agregar("Matrix", 136, List.of(Genero.ACCION), Clasificacion.MAS_13);
+        programaciones.save(new Programacion(pelicula, salas.obtener(sala),
+                reloj.hoy().plusMonths(2), null, LocalTime.of(20, 30), Set.of(),
+                new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000))));
+
+        Respuesta respuesta = put("/api/salas/" + sala, "{\"nombre\":\"Sala 1\",\"tipo\":\"CUATRO_D\"}");
+
+        assertEquals(409, respuesta.estado());
+        assertEquals("La sala " + sala + " está programada en una grilla: no se le puede cambiar el tipo",
+                respuesta.error());
+        assertEquals("DOS_D", get("/api/salas/" + sala).json().get("tipo").asText());
+    }
+
     // Daba 500: sin funciones generadas pasaba el chequeo y chocaba con la FK programacion → sala.
     @Test
     void unaSalaEnUnaGrillaNoSeBorraAunqueNoTengaFunciones() {

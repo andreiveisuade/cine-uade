@@ -64,7 +64,7 @@ public class GestorSalas {
 
     // El nombre repetido se busca sin la sala misma: la collation de MySQL ignora acentos y daba 409 falso
     // al renombrar "Sala Unica" a "Sala Única".
-    // El tipo no cambia con funciones: una función 3D quedaría en una sala que no la proyecta.
+    // El tipo no cambia con funciones ni grillas: su formato quedaría en una sala que no lo proyecta (R8, R35).
     public Sala editar(int id, String nombre, TipoSala tipo, Integer minutosLimpieza) {
         Sala sala = salaRepository.exigir(id, "la sala");
         TipoSala tipoAnterior = sala.getTipo();
@@ -75,6 +75,10 @@ public class GestorSalas {
         if (tipo != tipoAnterior && funcionRepository.existsBySala_Id(id)) {
             throw new ConflictoDeNegocio(
                     "La sala " + id + " tiene funciones programadas: no se le puede cambiar el tipo");
+        }
+        if (tipo != tipoAnterior && programacionRepository.existsBySala_Id(id)) {
+            throw new ConflictoDeNegocio(
+                    "La sala " + id + " está programada en una grilla: no se le puede cambiar el tipo");
         }
         return sala;
     }
