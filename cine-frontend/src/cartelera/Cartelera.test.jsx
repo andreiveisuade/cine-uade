@@ -24,6 +24,7 @@ beforeEach(() => {
   api.sesionActual.mockRejectedValue(new Error("401"));
   api.obtenerCartelera.mockResolvedValue(PELICULAS);
   api.obtenerGeneros.mockResolvedValue(["DRAMA", "TERROR"]);
+  api.obtenerTiposPelicula.mockResolvedValue(["DOS_D", "TRES_D", "IMAX"]);
 });
 
 afterEach(() => { window.matchMedia = matchMediaOriginal; });
@@ -37,7 +38,7 @@ describe("Cartelera", () => {
     abrir();
 
     expect(await screen.findByText("3 películas en cartel")).toBeInTheDocument();
-    expect(api.obtenerCartelera).toHaveBeenCalledWith(undefined);
+    expect(api.obtenerCartelera).toHaveBeenCalledWith(undefined, undefined);
     expect(within(tarjeta("Dune")).getByText("2h 0m · Drama")).toBeInTheDocument();
     expect(tarjeta("Matrix")).toHaveAttribute("href", "/pelicula/2");
   });
@@ -48,7 +49,9 @@ describe("Cartelera", () => {
     abrir("/cartelera/DRAMA");
 
     expect(await screen.findByText("1 película de drama")).toBeInTheDocument();
-    expect(api.obtenerCartelera).toHaveBeenCalledWith("DRAMA");
+    expect(api.obtenerCartelera).toHaveBeenCalledWith("DRAMA", undefined);
+    await userEvent.click(screen.getByRole("button", { name: /Géneros/ }));
+    await screen.findByRole("link", { name: "Terror" });
     const filtro = screen.getByLabelText("Filtrar por género");
     expect(within(filtro).getAllByRole("link").map((a) => [a.textContent, a.getAttribute("href")])).toEqual([
       ["Todos", "/cartelera"], ["Drama", "/cartelera/DRAMA"], ["Terror", "/cartelera/TERROR"],
@@ -61,6 +64,60 @@ describe("Cartelera", () => {
     abrir("/cartelera/TERROR");
 
     expect(await screen.findByText("No hay películas de ese género en cartelera.")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Ver toda la cartelera" })).toHaveAttribute("href", "/cartelera");
+  });
+
+  it("géneros y tipo arrancan plegados y se despliegan con un clic", async () => {
+    abrir();
+    await screen.findByText("3 películas en cartel");
+    const tipo = screen.getByRole("button", { name: "Tipo" });
+
+    expect(screen.getByRole("button", { name: "Géneros" })).toHaveAttribute("aria-expanded", "false");
+    expect(tipo).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByRole("link", { name: "IMAX" })).not.toBeInTheDocument();
+
+    await userEvent.click(tipo);
+
+    expect(tipo).toHaveAttribute("aria-expanded", "true");
+    expect(await screen.findByRole("link", { name: "IMAX" })).toHaveAttribute("href", "/cartelera?tipo=IMAX");
+    expect(screen.queryByRole("link", { name: "Drama" })).not.toBeInTheDocument();
+  });
+
+  it("elegir un tipo filtra y conserva el género", async () => {
+    abrir("/cartelera/DRAMA");
+    await screen.findByText("3 películas de drama");
+
+    await userEvent.click(screen.getByRole("button", { name: /Tipo/ }));
+    await userEvent.click(await screen.findByRole("link", { name: "3D" }));
+
+    expect(await screen.findByText("3 películas de drama en 3D")).toBeInTheDocument();
+    expect(api.obtenerCartelera).toHaveBeenLastCalledWith("DRAMA", "TRES_D");
+  });
+
+  it("al recargar con filtros en la URL los mantiene y plegados muestra cuáles son", async () => {
+    abrir("/cartelera/DRAMA?tipo=IMAX");
+
+    expect(await screen.findByText("3 películas de drama en IMAX")).toBeInTheDocument();
+    expect(api.obtenerCartelera).toHaveBeenCalledWith("DRAMA", "IMAX");
+    expect(screen.getByRole("button", { name: "Géneros Drama" })).toHaveAttribute("aria-expanded", "false");
+    expect(screen.getByRole("button", { name: "Tipo IMAX" })).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("cambiar de género conserva el tipo", async () => {
+    abrir("/cartelera?tipo=IMAX");
+    await screen.findByText("3 películas en IMAX");
+
+    await userEvent.click(screen.getByRole("button", { name: "Géneros" }));
+
+    expect(await screen.findByRole("link", { name: "Terror" })).toHaveAttribute("href", "/cartelera/TERROR?tipo=IMAX");
+  });
+
+  it("sin películas de ese tipo lo dice y ofrece ver toda la cartelera", async () => {
+    api.obtenerCartelera.mockResolvedValue([]);
+
+    abrir("/cartelera?tipo=IMAX");
+
+    expect(await screen.findByText("No hay películas con ese filtro en cartelera.")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Ver toda la cartelera" })).toHaveAttribute("href", "/cartelera");
   });
 

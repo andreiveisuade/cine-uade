@@ -42,6 +42,7 @@ describe("barra de la cuenta", () => {
     api.sesionActual.mockResolvedValue(ANA);
     api.salir.mockResolvedValue(null);
     api.obtenerGeneros.mockResolvedValue([]);
+    api.obtenerTiposPelicula.mockResolvedValue([]);
     api.obtenerCartelera.mockResolvedValue([]);
     renderConApp(<AppCliente />, { ruta: "/*", en: "/nosotros" });
 
