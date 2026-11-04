@@ -1,4 +1,4 @@
-import { AnimatePresence, m } from "motion/react";
+import { m } from "motion/react";
 import { Route, Routes, useLocation } from "react-router";
 import { Cartelera } from "@/cartelera/Cartelera.jsx";
 import { Pelicula } from "@/cartelera/pelicula/Pelicula.jsx";
@@ -13,11 +13,10 @@ import { Promociones } from "@/promos/Promociones.jsx";
 import { PasarelaEmulada } from "@/pasarela/PasarelaEmulada.jsx";
 import { NoExiste } from "./NoExiste.jsx";
 
-// Corta y sin desplazamiento grande: acompaña el cambio de pantalla sin demorarlo.
+// Solo entrada: con una salida en AnimatePresence, volver a la sección mientras se iba la dejaba en opacidad 0.
 const PANTALLA = {
   initial: { opacity: 0, y: 8 },
   animate: { opacity: 1, y: 0, transition: { duration: 0.2, ease: "easeOut" } },
-  exit: { opacity: 0, transition: { duration: 0.12 } },
 };
 
 // Una URL, una pantalla.
@@ -42,12 +41,7 @@ export function Rutas() {
       <Route path="*" element={<NoExiste />} />
     </Routes>
   );
-  // Si vuela un póster, la pantalla cambia de golpe: el fundido lo hace la View Transition, y mientras dura no
-  // corren los cuadros de Motion, así que la salida de AnimatePresence no terminaría nunca.
+  // Si vuela un póster, la pantalla cambia de golpe: el fundido lo hace la View Transition.
   if (ubicacion.state?.vuela) return <div key={seccion}>{pantalla}</div>;
-  return (
-    <AnimatePresence mode="wait" initial={false}>
-      <m.div key={seccion} {...PANTALLA}>{pantalla}</m.div>
-    </AnimatePresence>
-  );
+  return <m.div key={seccion} {...PANTALLA}>{pantalla}</m.div>;
 }

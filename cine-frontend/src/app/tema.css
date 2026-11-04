@@ -23,6 +23,9 @@
   --cine-superficie-2: #ebe9e3;
   --cine-borde: #dcd9d1;
   --cine-foco: var(--mantine-color-ambar-8);
+  --cine-butaca-libre: #ffffff;
+  --cine-butaca-borde: #8d8a80;
+  --cine-butaca-ocupada: #dcd9d1;
   --cine-sombra: 0 14px 32px -18px rgb(30 25 10 / 0.28);
 }
 
@@ -31,6 +34,9 @@
   --cine-superficie-2: #1e2129;
   --cine-borde: #2b2f39;
   --cine-foco: var(--mantine-color-ambar-5);
+  --cine-butaca-libre: #39404e;
+  --cine-butaca-borde: #6b7486;
+  --cine-butaca-ocupada: #0c0e12;
   --mantine-color-default-border: #2b2f39;
 }
 

@@ -13,7 +13,10 @@ import { Rutas } from "./Rutas.jsx";
 export function AppCliente() {
   const { pathname } = useLocation();
   // Cada pantalla arranca arriba, como una página.
-  useEffect(() => window.scrollTo(0, 0), [pathname]);
+  // Con llaves: Chrome devuelve una Promise de scrollTo, y React llamaría a lo que devuelva el efecto como cleanup.
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
 
   return (
     <SesionDelCliente>

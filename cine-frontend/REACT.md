@@ -389,29 +389,29 @@ preferencia guardada en `localStorage` (`cine-tema`); los componentes leen varia
 
 ## 16. Motion: `LazyMotion`, `m`, `reducedMotion`
 
-**Qué es.** Biblioteca de animaciones. `LazyMotion` baja las funciones de animación en un archivo aparte; `m.div`
-es la versión liviana de `motion.div` que las usa; `MotionConfig reducedMotion="user"` respeta la preferencia del
+**Qué es.** Biblioteca de animaciones. `LazyMotion` le da las funciones de animación a `m.div`, la versión liviana
+de `motion.div`; `MotionConfig reducedMotion="user"` respeta la preferencia del
 sistema.
 
-**Dónde lo usamos.** `app/Proveedores.jsx:10` y `:19`
+**Dónde lo usamos.** `app/Proveedores.jsx:17`
 
 ```jsx
-const animaciones = () => import("./animaciones.js").then((m) => m.default);
+import { domMax, LazyMotion, MotionConfig } from "motion/react";
 ```
 
 ```jsx
-      <LazyMotion features={animaciones} strict>
+      <LazyMotion features={domMax} strict>
         <MotionConfig reducedMotion="user">
 ```
 
-Lo usan `app/Rutas.jsx:49` (`AnimatePresence` entre pantallas) y `compra/mapa/MapaButacas.jsx:23` (las filas entran
+Lo usan `app/Rutas.jsx` (fundido de entrada entre pantallas) y `compra/mapa/MapaButacas.jsx:23` (las filas entran
 de a una).
 
 **Error típico.** Usar `motion.div` con `LazyMotion strict`: tira error, porque cargaría todo de entrada. Y animar
 sin respetar «reducir movimiento».
 
-**Pregunta del profe.** ¿Para qué `LazyMotion`? Para que el primer pintado no espere el código de animación; llega
-después en otro chunk.
+**Pregunta del profe.** ¿Por qué `domMax` no baja en un chunk aparte? Porque un `m.div` con `initial` en opacidad 0
+necesita esas funciones para aparecer: si la descarga fallaba, la pantalla quedaba invisible hasta recargar.
 
 ## 17. Tests con Vitest y Testing Library
 

@@ -1954,7 +1954,7 @@ docker compose up -d --build
           <tbody>
             <tr><td>Librerías</td><td><code>motion</code>, <code>canvas-confetti</code>, <code>jspdf</code> (las dos con <code>import()</code> al usarse), <code>@mantine/carousel</code> (Embla + autoplay), versión exacta en <code>package.json</code></td></tr>
             <tr><td>Mapa de butacas</td><td>Filas escalonadas, pop al tocar, total que corre al valor nuevo</td></tr>
-            <tr><td>Entre pantallas</td><td><code>AnimatePresence</code> con fundido; sesión y compra quedan afuera y no se remontan</td></tr>
+            <tr><td>Entre pantallas</td><td>Fundido de entrada, sin salida: con <code>AnimatePresence</code>, volver a la sección mientras se iba la dejaba en opacidad 0; sesión y compra quedan afuera y no se remontan</td></tr>
             <tr><td>Cartelera</td><td>Tarjetas escalonadas, hover que eleva, <code>layout</code> al filtrar; la portada rota sola (se frena como dice <code>#/</code>). Con mouse, 600 ms sobre una tarjeta muestran el trailer muteado (uno a la vez, se corta al salir); en touch no</td></tr>
             <tr><td>Ticket</td><td>Se imprime al aparecer; si el pago llega con la pantalla abierta, sello y confetti una vez por reserva</td></tr>
             <tr><td>Carga</td><td><code>Skeleton</code> con la forma de cada pantalla</td></tr>

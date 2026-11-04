@@ -2,7 +2,7 @@ import { etiqueta } from "@/api/etiquetas.js";
 import { precio } from "@/compartido/formato.js";
 import { ESTILO, estiloTipo } from "@/compra/mapa/estilosButaca.js";
 
-// El fondo dice el estado; el borde y el símbolo, el tipo de butaca.
+// El fondo dice el estado; la franja y el símbolo, el tipo de butaca.
 export function pintarParaComprar(asiento, elegidas) {
   const titulo = `${asiento.codigo} · ${etiqueta(asiento.tipo)} · ${precio(asiento.precio)}`;
   if (asiento.estado === "FUERA_DE_SERVICIO") {
