@@ -656,7 +656,7 @@ class GestorPagosTest extends PruebaDeIntegracion {
         assertEquals(EstadoCompraCandy.PENDIENTE, candyDe(reserva).getEstado());
     }
 
-    // El de candy vence a la media hora o cuando empieza la función, lo que pase primero.
+    // El de candy vence a los 15 minutos o cuando empieza la función, lo que pase primero.
     @Test
     void elCheckoutDelCandyVenceAntesDeQueEmpieceLaFuncion() {
         PasarelaQueCuenta pasarela = new PasarelaQueCuenta();

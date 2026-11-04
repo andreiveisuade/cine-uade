@@ -38,7 +38,7 @@ import lombok.Getter;
 @Getter
 public class Reserva {
 
-    public static final int MINUTOS_PARA_PAGAR = 30;
+    public static final int MINUTOS_PARA_PAGAR = 15;
 
     private static final DateTimeFormatter DIA_Y_HORA = DateTimeFormatter.ofPattern("dd/MM HH:mm");
     private static final DateTimeFormatter DIA = DateTimeFormatter.ofPattern("dd/MM");

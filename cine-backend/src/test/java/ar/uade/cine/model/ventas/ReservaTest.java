@@ -165,8 +165,8 @@ class ReservaTest {
     @ParameterizedTest(name = "{0}")
     @CsvSource(textBlock = """
             recién hecha,        2026-08-14T10:00, true
-            al filo de los 30,   2026-08-14T10:30, true
-            vencida,             2026-08-14T10:31, false
+            al filo de los 15,   2026-08-14T10:15, true
+            vencida,             2026-08-14T10:16, false
             """)
     void seCancelaSoloMientrasNoVencio(String caso, LocalDateTime ahora, boolean cancelable) {
         Reserva reserva = new Reserva(FUNCION, CLIENTE, butacas("A1"), CREADA);
@@ -183,10 +183,10 @@ class ReservaTest {
     @ParameterizedTest(name = "{0}")
     @CsvSource(textBlock = """
             recién hecha,        2026-08-14T10:00, RESERVADA
-            al filo de los 30,   2026-08-14T10:30, RESERVADA
-            vencida,             2026-08-14T10:31, EXPIRADA
+            al filo de los 15,   2026-08-14T10:15, RESERVADA
+            vencida,             2026-08-14T10:16, EXPIRADA
             """)
-    void figuraVencidaApenasPasanLosTreintaMinutos(String caso, LocalDateTime ahora, EstadoReserva figura) {
+    void figuraVencidaApenasPasanLosQuinceMinutos(String caso, LocalDateTime ahora, EstadoReserva figura) {
         Reserva reserva = new Reserva(FUNCION, CLIENTE, butacas("A1"), CREADA);
 
         assertEquals(figura, reserva.estadoA(ahora), caso);

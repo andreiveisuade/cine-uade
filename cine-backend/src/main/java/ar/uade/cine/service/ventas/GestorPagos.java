@@ -131,9 +131,9 @@ public class GestorPagos {
 
     // El mismo plazo que una reserva para pagar, y nunca después de que empieza la función (R30).
     private LocalDateTime venceElCandy(Reserva reserva) {
-        LocalDateTime enMediaHora = reloj.ahora().plusMinutes(Reserva.MINUTOS_PARA_PAGAR);
+        LocalDateTime alVencer = reloj.ahora().plusMinutes(Reserva.MINUTOS_PARA_PAGAR);
         LocalDateTime inicio = reserva.getFuncion().getInicio();
-        return enMediaHora.isBefore(inicio) ? enMediaHora : inicio;
+        return alVencer.isBefore(inicio) ? alVencer : inicio;
     }
 
     // Se valida antes de autorizar, porque esa plata no tiene cómo volver (R13).
