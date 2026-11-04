@@ -313,7 +313,7 @@ class GestorReservasTest extends PruebaDeIntegracion {
 
     @Test
     void loGuardadoSeReleeConSusButacasYSuFecha() {
-        reservas.reservar(1, 1, generales("A1", "B2"), null);
+        reservas.reservar(1, 1, generales("A1", "A2"), null);
 
         Reserva leida = reservaRepository.findById(1).orElseThrow();
 

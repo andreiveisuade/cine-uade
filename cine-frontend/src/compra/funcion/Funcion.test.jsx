@@ -170,6 +170,22 @@ describe("Funcion: continuar con sesión", () => {
     await waitFor(() => expect(api.obtenerFuncion).toHaveBeenCalledTimes(2));
   });
 
+  it("R34: butacas no contiguas (400) muestra el error tal cual y la selección queda", async () => {
+    api.obtenerFuncion.mockResolvedValue({ ...FUNCION, asientos: [asiento("A1"), asiento("A2"), asiento("A3")] });
+    api.bloquearButacas.mockResolvedValue({ rechazadas: [] });
+    const mensaje = "Las butacas tienen que ser contiguas y de la misma fila";
+    api.crearReserva.mockRejectedValue(Object.assign(new Error(mensaje), { status: 400 }));
+    abrir();
+    await userEvent.click(await butaca("A1"));
+    await userEvent.click(await butaca("A3"));
+
+    await userEvent.click(screen.getByRole("button", { name: "Continuar" }));
+
+    expect(await screen.findByText(mensaje)).toBeInTheDocument();
+    expect(screen.getByText("2 butacas")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Continuar" })).toBeEnabled();
+  });
+
   it("otro rechazo se muestra al lado del botón y deja reintentar", async () => {
     api.crearReserva.mockRejectedValue(Object.assign(new Error("La función ya empezó: no se pueden reservar butacas"), { status: 400 }));
 

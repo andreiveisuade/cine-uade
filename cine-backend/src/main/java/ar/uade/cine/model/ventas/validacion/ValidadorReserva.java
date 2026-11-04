@@ -10,11 +10,12 @@ import java.util.stream.Collectors;
 
 import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.rechazos.DatoInvalido;
+import ar.uade.cine.model.salas.Asiento;
 import ar.uade.cine.model.usuarios.Cliente;
 import ar.uade.cine.model.validacion.Regla;
 import ar.uade.cine.model.ventas.Entrada;
 
-// Qué trae una reserva al nacer: función, cliente, fecha y de 1 a 10 butacas sin repetir; guardas de Regla.
+// Qué trae una reserva al nacer: función, cliente, fecha y de 1 a 10 butacas contiguas; guardas de Regla.
 public final class ValidadorReserva {
 
     public static final int MAXIMO_BUTACAS = 10;
@@ -32,6 +33,10 @@ public final class ValidadorReserva {
         repetida(entradas).ifPresent(codigo -> {
             throw new DatoInvalido("La butaca " + codigo + " está repetida en el pedido");
         });
+        // R34: solo al reservar, no al bloquear; si no, elegir A1, A3 y después A2 fallaría a mitad de camino.
+        if (!Asiento.sonContiguos(entradas.stream().map(Entrada::asiento).toList())) {
+            throw new DatoInvalido("Las butacas tienen que ser contiguas y de la misma fila");
+        }
     }
 
     // Aparte porque la reserva necesita la función para ponerles precio a sus entradas antes de validarlas.

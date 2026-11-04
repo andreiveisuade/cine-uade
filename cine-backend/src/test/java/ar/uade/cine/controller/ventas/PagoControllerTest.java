@@ -321,6 +321,7 @@ class PagoControllerTest extends PruebaDeApi {
     @ParameterizedTest(name = "{0}")
     @CsvSource(delimiter = '|', textBlock = """
             once con una ocupada | "A1":"GENERAL","A2":"GENERAL","A3":"GENERAL","A4":"GENERAL","A5":"GENERAL","A6":"GENERAL","B1":"GENERAL","B2":"GENERAL","B3":"GENERAL","B4":"GENERAL","B5":"GENERAL" | Una compra tiene que tener como máximo 10 butacas
+            separadas y ocupada  | "A1":"GENERAL","A3":"GENERAL"                                                                                                                            | Las butacas tienen que ser contiguas y de la misma fila
             la ocupada repetida  | "A1":"GENERAL","a1":"GENERAL"                                                                                                                            | La butaca A1 está repetida en el pedido
             """)
     void elPedidoSeValidaAntesDeMirarLaOcupacion(String caso, String butacas, String mensaje) {

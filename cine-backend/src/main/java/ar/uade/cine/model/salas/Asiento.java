@@ -1,5 +1,6 @@
 package ar.uade.cine.model.salas;
 
+import java.util.IntSummaryStatistics;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -77,6 +78,13 @@ public class Asiento {
         if (estaFueraDeServicio()) {
             throw new DatoInvalido("La butaca " + getCodigo() + " está fuera de servicio");
         }
+    }
+
+    // R34: misma fila y números corridos. Supone butacas sin repetir: la repetida ya se rechazó con su mensaje.
+    public static boolean sonContiguos(List<Asiento> asientos) {
+        IntSummaryStatistics numeros = asientos.stream().mapToInt(Asiento::getNumero).summaryStatistics();
+        return asientos.stream().map(Asiento::getFila).distinct().count() <= 1
+                && numeros.getMax() - numeros.getMin() + 1 == asientos.size();
     }
 
     public String getCodigo() {

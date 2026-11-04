@@ -76,6 +76,10 @@ public class Entrada {
         return asiento.getId();
     }
 
+    public Asiento asiento() {
+        return asiento;
+    }
+
     public String codigoAsiento() {
         return asiento.getCodigo();
     }

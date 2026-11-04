@@ -88,6 +88,30 @@ class ReservaTest {
         assertEquals("La butaca A1 está repetida en el pedido", error.getMessage());
     }
 
+    // R34: se sientan juntos. Se mira el pedido, no el orden en que se tocaron las butacas.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            una sola,           A5
+            corridas,           A3 A4 A5
+            desordenadas,       A5 A3 A4
+            """)
+    void lasButacasContiguasDeUnaFilaSeReservan(String caso, String codigos) {
+        assertDoesNotThrow(() -> new Reserva(FUNCION, CLIENTE, butacas(codigos.split(" ")), CREADA));
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            con un hueco,       A1 A3
+            en filas pegadas,   A1 B1
+            una en otra fila,   A1 A2 B3
+            """)
+    void lasButacasSeparadasNoSeReservan(String caso, String codigos) {
+        DatoInvalido error = assertThrows(DatoInvalido.class,
+                () -> new Reserva(FUNCION, CLIENTE, butacas(codigos.split(" ")), CREADA));
+
+        assertEquals("Las butacas tienen que ser contiguas y de la misma fila", error.getMessage());
+    }
+
     @Test
     void nacePorPagarConUnCodigoDeAccesoYSusButacasOcupadas() {
         Reserva reserva = new Reserva(FUNCION, CLIENTE, butacas("A1", "A2"), CREADA);
