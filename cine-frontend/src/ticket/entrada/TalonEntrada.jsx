@@ -2,7 +2,7 @@ import { Badge, Box, Stack, Text } from "@mantine/core";
 import { m } from "motion/react";
 import { QRCodeSVG } from "qrcode.react";
 import { fechaHora } from "@/compartido/formato.js";
-import { CODIGO_POR_ESTADO, codigoLegible, entradaValida, qrSoloParaElCandy } from "@/compartido/estadoReserva.js";
+import { codigoLegible, entradaValida, notaDelCodigo, qrSoloParaElCandy } from "@/compartido/estadoReserva.js";
 import { CopiarCodigo } from "./CopiarCodigo.jsx";
 import clases from "@/compartido/ui/Entrada.module.css";
 
@@ -40,7 +40,7 @@ export function TalonEntrada({ reserva, pagoEnVivo }) {
         </Box>
       </Box>
       <Text size="xs" c="dimmed" maw="24ch">
-        {usada ? `Ya se usó el ${fechaHora(usada)}` : CODIGO_POR_ESTADO[reserva.estado]}
+        {usada ? `Ya se usó el ${fechaHora(usada)}` : notaDelCodigo(reserva)}
       </Text>
     </Stack>
   );

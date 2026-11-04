@@ -42,7 +42,6 @@ afterEach(() => vi.useRealTimers());
 
 describe("Ticket", () => {
   it.each([
-    ["RESERVADA", "Reserva confirmada. Pagala online o en boletería antes de las 19:30: después se liberan las butacas."],
     ["PAGADA", "Entrada paga. Mostrá el código en la puerta."],
     ["EXPIRADA", "Esta reserva venció. Las butacas ya se liberaron."],
     ["CANCELADA", "Esta reserva está cancelada."],
@@ -53,6 +52,29 @@ describe("Ticket", () => {
     abrir();
 
     expect(await screen.findByText(texto)).toBeInTheDocument();
+  });
+
+  it("sin pagar no promete una hora: la función puede empezar antes de que venza, y el tiempo lo cuenta el backend", async () => {
+    api.obtenerReservaPorCodigo.mockResolvedValue({ ...reserva("RESERVADA", true), segundosParaPagar: 240,
+      venceEn: "2026-10-21T20:05:00" });
+
+    abrir();
+
+    expect(await screen.findByText("Reserva confirmada. Pagala online o en boletería: cuando se termine el tiempo se liberan las butacas.")).toBeInTheDocument();
+    expect(screen.getByRole("timer")).toHaveTextContent("04:00");
+    expect(screen.queryByText(/antes de las/)).not.toBeInTheDocument();
+    expect(screen.getByText("Todavía no está paga: el QR aparece cuando se pague.")).toBeInTheDocument();
+  });
+
+  it("con la función empezada sigue RESERVADA pero no es cobrable: no dice que se puede pagar", async () => {
+    api.obtenerReservaPorCodigo.mockResolvedValue(reserva("RESERVADA", false));
+
+    abrir();
+
+    expect(await screen.findByText("La función ya empezó: esta reserva ya no se puede pagar.")).toBeInTheDocument();
+    expect(screen.getByText("Ya no sirve: la función empezó sin que se pague.")).toBeInTheDocument();
+    expect(screen.queryByText(/Pagala/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/cuando se pague/)).not.toBeInTheDocument();
   });
 
   it("al recargar no muestra la reserva vieja que quedó en el historial: la pide al backend", async () => {
@@ -95,7 +117,7 @@ describe("Ticket", () => {
   it("una reserva que no se puede cobrar online no se vuelve a pedir", async () => {
     api.obtenerReservaPorCodigo.mockResolvedValue(reserva("RESERVADA", false));
     abrir();
-    await screen.findByText(/Reserva confirmada/);
+    await screen.findByText(/ya no se puede pagar/);
 
     await pasar(60_000);
 

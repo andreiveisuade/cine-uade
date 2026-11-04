@@ -1,7 +1,7 @@
 import { etiqueta } from "@/api/etiquetas.js";
-import { cantidad, hora } from "@/compartido/formato.js";
+import { cantidad } from "@/compartido/formato.js";
 
-// Presentación del estado que manda el backend; el front no decide vencimientos: la hora límite viene en venceEn.
+// Presentación del estado que manda el backend; el front no decide vencimientos: lo que queda viene en segundosParaPagar.
 export const COLOR_ESTADO = { RESERVADA: "ambar", PAGADA: "green", EXPIRADA: "gray", CANCELADA: "gray", NO_USADA: "gray" };
 
 // El backend no tiene estado de usada: es una PAGADA con ingresadaEn, y para el comprador ya no está vigente.
@@ -11,7 +11,11 @@ export const estadoVisible = (reserva) => (reserva.ingresadaEn
 
 // Qué le decimos al comprador según el estado, en la cabecera de la entrada.
 const AVISO_POR_ESTADO = {
-  RESERVADA: (r) => `Reserva confirmada. Pagala online o en boletería antes de las ${hora(r.venceEn)}: después se liberan las butacas.`,
+  // Sin hora: venceEn no contempla que la función puede empezar antes (R19). El tiempo lo cuenta TiempoParaPagar.
+  // RESERVADA sin cobrable es la función empezada: la vencida ya llega EXPIRADA.
+  RESERVADA: (r) => (r.cobrable
+    ? "Reserva confirmada. Pagala online o en boletería: cuando se termine el tiempo se liberan las butacas."
+    : "La función ya empezó: esta reserva ya no se puede pagar."),
   PAGADA: (r) => (r.ingresadaEn ? "Esta entrada ya se usó en la puerta." : "Entrada paga. Mostrá el código en la puerta."),
   EXPIRADA: () => "Esta reserva venció. Las butacas ya se liberaron.",
   CANCELADA: () => "Esta reserva está cancelada.",
@@ -28,6 +32,10 @@ export const CODIGO_POR_ESTADO = {
   CANCELADA: "Ya no sirve: la reserva se canceló.",
   NO_USADA: "La entrada ya no sirve: la función terminó.",
 };
+
+export const notaDelCodigo = (reserva) => (reserva.estado === "RESERVADA" && !reserva.cobrable
+  ? "Ya no sirve: la función empezó sin que se pague."
+  : CODIGO_POR_ESTADO[reserva.estado]);
 
 // Las que ya no sirven: cancelada, vencida y (R32) la paga que nadie usó con la función terminada.
 export const cerrada = (reserva) => ["EXPIRADA", "CANCELADA", "NO_USADA"].includes(reserva.estado);
