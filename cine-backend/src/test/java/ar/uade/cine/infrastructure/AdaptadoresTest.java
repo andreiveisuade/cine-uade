@@ -26,7 +26,7 @@ class AdaptadoresTest {
             """)
     void laPasarelaDeVerdadSoloConToken(String caso, String token, boolean deVerdad) {
         var pasarela = new Adaptadores().pasarelaPagos(
-                new PropiedadesMercadoPago(token, "https://api.mercadopago.com", "http://localhost:8080"));
+                new PropiedadesMercadoPago(token, "https://api.mercadopago.com", "http://localhost:8080", true));
 
         assertEquals(deVerdad ? MercadoPagoHttp.class : MercadoPagoEmulado.class, pasarela.getClass(), caso);
     }

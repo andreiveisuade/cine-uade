@@ -46,10 +46,12 @@ public class MercadoPagoHttp implements PasarelaPagos {
 
     private final ClienteMercadoPago api;
     private final String sitio;
+    private final boolean soloConCuenta;
 
-    public MercadoPagoHttp(String token, String base, String sitio) {
+    public MercadoPagoHttp(String token, String base, String sitio, boolean soloConCuenta) {
         this.api = new ClienteMercadoPago(token, sinBarraFinal(base));
         this.sitio = sinBarraFinal(sitio);
+        this.soloConCuenta = soloConCuenta;
     }
 
     // Las entradas van en un ítem con el descuento ya restado (el detalle de butacas está en la reserva) y el candy
@@ -86,6 +88,9 @@ public class MercadoPagoHttp implements PasarelaPagos {
             item(items, "Candy de la reserva " + reservaId, candy);
         }
         preferencia.put("external_reference", id);
+        if (soloConCuenta) {
+            preferencia.put("purpose", "wallet_purchase");
+        }
         preferencia.putObject("back_urls")
                 .put("success", retorno)
                 .put("failure", retorno)

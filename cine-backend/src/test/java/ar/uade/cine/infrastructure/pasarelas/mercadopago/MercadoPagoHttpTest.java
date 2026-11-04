@@ -158,9 +158,22 @@ class MercadoPagoHttpTest {
         assertEquals(conAutoReturn, JSON.readTree(preferenciaEnviada).has("auto_return"), caso);
     }
 
+    // Con un vendedor de prueba MP rechaza al invitado recién al pagar; wallet_purchase pide la cuenta desde el principio.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource({
+            "solo con cuenta, true",
+            "tambien invitado, false"
+    })
+    void elPagoSoloConCuentaPideElPropositoWallet(String caso, boolean soloConCuenta) throws IOException {
+        new MercadoPagoHttp("token", direccion(), "http://localhost:8080", soloConCuenta)
+                .crear(1, MedioPago.MERCADO_PAGO, Dinero.de(1000), Dinero.CERO, VENCE);
+        JsonNode proposito = JSON.readTree(preferenciaEnviada).path("purpose");
+        assertEquals(soloConCuenta ? "wallet_purchase" : "", proposito.asText(), caso);
+    }
+
     @Test
     void conCredencialesDePruebaElLinkEsElDelSandbox() {
-        MercadoPagoHttp pasarela = new MercadoPagoHttp("TEST-123", direccion(), "http://localhost:8080");
+        MercadoPagoHttp pasarela = new MercadoPagoHttp("TEST-123", direccion(), "http://localhost:8080", false);
 
         assertEquals("https://mp.test/sandbox", pasarela.crear(25, MedioPago.QR, Dinero.de(100), Dinero.CERO, VENCE).urlPago());
     }
@@ -317,7 +330,7 @@ class MercadoPagoHttpTest {
     }
 
     private MercadoPagoHttp pasarela(String sitio) {
-        return new MercadoPagoHttp("APP_USR-123", direccion(), sitio);
+        return new MercadoPagoHttp("APP_USR-123", direccion(), sitio, false);
     }
 
     private String direccion() {

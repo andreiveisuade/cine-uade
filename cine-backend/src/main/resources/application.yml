@@ -83,6 +83,8 @@ cine:
     token: ${MP_ACCESS_TOKEN:}
     base: https://api.mercadopago.com
     sitio: ${CINE_URL_PUBLICA:http://localhost:8080}
+    # Un vendedor de prueba rechaza al invitado recién al pagar: se pide la cuenta de MP desde el principio.
+    solo-con-cuenta: ${MP_SOLO_CON_CUENTA:true}
     # Cada cuánto se le pregunta a MP por los pagos aprobados, por si el comprador no volvió al sitio.
     conciliacion: 60s
   google:

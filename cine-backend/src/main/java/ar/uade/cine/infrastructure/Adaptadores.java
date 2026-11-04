@@ -67,7 +67,7 @@ public class Adaptadores {
     @Bean
     public PasarelaPagos pasarelaPagos(PropiedadesMercadoPago mercadoPago) {
         return mercadoPago.configurado()
-                ? new MercadoPagoHttp(mercadoPago.token(), mercadoPago.base(), mercadoPago.sitio())
+                ? new MercadoPagoHttp(mercadoPago.token(), mercadoPago.base(), mercadoPago.sitio(), mercadoPago.soloConCuenta())
                 : new MercadoPagoEmulado();
     }
 

@@ -1807,7 +1807,7 @@ puntaje   = (v/(v+50)) × nota + (50/(v+50)) × promedio del catálogo</code></p
       <ul>
         <li>Sin volver al sitio: la conciliación cobró a los 3 s (<code>1 cobrados</code>); reserva <code>PAGADA</code>, <code>CREDITO</code>.</li>
         <li>Checkout CREDITO: MP ofreció solo tarjetas de crédito.</li>
-        <li>Hay que entrar con el <strong>comprador de prueba</strong>: como invitado da «Una de las partes con la que intentás hacer el pago es de prueba».</li>
+        <li>Hay que entrar con el <strong>comprador de prueba</strong>: como invitado da «Una de las partes con la que intentás hacer el pago es de prueba». Por eso la preferencia lleva <code>purpose: wallet_purchase</code> (<code>MP_SOLO_CON_CUENTA</code>, por defecto activo): MP pide la cuenta desde el principio y no ofrece el camino de invitado.</li>
       </ul>
     </section>
 
