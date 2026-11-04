@@ -305,6 +305,43 @@ describe("venta cruzada en el ticket", () => {
     expect(screen.getByText("$ 14.500")).toBeInTheDocument();
   });
 
+  it("con promo la entrada muestra el descuento y el total cobrado, no el de lista", async () => {
+    api.obtenerReservaPorCodigo.mockResolvedValue({ ...reserva("PAGADA"), pago: { monto: 3000, descuento: 1000 }, candy: [
+      { id: 1, estado: "COBRADA", items: [{ productoId: 4, nombre: "Combo clásico", cantidad: 1, subtotal: 5500 }] },
+    ] });
+    abrir();
+
+    expect(await screen.findByText("Descuento")).toBeInTheDocument();
+    expect(screen.getByText("−$ 1.000")).toBeInTheDocument();
+    expect(screen.getByText("$ 8.500")).toBeInTheDocument();
+  });
+
+  // Sin esto, «Sumar candy» después de pagar rebota al ticket, y con la emulada cobra un pago rechazado.
+  it.each([
+    ["el de esta reserva se olvida al volver", "ABCD1234", null],
+    ["el de otra reserva sigue abierto", "OTRA5678", "OTRA5678"],
+  ])("el checkout abierto: %s", async (_caso, codigo, queda) => {
+    sessionStorage.setItem("cine.checkout", JSON.stringify({ codigo, id: "1-MERCADO_PAGO-1" }));
+    api.obtenerReservaPorCodigo.mockResolvedValue(reserva("PAGADA"));
+    abrir();
+
+    await screen.findByText("Total · 2 entradas");
+
+    const abierto = sessionStorage.getItem("cine.checkout");
+    expect(abierto && JSON.parse(abierto).codigo).toBe(queda);
+    sessionStorage.removeItem("cine.checkout");
+  });
+
+  it("una entrada usada lo dice en la cabecera y deja de figurar como paga", async () => {
+    api.obtenerReservaPorCodigo.mockResolvedValue({ ...reserva("PAGADA"), ingresadaEn: "2026-10-21T19:50:00" });
+    abrir();
+
+    expect(await screen.findByText("Usada")).toBeInTheDocument();
+    expect(screen.getByText("Esta entrada ya se usó en la puerta.")).toBeInTheDocument();
+    expect(screen.queryByText("Entrada paga. Mostrá el código en la puerta.")).not.toBeInTheDocument();
+    expect(screen.queryByText("Pagada")).not.toBeInTheDocument();
+  });
+
   it("sin candy la entrada no muestra el bloque", async () => {
     api.obtenerReservaPorCodigo.mockResolvedValue(reserva("PAGADA"));
     abrir();

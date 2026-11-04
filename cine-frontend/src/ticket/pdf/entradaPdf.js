@@ -1,6 +1,6 @@
 import { etiqueta } from "@/api/etiquetas.js";
 import { diaDelMes, hora, precio } from "@/compartido/formato.js";
-import { avisoDe, CODIGO_POR_ESTADO, codigoLegible, conAcreditacion, renglonesDelCandy, totalDeLaEntrada } from "@/compartido/estadoReserva.js";
+import { avisoDe, CODIGO_POR_ESTADO, codigoLegible, conAcreditacion, descuentoDeLaEntrada, renglonesDelCandy, totalDeLaEntrada } from "@/compartido/estadoReserva.js";
 
 // Los tonos de tema.js y tema.css sobre papel blanco: se imprime sin gastar tinta en fondos.
 const COLOR = {
@@ -138,6 +138,14 @@ function cuerpo(doc, reserva, poster, arriba, corte) {
   // El PDF solo sale con la entrada paga: lo pedido sin pagar no se entrega y no va impreso.
   const renglones = renglonesDelCandy(reserva).filter((r) => r.cobrado);
   if (renglones.length) y = candy(doc, renglones, x, y + 4, ancho) + 2;
+
+  const descuento = descuentoDeLaEntrada(reserva);
+  if (descuento > 0) {
+    letra(doc, "normal", 10, COLOR.texto);
+    doc.text("Descuento", x, y + 5, { baseline: "bottom" });
+    doc.text(`−${precio(descuento)}`, x + ancho, y + 5, { align: "right", baseline: "bottom" });
+    y += 7;
+  }
 
   const total = totalDeLaEntrada(reserva);
   letra(doc, "bold", 11, COLOR.texto);

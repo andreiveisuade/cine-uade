@@ -76,7 +76,7 @@ pantalla lo muestra con `EsperaOError` o `ErrorCaja`.
   clics seguidos juntos; si el backend rechaza, vuelve a lo guardado.
 - `usePedidoDeLaCompra(reserva, productos, sumar, alFallar)`: arma el pedido sobre ese hook, trae la cotización y da el
   total a mostrar (el provisorio mientras viaja el PUT es la única cuenta de plata del front).
-- `usePagar(codigo)` y `useVueltaDelPago(codigo, alVolver)`: un checkout nuevo por «Pagar» (con el medio que cotizó el
+- `usePagar(codigo)`, `useVueltaDelPago(codigo, alVolver)` y `useOlvidarCheckout(codigo)` (el ticket cierra la vuelta): un checkout nuevo por «Pagar» (con el medio que cotizó el
   backend, Mercado Pago) y la vuelta de Mercado Pago.
 - `useEsperarPago(codigo, reserva)`: consulta cada 10 s hasta que el pago llega.
 - `useFestejarPago`: confetti una vez cuando el pago llega con la pantalla abierta.

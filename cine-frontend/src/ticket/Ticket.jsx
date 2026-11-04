@@ -7,6 +7,7 @@ import { useCargar } from "@/compartido/hooks/useCargar.js";
 import { useTitulo } from "@/compartido/hooks/useTitulo.js";
 import { AccionesTicket } from "./AccionesTicket.jsx";
 import { EnLaPuerta } from "./EnLaPuerta.jsx";
+import { useOlvidarCheckout } from "@/compra/tu-compra/usePagar.js";
 import { EntradaTicket } from "@/ticket/entrada/EntradaTicket.jsx";
 import { vigente } from "@/compartido/estadoReserva.js";
 import { TicketEsqueleto } from "./TicketEsqueleto.jsx";
@@ -18,6 +19,7 @@ import { VentaCruzada } from "./VentaCruzada.jsx";
 export function Ticket() {
   const { codigo } = useParams();
   useTitulo("Tu ticket");
+  useOlvidarCheckout(codigo);
   // El resultado del pago: la vuelta de Mercado Pago redirige acá con ?aviso= si no se pudo cobrar.
   const aviso = useSearchParams()[0].get("aviso");
   // Siempre por código, aunque venga en la navegación: el historial la conserva al recargar y quedaría

@@ -12,11 +12,23 @@ export function usePagar(codigo) {
 
   const pagar = (medio) => enviar(async () => {
     const checkout = await api.abrirCheckout(codigo, medio);
-    sessionStorage.setItem(CLAVE, JSON.stringify({ codigo, id: checkout.id }));
+    // La emulada vive en este sitio y vuelve sola al elegir: Atrás sin elegir no puede confirmar nada.
+    if (!checkout.urlPago.startsWith("/#/")) sessionStorage.setItem(CLAVE, JSON.stringify({ codigo, id: checkout.id }));
     window.location.assign(checkout.urlPago);
   });
 
   return { pagar, pagando: enviando, error };
+}
+
+// Llegar al ticket cierra la vuelta: si no, la próxima entrada a Tu compra la confirmaría y rebotaría.
+export function useOlvidarCheckout(codigo) {
+  useEffect(() => {
+    try {
+      if (JSON.parse(sessionStorage.getItem(CLAVE))?.codigo === codigo) sessionStorage.removeItem(CLAVE);
+    } catch {
+      sessionStorage.removeItem(CLAVE);
+    }
+  }, [codigo]);
 }
 
 // En localhost MP no redirige al sitio: al volver, el backend consulta el pago y cobra si aprobó, sin esperar a la

@@ -69,6 +69,14 @@ describe("la entrada en PDF", () => {
     expect(textos).not.toContain("SIN PAGAR");
   });
 
+  it("con promo muestra el descuento y el total cobrado", () => {
+    const { textos } = armar({ ...reserva, pago: { monto: 850, descuento: 850 } });
+    expect(textos).toContain("Descuento");
+    expect(textos).toContain("−$ 850");
+    expect(textos).toContain("Total · 2 entradas");
+    expect(textos).not.toContain("$ 1.700");
+  });
+
   it("sin candy cobrado no hay bloque de candy", () => {
     const { textos } = armar({ ...reserva, candy: [
       { id: 3, estado: "PENDIENTE", items: [{ productoId: 2, nombre: "Gaseosa", cantidad: 1, subtotal: 2200 }] },

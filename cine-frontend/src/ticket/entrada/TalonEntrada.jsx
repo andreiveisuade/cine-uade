@@ -15,7 +15,7 @@ export function TalonEntrada({ reserva, pagoEnVivo }) {
   const soloCandy = qrSoloParaElCandy(reserva);
   return (
     <Stack gap="sm" align="center" ta="center" justify="center" h="100%" pos="relative">
-      {reserva.estado === "PAGADA" && (
+      {entradaValida(reserva) && (
         <Badge component={m.div} initial={pagoEnVivo ? SELLO_CAYENDO : false} animate={SELLO}
           transition={{ type: "spring", stiffness: 400, damping: 18 }}
           color="green" variant="outline" size="lg" pos="absolute" top={-4} right={-4} style={{ borderWidth: 2 }}>

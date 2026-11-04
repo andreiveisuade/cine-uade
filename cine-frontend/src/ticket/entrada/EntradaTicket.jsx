@@ -1,7 +1,7 @@
 import { Box, Group, SimpleGrid, Stack, Text } from "@mantine/core";
 import { etiqueta } from "@/api/etiquetas.js";
 import { dia, hora, precio } from "@/compartido/formato.js";
-import { qrSoloParaElCandy, renglonesDelCandy, totalDeLaEntrada, vigente } from "@/compartido/estadoReserva.js";
+import { descuentoDeLaEntrada, qrSoloParaElCandy, renglonesDelCandy, totalDeLaEntrada, vigente } from "@/compartido/estadoReserva.js";
 import { ButacaEntrada } from "./ButacaEntrada.jsx";
 import { CabeceraEntrada } from "./CabeceraEntrada.jsx";
 import { CandyEntrada } from "./CandyEntrada.jsx";
@@ -15,6 +15,7 @@ export function EntradaTicket({ reserva, pagoEnVivo }) {
   const sala = reserva.sala || reserva.funcion.sala;
   const items = renglonesDelCandy(reserva);
   const total = totalDeLaEntrada(reserva);
+  const descuento = descuentoDeLaEntrada(reserva);
   return (
     <Entrada talon={reserva.codigo && <TalonEntrada reserva={reserva} pagoEnVivo={pagoEnVivo} />}
       style={atenuada ? { opacity: 0.6, filter: "grayscale(1)" } : undefined}>
@@ -31,6 +32,12 @@ export function EntradaTicket({ reserva, pagoEnVivo }) {
         <Box>
           {reserva.entradas.map((e) => <ButacaEntrada key={e.codigo} entrada={e} />)}
           {items.length > 0 && <CandyEntrada renglones={items} aunqueLaEntradaNoSirva={qrSoloParaElCandy(reserva)} />}
+          {descuento > 0 && (
+            <Group justify="space-between" align="baseline" pt="sm">
+              <Text c="green">Descuento</Text>
+              <Text c="green" fw={650} className="cine-cifras">−{precio(descuento)}</Text>
+            </Group>
+          )}
           <Group justify="space-between" align="baseline" pt="sm">
             <Text fw={650}>{total.texto}</Text>
             <Text className="cine-display cine-cifras" fz={36} fw={850} lh={1}>{precio(total.importe)}</Text>

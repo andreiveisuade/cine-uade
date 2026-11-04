@@ -1,6 +1,6 @@
 import { etiqueta } from "@/api/etiquetas.js";
 import { fechaHora, precioExacto } from "@/compartido/formato.js";
-import { conAcreditacion } from "@/compartido/estadoReserva.js";
+import { conAcreditacion, descuentoDeLaEntrada, importeDeLasEntradas } from "@/compartido/estadoReserva.js";
 
 const LINEA = "=".repeat(44);
 
@@ -26,7 +26,8 @@ export function armarComprobante(reserva) {
       precioExacto(e.precio) + (conAcreditacion(e) ? "  " + etiqueta(e.tarifa) : ""))),
     LINEA,
     renglon("Entradas", String(reserva.entradas.length)),
-    renglon("Total", precioExacto(reserva.total)),
+    ...(descuentoDeLaEntrada(reserva) > 0 ? [renglon("Descuento", "-" + precioExacto(descuentoDeLaEntrada(reserva)))] : []),
+    renglon("Total", precioExacto(importeDeLasEntradas(reserva))),
     renglon("Estado", etiqueta(reserva.estado)),
     LINEA,
     centrar("CÓDIGO DE ACCESO"),

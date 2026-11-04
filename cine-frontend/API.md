@@ -188,7 +188,7 @@ consulte el mapa de la función (R17 no tiene scheduler). Igual con la paga que 
 
 Toda reserva trae también `candy`: sus compras de candy sin las anuladas, cada una con la forma de
 `GET /candy/compras` (`estado` `PENDIENTE` o `COBRADA`). La `PENDIENTE` es la pedida en la web y se cobra con la
-reserva; las `COBRADA` son la que se cobró con ella y las del mostrador. `total` sigue siendo solo de las entradas.
+reserva; las `COBRADA` son la que se cobró con ella y las del mostrador. `total` sigue siendo solo de las entradas, a precio de lista; lo cobrado por ellas, con la promo, es `pago.monto`.
 
 ## Candy de la compra (R30)
 

@@ -1,9 +1,9 @@
 import { Badge, Box, Group, Stack, Text, Title } from "@mantine/core";
-import { etiqueta } from "@/api/etiquetas.js";
 import { Poster } from "@/compartido/ui/Poster.jsx";
-import { avisoDe, COLOR_ESTADO } from "@/compartido/estadoReserva.js";
+import { avisoDe, estadoVisible } from "@/compartido/estadoReserva.js";
 
 export function CabeceraEntrada({ reserva }) {
+  const estado = estadoVisible(reserva);
   return (
     <Group gap="md" wrap="nowrap" align="flex-start">
       <Box w={64} style={{ flexShrink: 0, borderRadius: "var(--mantine-radius-sm)", overflow: "hidden" }}>
@@ -11,7 +11,7 @@ export function CabeceraEntrada({ reserva }) {
       </Box>
       <Stack gap={6}>
         <Group gap="sm">
-          <Badge color={COLOR_ESTADO[reserva.estado]} variant="filled" size="md">{etiqueta(reserva.estado)}</Badge>
+          <Badge color={estado.color} variant="filled" size="md">{estado.texto}</Badge>
           <Text size="xs" c="dimmed" className="cine-cifras">Reserva #{reserva.id}</Text>
         </Group>
         <Title order={1} fz="clamp(1.75rem, 1.3rem + 1.6vw, 2.5rem)">{reserva.pelicula.titulo}</Title>

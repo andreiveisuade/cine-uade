@@ -226,6 +226,17 @@ describe("Tu compra: pagar", () => {
     expect(sessionStorage.getItem("cine.checkout")).toBeNull();
   });
 
+  // La emulada vuelve sola con Aprobar o Rechazar: Atrás sin elegir no puede contar como pago.
+  it("con la pasarela emulada no recuerda el checkout, así Atrás no lo cobra", async () => {
+    api.abrirCheckout.mockResolvedValue({ id: "7-MERCADO_PAGO-1", urlPago: "/#/pasarela-emulada/7-MERCADO_PAGO-1?monto=1" });
+    abrir();
+
+    await userEvent.click(await pagar(/Pagar .* con Mercado Pago/));
+
+    expect(window.location.assign).toHaveBeenCalled();
+    expect(sessionStorage.getItem("cine.checkout")).toBeNull();
+  });
+
   it("abandonar cancela la reserva y vuelve al mapa", async () => {
     api.cancelarReservaPorCodigo.mockResolvedValue(RESERVA);
     abrir();
