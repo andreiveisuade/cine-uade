@@ -20,6 +20,7 @@ import ar.uade.cine.controller.http.Parseo;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.cartelera.Pelicula;
+import ar.uade.cine.model.cartelera.TipoPelicula;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.dto.cartelera.PedidoEdicionPeliculaDTO;
 import ar.uade.cine.dto.cartelera.PedidoPeliculaDTO;
@@ -50,8 +51,10 @@ public class PeliculaController {
 
     @Operation(summary = "La cartelera pública: solo lo que está en exhibición")
     @GetMapping("/api/cartelera")
-    public List<PeliculaVistaDTO> cartelera(@RequestParam(required = false) String genero) {
-        return cartelera.listarEnCartelera(Parseo.constanteOpcional(Genero.class, genero, "el género"))
+    public List<PeliculaVistaDTO> cartelera(@RequestParam(required = false) String genero,
+                                            @RequestParam(required = false) String tipo) {
+        return cartelera.listarEnCartelera(Parseo.constanteOpcional(Genero.class, genero, "el género"),
+                        Parseo.constanteOpcional(TipoPelicula.class, tipo, "el tipo de película"))
                 .stream().map(vistas::pelicula).toList();
     }
 

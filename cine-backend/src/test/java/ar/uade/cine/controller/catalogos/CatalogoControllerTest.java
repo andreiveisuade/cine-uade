@@ -21,6 +21,7 @@ class CatalogoControllerTest extends PruebaDeApi {
             géneros,            /api/generos
             clasificaciones,    /api/clasificaciones
             tipos de sala,      /api/tipos-sala
+            tipos de película,  /api/tipos-pelicula
             idiomas,            /api/idiomas
             proyecciones,       /api/proyecciones
             medios de pago,     /api/medios-pago
@@ -38,6 +39,7 @@ class CatalogoControllerTest extends PruebaDeApi {
                 + "\"DOCUMENTAL\",\"ROMANCE\",\"SUSPENSO\"]", getPublico("/api/generos").cuerpo());
         assertEquals("[\"DOBLADA\",\"SUBTITULADA\"]", getPublico("/api/idiomas").cuerpo());
         assertEquals("[\"DOS_D\",\"TRES_D\"]", getPublico("/api/proyecciones").cuerpo());
+        assertEquals("[\"DOS_D\",\"TRES_D\",\"IMAX\"]", getPublico("/api/tipos-pelicula").cuerpo());
     }
 
     // Los flags no se deducen del nombre de la constante: los clientes los leen de acá.

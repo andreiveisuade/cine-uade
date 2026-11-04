@@ -321,8 +321,8 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         sacarDeCartelera(vieja);
 
         assertEquals(2, gestor.listar().size());
-        assertEquals(1, gestor.listarEnCartelera(null).size());
-        assertEquals("Dune", gestor.listarEnCartelera(null).get(0).getTitulo());
+        assertEquals(1, gestor.listarEnCartelera(null, null).size());
+        assertEquals("Dune", gestor.listarEnCartelera(null, null).get(0).getTitulo());
     }
 
     @Test
@@ -330,7 +330,7 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         Pelicula pelicula = gestor.agregar("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13);
 
         assertTrue(pelicula.estaEnCartelera(), "el flag arranca en true");
-        assertEquals(0, gestor.listarEnCartelera(null).size(), "pero sin funciones no está en cartelera");
+        assertEquals(0, gestor.listarEnCartelera(null, null).size(), "pero sin funciones no está en cartelera");
     }
 
     @Test
@@ -338,7 +338,7 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         Pelicula pelicula = gestor.agregar("Dune", 155, List.of(Genero.CIENCIA_FICCION), Clasificacion.MAS_13);
         programarProxima(pelicula.getId());
 
-        assertEquals(1, gestor.listarEnCartelera(null).size());
+        assertEquals(1, gestor.listarEnCartelera(null, null).size());
     }
 
     @Test
@@ -347,7 +347,7 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         programarPasada(pelicula.getId());
 
         assertTrue(pelicula.estaEnCartelera(), "nadie tocó el flag");
-        assertEquals(0, gestor.listarEnCartelera(null).size(), "y aun así ya no está en cartelera");
+        assertEquals(0, gestor.listarEnCartelera(null, null).size(), "y aun así ya no está en cartelera");
     }
 
     @Test
@@ -356,7 +356,7 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         programarPasada(pelicula.getId());
         programarProxima(pelicula.getId());
 
-        assertEquals(1, gestor.listarEnCartelera(null).size());
+        assertEquals(1, gestor.listarEnCartelera(null, null).size());
     }
 
     // Retener la conexión mientras extiende las grillas pediría otra: con el pool lleno, todos esperan.
@@ -369,7 +369,7 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
                 while (tomadas.size() < pool.getMaximumPoolSize() - 1) {
                     tomadas.add(pool.getConnection());
                 }
-                Future<List<Pelicula>> cartelera = hilo.submit(() -> gestor.listarEnCartelera(null));
+                Future<List<Pelicula>> cartelera = hilo.submit(() -> gestor.listarEnCartelera(null, null));
 
                 assertDoesNotThrow(() -> cartelera.get(5, TimeUnit.SECONDS));
             } finally {
@@ -458,7 +458,7 @@ class GestorCarteleraTest extends PruebaDeIntegracion {
         assertEquals("Wachowski", leida.getCatalogo().director());
         assertEquals(1999, leida.getCatalogo().anio());
         assertFalse(leida.estaEnCartelera());
-        assertTrue(gestor.listarEnCartelera(null).isEmpty());
+        assertTrue(gestor.listarEnCartelera(null, null).isEmpty());
     }
 
     @Test

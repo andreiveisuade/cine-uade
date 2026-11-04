@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import ar.uade.cine.model.cartelera.Clasificacion;
 import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.cartelera.Pelicula;
+import ar.uade.cine.model.cartelera.TipoPelicula;
 import ar.uade.cine.model.cartelera.TrailerYoutube;
 import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.funciones.Proyeccion;
@@ -155,11 +156,12 @@ public class GestorCartelera {
     // En cartelera = tiene funciones por delante; el flag enCartelera es solo un veto.
     // Sin transacción propia: retendría una conexión mientras extenderActivas pide otra y el pool se bloquea.
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    public List<Pelicula> listarEnCartelera(Genero genero) {
+    public List<Pelicula> listarEnCartelera(Genero genero, TipoPelicula tipo) {
         LocalDateTime ahora = reloj.ahora();
         // Sin esto, un cine con grillas abiertas amanecería vacío al pasar el último rango.
         programaciones.extenderActivas(ahora.toLocalDate());
-        return peliculaRepository.findEnCartelera(ahora, genero);
+        return peliculaRepository.findEnCartelera(ahora, genero,
+                tipo == null ? null : tipo.getProyeccion(), tipo == null ? null : tipo.getTipoSala());
     }
 
     @Transactional(readOnly = true)
