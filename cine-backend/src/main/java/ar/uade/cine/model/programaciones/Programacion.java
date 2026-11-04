@@ -160,7 +160,9 @@ public class Programacion {
         return activa;
     }
 
+    // De baja, la película pudo perder el formato: activa, fallaría en silencio en cada extensión.
     public void activar() {
+        formato.exigirProgramable(pelicula, sala);
         this.activa = true;
     }
 
