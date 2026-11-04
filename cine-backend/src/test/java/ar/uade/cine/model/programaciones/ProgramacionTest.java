@@ -117,6 +117,20 @@ class ProgramacionTest {
                         new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.TRES_D, Dinero.de(5000)))).getMessage());
     }
 
+    // R35: la sala 4D solo proyecta en 3D, y de ahí R31 deja afuera a la película sin esa versión.
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(textBlock = """
+            2D en una sala 4D,               DOS_D,  La sala Sala 4D no puede proyectar en 2D
+            3D de una película solo en 2D,   TRES_D, La película Matrix no tiene versión en 3D
+            """)
+    void unaGrillaEnUnaSala4DSoloVaEn3DDeUnaPeliculaConEsaVersion(String caso, Proyeccion proyeccion, String mensaje) {
+        Sala cuatroD = new Sala("Sala 4D", TipoSala.CUATRO_D, 15);
+
+        assertEquals(mensaje, assertThrows(Rechazo.class,
+                () -> new Programacion(MATRIX, cuatroD, LocalDate.of(2026, 9, 7), null, LocalTime.of(20, 30), Set.of(),
+                        new FormatoDeFuncion(Version.SUBTITULADA, proyeccion, Dinero.de(5000)))).getMessage());
+    }
+
     // R20 y el horizonte miran el reloj (14/08/2026 10:00): un rango ya pasado no generaría nada, uno a más de un año se rechaza.
     @ParameterizedTest(name = "{0}")
     @CsvSource(textBlock = """

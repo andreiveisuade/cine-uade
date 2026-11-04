@@ -390,12 +390,55 @@ class PlanificadorGrillaTest extends PruebaDeIntegracion {
         PropuestaGrilla propuesta = planificador.proponer(unDia(3));
 
         LocalDateTime cierre = LocalDateTime.of(2026, 9, 1, 23, 0);
-        for (String sala : List.of("Sala 4D", "Sala IMAX", "Sala 3D", "Sala 2D")) {
+        // R35: la 4D solo puede dar la de 150 minutos; a las otras les alcanza con que entre la más corta.
+        Map<String, Integer> laMasCortaQuePuede = Map.of("Sala 4D", 150, "Sala IMAX", 90, "Sala 3D", 90, "Sala 2D", 90);
+        laMasCortaQuePuede.forEach((sala, minutos) -> {
             PaseSugerido ultimo = de(propuesta, sala).stream().max(Comparator.comparing(PaseSugerido::inicio))
                     .orElseThrow(() -> new AssertionError(sala + " quedó vacía"));
             LocalDateTime proximo = ultimo.inicio().plusMinutes(ultimo.duracionMinutos() + 15L);
-            assertTrue(proximo.plusMinutes(90).isAfter(cierre), sala + " tiene lugar para otra a las " + proximo);
-        }
+            assertTrue(proximo.plusMinutes(minutos).isAfter(cierre), sala + " tiene lugar para otra a las " + proximo);
+        });
+    }
+
+    // R35: la grilla no le propone a la 4D lo que la función después rechazaría, y aplicarla no se cae.
+    @Test
+    void laSala4DSoloDaEn3DLasQueTienenEsaVersion() {
+        cargar("Solo 2D y la mejor", 9.5, Genero.ACCION);
+        cargarEn3D("Con 3D", 7.0, 100);
+        salas.agregar("Sala 4D", TipoSala.CUATRO_D, List.of(10));
+
+        PropuestaGrilla propuesta = planificador.aplicar(unDia(2));
+
+        assertEquals(Set.of("Con 3D"), de(propuesta, "Sala 4D").stream().map(PaseSugerido::titulo).collect(Collectors.toSet()));
+        assertTrue(funciones.listar().stream().allMatch(f -> f.getProyeccion() == Proyeccion.TRES_D));
+    }
+
+    // R35: en un catálogo sin 3D, como el que deja el importador, la 4D queda vacía y las demás se llenan igual.
+    @Test
+    void sinVersiones3DLaSala4DQuedaVaciaYLaGrillaSeAplica() {
+        cargar("Solo 2D", 8.0, Genero.ACCION);
+        salas.agregar("Sala 4D", TipoSala.CUATRO_D, List.of(10));
+        salas.agregar("Sala 2D", TipoSala.DOS_D, List.of(10));
+
+        PropuestaGrilla propuesta = planificador.aplicar(unDia(1));
+
+        assertTrue(de(propuesta, "Sala 4D").isEmpty());
+        assertFalse(de(propuesta, "Sala 2D").isEmpty());
+    }
+
+    // La mitad mejor puntuada de lo que la sala puede dar: si no, la mejor con 3D de un elenco de 2D no entraba.
+    @Test
+    void laPremiumEligeLasMejorPuntuadasEntreLasQuePuedeProyectar() {
+        cargar("Mejor en 2D", 9.5, Genero.ACCION);
+        cargar("Segunda en 2D", 9.0, Genero.COMEDIA);
+        cargar("Tercera en 2D", 8.5, Genero.TERROR);
+        cargarEn3D("Buena en 3D", 7.0, 100);
+        cargarEn3D("Floja en 3D", 4.0, 100);
+        salas.agregar("Sala 4D", TipoSala.CUATRO_D, List.of(10));
+
+        PropuestaGrilla propuesta = planificador.proponer(unDia(5));
+
+        assertEquals(Set.of("Buena en 3D"), de(propuesta, "Sala 4D").stream().map(PaseSugerido::titulo).collect(Collectors.toSet()));
     }
 
     // Desigualdad del reordenamiento: la sala más cara con las mejor puntuadas, y la mejor de todas primero.

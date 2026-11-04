@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.model.funciones.Proyeccion;
@@ -103,13 +104,13 @@ final class RepartoDePases {
                         p.getDuracionMinutos())).thenComparing(deuda));
     }
 
-    // Qué puede dar la sala (R8, R31) y cuáles prefiere según su papel, que sale de los atributos de su tipo.
+    // Qué puede dar la sala (R8, R31, R35) y cuáles prefiere según su papel, que sale de los atributos de su tipo.
     private CartelDeSala cartelDe(Sala sala, int minutosDelDia) {
         List<Pelicula> proyectables = elenco.stream()
                 .filter(p -> proyeccionEn(p, sala.getTipo()).isPresent())
                 .toList();
         List<Pelicula> preferidas = switch (PapelEnLaGrilla.de(sala.getTipo())) {
-            case MEJOR_PUNTUADAS -> mejorPuntuadas();
+            case MEJOR_PUNTUADAS -> mejorPuntuadas(proyectables);
             case VERSIONES_3D -> versiones3D(proyectables);
             case EN_2D -> proyectables;
         };
@@ -124,21 +125,22 @@ final class RepartoDePases {
         return en3D.isEmpty() ? proyectables : en3D;
     }
 
-    // La mitad mejor puntuada del elenco (redondeando para arriba), para que la premium no repita siempre una.
-    private List<Pelicula> mejorPuntuadas() {
-        return elenco.stream()
+    // La mitad mejor puntuada de lo que puede dar (redondeando para arriba), para que la premium no repita siempre una.
+    // De lo que puede dar y no del elenco: en una 4D (R35) las mejores del elenco pueden no tener versión 3D.
+    private List<Pelicula> mejorPuntuadas(List<Pelicula> proyectables) {
+        return proyectables.stream()
                 .sorted(Comparator.comparingDouble((Pelicula p) -> -puntajes.de(p))
                         .thenComparing(Pelicula::getTitulo))
-                .limit((elenco.size() + 1) / 2)
+                .limit((proyectables.size() + 1) / 2)
                 .toList();
     }
 
-    // En una sala que proyecta 3D va en 3D si la película tiene esa versión; si no, en 2D. Vacío: no la puede dar.
+    // En 3D si la sala y la película pueden; si no, en 2D si pueden. Vacío: esa sala no la puede dar.
     private static Optional<Proyeccion> proyeccionEn(Pelicula pelicula, TipoSala tipo) {
-        if (pelicula.seEstrenaEn(Proyeccion.TRES_D) && Proyeccion.TRES_D.sePuedeProyectarEn(tipo)) {
-            return Optional.of(Proyeccion.TRES_D);
-        }
-        return pelicula.seEstrenaEn(Proyeccion.DOS_D) ? Optional.of(Proyeccion.DOS_D) : Optional.empty();
+        return Stream.of(Proyeccion.TRES_D, Proyeccion.DOS_D)
+                .filter(tipo::admite)
+                .filter(pelicula::seEstrenaEn)
+                .findFirst();
     }
 
     // Nunca cero: con puntaje 0 la deuda sería infinita y se llevaría la grilla entera.

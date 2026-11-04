@@ -39,7 +39,7 @@ class CatalogoControllerTest extends PruebaDeApi {
                 + "\"DOCUMENTAL\",\"ROMANCE\",\"SUSPENSO\"]", getPublico("/api/generos").cuerpo());
         assertEquals("[\"DOBLADA\",\"SUBTITULADA\"]", getPublico("/api/idiomas").cuerpo());
         assertEquals("[\"DOS_D\",\"TRES_D\"]", getPublico("/api/proyecciones").cuerpo());
-        assertEquals("[\"DOS_D\",\"TRES_D\",\"IMAX\"]", getPublico("/api/tipos-pelicula").cuerpo());
+        assertEquals("[\"DOS_D\",\"TRES_D\",\"IMAX\",\"CUATRO_D\"]", getPublico("/api/tipos-pelicula").cuerpo());
     }
 
     // Los flags no se deducen del nombre de la constante: los clientes los leen de acá.
@@ -50,16 +50,17 @@ class CatalogoControllerTest extends PruebaDeApi {
                 getPublico("/api/clasificaciones").cuerpo());
     }
 
-    // Experto: el papel en la grilla sale de los atributos del tipo, y Swing lo muestra sin deducirlo.
+    // Experto: qué proyecta y su papel en la grilla salen del tipo, y los clientes los leen sin deducirlos (R8, R35).
     @Test
-    void losTiposDeSalaDicenSuRecargoSiProyectanEn3DSiSonPremiumYQueLesTocaEnLaGrilla() {
-        String premium = "\"premium\":true,\"enLaGrilla\":\"Premium: las mejor puntuadas, en 3D si tienen versión 3D\"}";
-        assertEquals("[{\"nombre\":\"DOS_D\",\"multiplicador\":1.0,\"soportaTresD\":false,\"premium\":false,"
+    void losTiposDeSalaDicenSuRecargoQueProyectanSiSonPremiumYQueLesTocaEnLaGrilla() {
+        String premium = "\"premium\":true,\"enLaGrilla\":\"Premium: las mejor puntuadas de las que puede proyectar, "
+                + "en 3D si tienen versión 3D\"}";
+        assertEquals("[{\"nombre\":\"DOS_D\",\"multiplicador\":1.0,\"proyecciones\":[\"DOS_D\"],\"premium\":false,"
                 + "\"enLaGrilla\":\"2D: las películas en 2D, primero las que todavía no tienen pase ese día\"},"
-                + "{\"nombre\":\"TRES_D\",\"multiplicador\":1.3,\"soportaTresD\":true,\"premium\":false,"
+                + "{\"nombre\":\"TRES_D\",\"multiplicador\":1.3,\"proyecciones\":[\"DOS_D\",\"TRES_D\"],\"premium\":false,"
                 + "\"enLaGrilla\":\"3D: las versiones 3D; si no hay ninguna, en 2D\"},"
-                + "{\"nombre\":\"IMAX\",\"multiplicador\":1.6,\"soportaTresD\":true," + premium + ","
-                + "{\"nombre\":\"CUATRO_D\",\"multiplicador\":1.8,\"soportaTresD\":true," + premium + "]",
+                + "{\"nombre\":\"IMAX\",\"multiplicador\":1.6,\"proyecciones\":[\"DOS_D\",\"TRES_D\"]," + premium + ","
+                + "{\"nombre\":\"CUATRO_D\",\"multiplicador\":1.8,\"proyecciones\":[\"TRES_D\"]," + premium + "]",
                 getPublico("/api/tipos-sala").cuerpo());
     }
 

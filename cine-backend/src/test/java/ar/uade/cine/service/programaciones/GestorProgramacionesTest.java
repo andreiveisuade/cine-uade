@@ -24,6 +24,9 @@ import ar.uade.cine.model.cartelera.Genero;
 import ar.uade.cine.model.dinero.Dinero;
 import ar.uade.cine.model.funciones.FormatoDeFuncion;
 import ar.uade.cine.model.funciones.Funcion;
+import ar.uade.cine.model.cartelera.Pelicula;
+import ar.uade.cine.model.salas.Sala;
+import ar.uade.cine.service.cartelera.DatosPelicula;
 import ar.uade.cine.model.funciones.Proyeccion;
 import ar.uade.cine.model.funciones.Version;
 import ar.uade.cine.model.programaciones.Programacion;
@@ -224,6 +227,15 @@ class GestorProgramacionesTest extends PruebaDeIntegracion {
                         new FormatoDeFuncion(Version.SUBTITULADA, Proyeccion.DOS_D, Dinero.de(5000)))));
 
         assertEquals("No existe la película 99", error.getMessage());
+    }
+
+    @Test
+    void previsualizarRechazaUnaGrilla2DEnUnaSala4D() {
+        Sala cuatroD = salas.agregar("Sala 4D", TipoSala.CUATRO_D, List.of(5, 5));
+
+        rechaza("La sala Sala 4D no puede proyectar en 2D",
+                () -> programaciones.previsualizar(new DatosGrilla(1, cuatroD.getId(), LUNES, DOMINGO, LAS_2030, Set.of(),
+                        new FormatoDeFuncion(Version.DOBLADA, Proyeccion.DOS_D, Dinero.de(5000)))));
     }
 
     @Test

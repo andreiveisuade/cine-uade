@@ -43,6 +43,8 @@ class FuncionTest {
             R31: 3D de una película sin versión 3D, SUBTITULADA, TRES_D, IMAX, 5000, La película Matrix no tiene versión en 3D
             # R8 primero: la sala se mira antes que la película.
             R8 y R31 gana R8,             SUBTITULADA, TRES_D, DOS_D, 5000, La sala Sala 1 no puede proyectar en 3D
+            R35: 2D en una sala 4D,       SUBTITULADA, DOS_D,  CUATRO_D, 5000, La sala Sala 1 no puede proyectar en 2D
+            R35: 3D de una película sin versión 3D en una sala 4D, SUBTITULADA, TRES_D, CUATRO_D, 5000, La película Matrix no tiene versión en 3D
             """)
     void unaFuncionSinFormatoSinPrecioOEn3DSinSoporteNoSeConstruye(String caso, Version version,
             Proyeccion proyeccion, TipoSala tipo, double precio, String mensaje) {

@@ -46,11 +46,12 @@ public class CatalogoController {
                 .toList();
     }
 
-    @Operation(summary = "Los tipos de sala: multiplicador, 3D, premium y qué les toca en la grilla")
+    @Operation(summary = "Los tipos de sala: multiplicador, qué proyectan, premium y qué les toca en la grilla")
     @GetMapping("/api/tipos-sala")
     public List<TipoSalaVistaDTO> tiposDeSala() {
         return Arrays.stream(TipoSala.values())
-                .map(t -> new TipoSalaVistaDTO(t.name(), t.getMultiplicadorPrecio(), t.soportaTresD(), t.premium(),
+                .map(t -> new TipoSalaVistaDTO(t.name(), t.getMultiplicadorPrecio(),
+                        t.getProyecciones().stream().map(Enum::name).toList(), t.premium(),
                         PapelEnLaGrilla.de(t).getDescripcion()))
                 .toList();
     }
