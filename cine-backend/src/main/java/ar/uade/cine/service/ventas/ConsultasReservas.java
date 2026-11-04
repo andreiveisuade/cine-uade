@@ -56,6 +56,10 @@ public class ConsultasReservas {
                 .map(reservaRepository::findByCliente_EmailOrderByIdDesc).orElse(List.of());
     }
 
+    public List<Reserva> listarPorCliente(int clienteId) {
+        return reservaRepository.findByCliente_IdOrderByIdDesc(clienteId);
+    }
+
     // La más nueva primero, ordenada en la base. El día también en la base; el texto en memoria porque el
     // código de butaca se arma de fila y número, y el estado porque una vencida sigue RESERVADA hasta que se expira.
     public List<Reserva> buscar(CriteriosReserva criterios) {

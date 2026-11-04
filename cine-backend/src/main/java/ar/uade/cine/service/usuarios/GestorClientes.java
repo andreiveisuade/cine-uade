@@ -1,6 +1,7 @@
 package ar.uade.cine.service.usuarios;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 import lombok.RequiredArgsConstructor;
@@ -54,6 +55,17 @@ public class GestorClientes {
     @Transactional(readOnly = true)
     public List<Cliente> listar() {
         return clienteRepository.findAll();
+    }
+
+    // R26: la baja no borra la cuenta, así que acá salen todos, también los que se dieron de baja.
+    @Transactional(readOnly = true)
+    public List<Cliente> buscar(String texto) {
+        return clienteRepository.buscar(texto == null ? "" : texto.strip().toLowerCase(Locale.ROOT));
+    }
+
+    @Transactional(readOnly = true)
+    public Cliente obtener(int id) {
+        return clienteRepository.exigir(id, "el cliente");
     }
 
     // Sin email no hay a quién buscar; con espacios o mayúsculas, se busca como lo guarda Email.

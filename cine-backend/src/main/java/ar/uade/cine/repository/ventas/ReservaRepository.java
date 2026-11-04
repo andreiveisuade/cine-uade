@@ -40,6 +40,8 @@ public interface ReservaRepository extends Repositorio<Reserva> {
 
     List<Reserva> findByCliente_EmailOrderByIdDesc(String email);
 
+    List<Reserva> findByCliente_IdOrderByIdDesc(int clienteId);
+
     boolean existsByFuncion_Id(int funcionId);
 
     boolean existsByFuncion_Pelicula_IdAndFuncion_InicioAfter(int peliculaId, LocalDateTime ahora);
