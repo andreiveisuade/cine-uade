@@ -1,5 +1,6 @@
 package ar.uade.cine.controller.cartelera;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
@@ -204,15 +205,17 @@ class PeliculaControllerTest extends PruebaDeApi {
     }
 
     // El tipo sale de lo que se vende: Alien solo pasó en 3D e IMAX, y una película entra en todos los tipos que tenga.
+    // Gravity va en la sala 4D, que proyecta en 3D (R35): está en los dos filtros.
     @ParameterizedTest(name = "{0}")
     @CsvSource(delimiter = '|', textBlock = """
             2D                       | tipo=DOS_D                | [Dune, Interstellar, Alien]
-            3D                       | tipo=TRES_D               | [Avatar]
+            3D                       | tipo=TRES_D               | [Avatar, Gravity]
             IMAX                     | tipo=IMAX                 | [Interstellar]
+            4D                       | tipo=CUATRO_D             | [Gravity]
             sin distinguir mayúsculas| tipo=imax                 | [Interstellar]
-            combinado con género     | genero=DRAMA&tipo=TRES_D  | [Avatar]
+            combinado con género     | genero=DRAMA&tipo=TRES_D  | [Avatar, Gravity]
             género sin ese tipo      | genero=ACCION&tipo=TRES_D | []
-            tipo vacío no filtra     | tipo=                     | [Dune, Avatar, Interstellar, Alien]
+            tipo vacío no filtra     | tipo=                     | [Dune, Avatar, Interstellar, Alien, Gravity]
             """)
     void laCarteleraFiltraPorTipoSegunLasFuncionesPorDelante(String caso, String consulta, String titulos) {
         Sala comun = salas.save(new Sala("Sala 2D", TipoSala.DOS_D, 15));
@@ -225,6 +228,8 @@ class PeliculaControllerTest extends PruebaDeApi {
         Pelicula alien = enCartelera("Alien", Genero.ACCION);
         funcion(alien, comun, proxima.plusHours(4), Proyeccion.DOS_D);
         funcion(alien, imax, reloj.ahora().minusDays(1), Proyeccion.TRES_D);
+        funcion(enCartelera("Gravity", Genero.DRAMA), salas.save(new Sala("Sala 4D", TipoSala.CUATRO_D, 15)), proxima,
+                Proyeccion.TRES_D);
 
         Respuesta respuesta = get("/api/cartelera?" + consulta);
 
@@ -233,17 +238,32 @@ class PeliculaControllerTest extends PruebaDeApi {
                 .map(p -> p.get("titulo").asText()).toList().toString());
     }
 
-    // CUATRO_D es un tipo de sala válido, pero no un tipo por el que se filtra.
-    @ParameterizedTest
-    @CsvSource(textBlock = """
-            CUATRO_D
-            CINE
-            """)
-    void unTipoQueNoExisteEs400(String tipo) {
-        Respuesta respuesta = get("/api/cartelera?tipo=" + tipo);
+    @Test
+    void unTipoQueNoExisteEs400() {
+        Respuesta respuesta = get("/api/cartelera?tipo=CINE");
 
         assertEquals(400, respuesta.estado());
-        assertEquals("El tipo de película no es válido: " + tipo, respuesta.error());
+        assertEquals("El tipo de película no es válido: CINE", respuesta.error());
+    }
+
+    // Los tipos de cada función, con el criterio del filtro: la ficha filtra con esto y no deduce nada.
+    @ParameterizedTest(name = "{0} en {1}")
+    @CsvSource(textBlock = """
+            DOS_D,    DOS_D,  DOS_D
+            TRES_D,   DOS_D,  DOS_D
+            TRES_D,   TRES_D, TRES_D
+            IMAX,     DOS_D,  DOS_D IMAX
+            IMAX,     TRES_D, TRES_D IMAX
+            CUATRO_D, TRES_D, TRES_D CUATRO_D
+            """)
+    void cadaFuncionDiceDeQueTiposEs(TipoSala tipoSala, Proyeccion proyeccion, String tipos) {
+        Pelicula pelicula = enCartelera("Dune", Genero.ACCION);
+        funcion(pelicula, salas.save(new Sala("Sala", tipoSala, 15)), reloj.ahora().plusDays(2), proyeccion);
+
+        JsonNode funcion = get("/api/peliculas/" + pelicula.getId() + "/funciones").json().get(0);
+
+        assertEquals(List.of(tipos.split(" ")), StreamSupport.stream(funcion.get("tipos").spliterator(), false)
+                .map(JsonNode::asText).toList());
     }
 
     private Pelicula enCartelera(String titulo, Genero genero) {
