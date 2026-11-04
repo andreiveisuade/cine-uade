@@ -12,7 +12,7 @@ const ANA = { id: 1, nombre: "Ana", email: "ana@mail.com", rol: "CLIENTE" };
 const RESERVA = {
   id: 7, codigo: "ABCD1234", estado: "RESERVADA", cobrable: true, cancelable: true, funcionId: 5, total: 16000,
   venceEn: "2026-10-21T19:30:00", pelicula: { id: 2, titulo: "Matrix" }, sala: { nombre: "Sala 2", tipo: "IMAX" },
-  funcion: { inicio: "2026-10-21T20:30:00", proyeccion: "DOS_D", idioma: "SUBTITULADA" },
+  funcion: { inicio: "2026-10-21T20:30:00", proyeccion: "DOS_D", tipos: ["DOS_D"], idioma: "SUBTITULADA" },
   entradas: [
     { codigo: "C5", tarifa: "GENERAL", precio: 8000, requiereAcreditacion: false },
     { codigo: "C6", tarifa: "JUBILADO", precio: 8000, requiereAcreditacion: true },

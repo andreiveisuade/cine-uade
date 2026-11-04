@@ -1,7 +1,7 @@
-import { Accordion, Button, Group, Text } from "@mantine/core";
+import { Accordion, Group, Text } from "@mantine/core";
 import { useReducedMotion } from "@mantine/hooks";
-import { Link } from "react-router";
 import { etiqueta } from "@/api/etiquetas.js";
+import { PildorasFiltro } from "./PildorasFiltro.jsx";
 
 const url = (genero, tipo) => `/cartelera${genero ? `/${genero}` : ""}${tipo ? `?tipo=${tipo}` : ""}`;
 
@@ -16,14 +16,7 @@ function Filtro({ titulo, ariaLabel, opciones, activa, urlDe }) {
         </Group>
       </Accordion.Control>
       <Accordion.Panel>
-        <Group gap={6} aria-label={ariaLabel}>
-          {["", ...opciones].map((o) => (
-            <Button key={o || "todos"} component={Link} to={urlDe(o)} size="compact-sm" radius="xl"
-              variant={(activa || "") === o ? "filled" : "default"}>
-              {o ? etiqueta(o) : "Todos"}
-            </Button>
-          ))}
-        </Group>
+        <PildorasFiltro ariaLabel={ariaLabel} opciones={opciones} activa={activa} urlDe={urlDe} />
       </Accordion.Panel>
     </Accordion.Item>
   );
