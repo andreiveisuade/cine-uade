@@ -50,7 +50,7 @@ public final class PantallaReservas extends PantallaListado<Reserva> {
                     .collect(Collectors.joining(", "))),
             Columna.<Reserva>de("Candy", PantallaReservas::candy),
             // R30: el total es el del ticket de la web, entradas y candy; la Caja los sigue desglosando.
-            Columna.<Reserva>numero("Total", r -> precio(r.total() + r.totalCandy())),
+            Columna.<Reserva>numero("Total", r -> precio(r.totalConCandy())),
             Columna.<Reserva>de("Estado", r -> etiqueta(r.estado())).comoEstado(PantallaReservas::color),
             Columna.<Reserva>de("Pago", PantallaReservas::pago).ancho(130))
             .vacia("Ninguna reserva con esos filtros");
@@ -103,7 +103,7 @@ public final class PantallaReservas extends PantallaListado<Reserva> {
         long activas = todas.stream().filter(r -> !List.of("CANCELADA", "EXPIRADA", "NO_USADA").contains(r.estado()))
                 .count();
         // R30: el candy pedido en la web se cobra junto con la reserva.
-        double pendiente = aCobrar.stream().mapToDouble(r -> r.total() + r.totalCandy()).sum();
+        double pendiente = aCobrar.stream().mapToDouble(Reserva::totalConCandy).sum();
         return cantidad(todas.size(), "reserva", "reservas") + " · " + cantidad((int) activas, "activa", "activas")
                 + " · " + cantidad(aCobrar.size(), "pendiente", "pendientes") + " de cobro"
                 + (aCobrar.isEmpty() ? "" : " (" + precio(pendiente) + ")");

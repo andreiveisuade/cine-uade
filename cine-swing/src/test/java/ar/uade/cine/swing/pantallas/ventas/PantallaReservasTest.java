@@ -88,6 +88,23 @@ class PantallaReservasTest {
         assertEquals("1× Pochoclos", encargado.celda(0, "Candy"));
     }
 
+    // Ya paga, la columna dice lo cobrado: la promo descuenta y el candy pendiente se paga aparte.
+    @Test
+    void elTotalDeUnaPagaEsLoCobradoConPromoYSinElCandyPendiente() {
+        String pagoConPromo = PAGO.replace("\"descuento\":0.0,\"monto\":7500.0", "\"descuento\":3750.0,\"monto\":3750.0");
+        String candy = "[{\"id\":1,\"estado\":\"COBRADA\",\"fecha\":\"2026-11-05T09:50:00\",\"items\":[],\"total\":5500.0},"
+                + "{\"id\":2,\"estado\":\"PENDIENTE\",\"fecha\":\"2026-11-05T11:00:00\",\"items\":[],\"total\":2000.0}]";
+        servidor.responder("GET /api/reservas", 200, "[" + reserva(6, "PAGADA", false, pagoConPromo)
+                .replace("\"cancelable\":false}", "\"cancelable\":false,\"candy\":" + candy + "}") + "]");
+        encargado.cerrar();
+
+        encargado = Operador.en(() -> new PantallaReservas(new ApiVentas(new ClienteHttp(servidor.url())),
+                navegacion));
+        encargado.esperarFilas(1);
+
+        assertEquals("$ 9.250", encargado.celda(0, "Total"));
+    }
+
     @Test
     void soloSeCobraLaQueElBackendDiceCobrable() {
         assertFalse(encargado.habilitado("Cobrar"));

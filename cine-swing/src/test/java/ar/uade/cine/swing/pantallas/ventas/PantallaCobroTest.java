@@ -84,6 +84,18 @@ class PantallaCobroTest {
         encargado.esperarTexto("con Crédito (subtotal");
     }
 
+    // El total de una paga es lo que entró a caja: el Pago ya tiene la promo, y no es el precio de lista.
+    @Test
+    void unaYaPagadaConPromoMuestraElDescuentoYElTotalCobrado() {
+        servidor.responder("GET /api/reservas/5", 200, reserva(5, "PAGADA", false, PAGO));
+        abrir(5);
+
+        encargado.esperarTexto("Descuento");
+        assertTrue(encargado.textos().contains("−$ 750"));
+        assertTrue(encargado.textos().contains("$ 6.750"));
+        assertTrue(encargado.textos().contains("$ 7.500"), "las entradas a precio de lista, para que la cuenta cierre");
+    }
+
     @Test
     void unaVencidaDiceQuePasoElPlazo() {
         servidor.responder("GET /api/reservas/5", 200,

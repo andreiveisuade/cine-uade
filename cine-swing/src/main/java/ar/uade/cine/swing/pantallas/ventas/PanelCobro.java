@@ -52,7 +52,7 @@ final class PanelCobro extends Seccion implements CajaDeCobro {
         this.reserva = reserva;
         Campos.llenar(medio, Opciones.medios(medios));
 
-        JLabel total = new JLabel(precio(reserva.total() + reserva.totalCandy()));
+        JLabel total = new JLabel(precio(reserva.totalConCandy()));
         total.setFont(total.getFont().deriveFont(Font.BOLD, Escala.LETRA_TITULO));
 
         Pila contenido = new Pila();

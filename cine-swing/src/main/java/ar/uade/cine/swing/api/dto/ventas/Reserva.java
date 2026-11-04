@@ -23,4 +23,11 @@ public record Reserva(int id, String estado, String codigo, String ingresadaEn, 
     public double totalCandy() {
         return candy().stream().mapToDouble(CompraCandy::total).sum();
     }
+
+    // Sin pagar es lo que se va a cobrar; ya paga manda el Pago, con la promo, y el candy pendiente se paga aparte.
+    public double totalConCandy() {
+        if (pago == null) return total + totalCandy();
+        return pago.monto() + candy().stream().filter(c -> "COBRADA".equals(c.estado()))
+                .mapToDouble(CompraCandy::total).sum();
+    }
 }

@@ -114,11 +114,14 @@ public final class PantallaCobro extends Pantalla {
         pila.agregar(estado);
         pila.agregar(Componentes.nota(yaNoSeCobra(reserva)));
         pila.agregar(Componentes.renglon("Entradas", precio(reserva.total()), false));
+        if (reserva.pago() != null && reserva.pago().descuento() > 0) {
+            pila.agregar(Componentes.renglon("Descuento", "−" + precio(reserva.pago().descuento()), false));
+        }
         for (CompraCandy compra : reserva.candy()) {
             pila.agregar(Componentes.renglon("Candy · " + compra.situacion().texto().toLowerCase(), precio(compra.total()),
                     false));
         }
-        pila.agregar(Componentes.renglon("Total", precio(reserva.total() + reserva.totalCandy()), true));
+        pila.agregar(Componentes.renglon("Total", precio(reserva.totalConCandy()), true));
         JPanel tarjeta = Componentes.conBorde(pila);
         tarjeta.setPreferredSize(new Dimension(Componentes.ANCHO_LATERAL + Escala.MARGEN * 3,
                 tarjeta.getPreferredSize().height));
