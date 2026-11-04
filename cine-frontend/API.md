@@ -62,6 +62,7 @@ Límites conocidos: el login con Basic (empleados) y cada pedido de Swing compar
 | Ruta | Devuelve |
 |---|---|
 | `GET /generos` | `["ACCION", "COMEDIA", …]` |
+| `GET /tipos-pelicula` | `["DOS_D","TRES_D","IMAX"]`: los filtros de `GET /cartelera?tipo=` |
 | `GET /clasificaciones` | `[{"nombre":"ATP","edadMinima":0}, …]` |
 | `GET /tipos-sala` | `[{"nombre":"IMAX","multiplicador":1.6,"soportaTresD":true,"premium":true,"enLaGrilla":"Premium: las mejor puntuadas, en 3D si tienen versión 3D"}, …]`. Son atributos del tipo (Experto): `enLaGrilla` dice qué le toca en la grilla automática y se muestra tal cual |
 | `GET /idiomas` · `GET /proyecciones` | `["DOBLADA","SUBTITULADA"]` · `["DOS_D","TRES_D"]` |
@@ -79,7 +80,7 @@ Los clientes deciden con estos campos, nunca por el nombre de una constante: ped
 
 | Ruta | Qué hace |
 |---|---|
-| `GET /cartelera?genero=` | Las películas en exhibición |
+| `GET /cartelera?genero=&tipo=` | Las películas en exhibición. `tipo` (`DOS_D`, `TRES_D`, `IMAX`) se resuelve por sus funciones por delante: la proyección en 2D y 3D, la sala en IMAX, así que una película puede estar en varios. Con `genero` se combina (y); otro valor es `400` |
 | `GET /peliculas/{id}` | Una película |
 | `GET /peliculas/{id}/funciones` | Sus funciones que todavía no empezaron (R19), por `inicio`, con la sala |
 | `GET /clientes?email=` | `[cliente]` o `[]`. Solo `ADMINISTRADOR` |
