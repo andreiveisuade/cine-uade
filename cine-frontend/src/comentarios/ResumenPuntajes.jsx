@@ -12,7 +12,7 @@ export function ResumenPuntajes({ comentarios }) {
     <Paper withBorder p={{ base: "md", sm: "lg" }}>
       <Group gap="xl" align="center" justify="center">
         <Stack gap={4} align="center">
-          <Text className="cine-display" fz={56} fw={800} lh={1}>{promedio.toFixed(1).replace(".", ",")}</Text>
+          <Text className="cine-display" fz={56} fw={800} lh={1}>{promedio.toLocaleString("es-AR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</Text>
           <Rating value={promedio} fractions={4} readOnly color="var(--cine-foco)" aria-label="Puntaje promedio" />
           <Text size="sm" c="dimmed">{cantidad(total, "comentario")}</Text>
         </Stack>

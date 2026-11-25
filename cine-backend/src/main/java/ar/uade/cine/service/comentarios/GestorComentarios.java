@@ -13,7 +13,7 @@ import ar.uade.cine.model.usuarios.Cliente;
 import ar.uade.cine.repository.comentarios.ComentarioRepository;
 import ar.uade.cine.repository.usuarios.ClienteRepository;
 
-// Publica y lista los comentarios del cine; el autor se busca por el email de la sesión y Comentario valida lo suyo.
+// Publica y lista los comentarios del cine; el autor es el de la sesión y Comentario valida lo suyo.
 @Service
 @Transactional
 @RequiredArgsConstructor
