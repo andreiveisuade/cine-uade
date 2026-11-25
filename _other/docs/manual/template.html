@@ -1084,7 +1084,7 @@ docker compose up -d --build
       <p>Los clientes deciden por status: Android trata todo 4xx como rechazo; Swing muestra el 409 sin campo en un pop-up y en la Puerta como ENTRADA NO VÁLIDA o CANDY NO ENTREGADO.</p>
 
       <h3 id="swagger">Swagger</h3>
-      <p><code>/swagger-ui.html</code> para probar, <code>/v3/api-docs</code> para Postman. Lo genera springdoc; <code>ContratoOpenApiTest</code> falla si un <code>$ref</code> no resuelve.</p>
+      <p><code>/swagger-ui.html</code> para probar, <code>/v3/api-docs</code> para Postman. Lo genera springdoc; <code>ContratoOpenApiTest</code> falla si un <code>$ref</code> no resuelve. Cada operación arranca con los clientes que la usan (<code>[Web]</code>, <code>[Swing]</code>, <code>[Web + Swing]</code>, <code>[Sin uso]</code>): salen de <code>ClienteDeLaApi</code>.</p>
     </section>
 
     <section class="doc-section" id="frontend">

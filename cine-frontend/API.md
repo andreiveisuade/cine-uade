@@ -1,7 +1,8 @@
 # Contrato de la API
 
 Base `/api`. La consumen la web (`src/api/api-http.js`) y Swing (una `Api<Subdominio>` por subdominio), con
-los mismos nombres de operación. Se prueba en <http://localhost:8080/swagger-ui.html> (en producción Swagger está apagado: con `CINE_SWAGGER=false` ni la UI ni `/v3/api-docs` existen).
+los mismos nombres de operación. Se prueba en <http://localhost:8080/swagger-ui.html> (en producción Swagger está apagado: con `CINE_SWAGGER=false` ni la UI ni `/v3/api-docs` existen). Ahí cada operación arranca con quién la usa: `[Web]`, `[Swing]`, `[Web + Swing]`, `[Sin uso]`.
+Si un cliente empieza o deja de usar una, se actualiza `ClienteDeLaApi` en el backend.
 
 ## Convenciones
 

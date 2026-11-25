@@ -122,6 +122,39 @@ class ContratoOpenApiTest extends PruebaDeApi {
         assertThat(respuestas(rutas, "/api/salas", "post").has("404")).isFalse();
     }
 
+    @ParameterizedTest(name = "{0}")
+    @CsvSource({
+            "solo la web,        /api/cartelera,      get,    [Web]",
+            "solo Swing,         /api/salas,          post,   [Swing]",
+            "las dos,            /api/funciones/{id}, get,    [Web + Swing]",
+            "la puerta,          /api/acceso,         post,   [Swing + Android]",
+            "las tres,           /api/sesion,         post,   [Web + Swing + Android]",
+            "ninguna,            /api/funciones/{id}, delete, [Sin uso]"})
+    @DisplayName("el resumen arranca con los clientes que usan la operación")
+    void elResumenDiceQuienLaUsa(String caso, String ruta, String metodo, String etiqueta) {
+        assertThat(operacion(ruta, metodo).get("summary").asText()).startsWith(etiqueta + " ").doesNotContain("null");
+    }
+
+    @Test
+    @DisplayName("ningún cliente figura usando una operación que no existe")
+    void losClientesUsanOperacionesQueExisten() {
+        Set<String> publicadas = new HashSet<>();
+        get("/v3/api-docs").json().get("paths").properties().forEach(ruta -> ruta.getValue().fieldNames()
+                .forEachRemaining(metodo -> publicadas.add(metodo.toUpperCase() + " " + ruta.getKey())));
+
+        for (ClienteDeLaApi cliente : ClienteDeLaApi.values()) {
+            assertThat(publicadas).as(cliente.name()).containsAll(cliente.operaciones());
+        }
+    }
+
+    @Test
+    @DisplayName("todas las operaciones tienen un resumen propio además de la etiqueta")
+    void todasTienenResumen() {
+        get("/v3/api-docs").json().get("paths").properties().forEach(ruta -> ruta.getValue().properties()
+                .forEach(op -> assertThat(op.getValue().get("summary").asText()).as(op.getKey() + " " + ruta.getKey())
+                        .doesNotEndWith("null")));
+    }
+
     // Try it out manda el cuerpo de ejemplo tal cual: con un ejemplo inválido no se podría probar desde Swagger.
     @Test
     @DisplayName("el cuerpo de ejemplo del alta de película se puede enviar tal cual")

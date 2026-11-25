@@ -94,6 +94,10 @@ public class ConfiguracionOpenApi {
                                 Reservar, pagar, pedir candy y cancelar la propia piden la sesión de Google del cliente. \
                                 `POST /api/sesion` (el login), `POST /api/acceso` y `POST /api/candy/retiros` piden \
                                 ACOMODADOR o ADMINISTRADOR; todo lo demás, ADMINISTRADOR.
+
+                                **Quién usa cada operación**, entre corchetes: `[Web]` la venta al cliente, \
+                                `[Swing]` el panel, `[Android]` la puerta, `[Web + Swing]` las dos, \
+                                `[Sin uso]` ninguna. Dice quién la llama, no quién puede llamarla.
                                 """))
                 // Relativo: sirve igual detrás del nginx del compose que contra el backend directo.
                 .servers(List.of(new Server().url("/").description("Este mismo servidor")));
@@ -129,6 +133,7 @@ public class ConfiguracionOpenApi {
         Conflicto.documentar(cual, respuestas);
         respuestas.addApiResponse("500", respuestaDeError("Falló el acceso a los datos"));
         accesoDe(ruta, metodo).documentar(operacion);
+        operacion.setSummary(ClienteDeLaApi.etiquetaDe(cual) + " " + operacion.getSummary());
     }
 
     // Cada acceso documenta su candado; accesoDe es el único lugar que decide cuál le toca a una ruta.
