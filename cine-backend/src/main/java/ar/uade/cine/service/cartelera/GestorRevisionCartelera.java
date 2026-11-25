@@ -9,7 +9,6 @@ import org.springframework.transaction.annotation.Transactional;
 import ar.uade.cine.model.cartelera.EstadoRevision;
 import ar.uade.cine.model.cartelera.Pelicula;
 import ar.uade.cine.model.rechazos.ConflictoDeNegocio;
-import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.repository.cartelera.PeliculaRepository;
 import ar.uade.cine.repository.funciones.FuncionRepository;
 

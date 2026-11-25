@@ -20,7 +20,6 @@ import ar.uade.cine.model.cartelera.TipoPelicula;
 import ar.uade.cine.model.cartelera.TrailerYoutube;
 import ar.uade.cine.model.funciones.Funcion;
 import ar.uade.cine.model.funciones.Proyeccion;
-import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.repository.funciones.FuncionRepository;
 import ar.uade.cine.repository.cartelera.PeliculaRepository;
 import ar.uade.cine.repository.programaciones.ProgramacionRepository;

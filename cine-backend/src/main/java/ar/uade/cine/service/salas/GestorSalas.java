@@ -10,7 +10,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import ar.uade.cine.model.rechazos.DatoInvalido;
 import ar.uade.cine.model.salas.Asiento;
 import ar.uade.cine.model.salas.Sala;
 import ar.uade.cine.model.salas.TipoAsiento;

@@ -51,7 +51,6 @@ import ar.uade.cine.repository.cartelera.PeliculaRepository;
 import ar.uade.cine.repository.funciones.FuncionRepository;
 import ar.uade.cine.repository.programaciones.ProgramacionRepository;
 import ar.uade.cine.repository.salas.SalaRepository;
-import ar.uade.cine.service.cartelera.GestorRevisionCartelera;
 import ar.uade.cine.service.salas.GestorSalas;
 import ar.uade.cine.service.usuarios.GestorClientes;
 import ar.uade.cine.service.ventas.GestorReservas;

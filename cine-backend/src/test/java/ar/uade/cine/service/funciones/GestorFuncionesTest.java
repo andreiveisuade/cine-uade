@@ -44,7 +44,6 @@ import ar.uade.cine.service.cartelera.GestorRevisionCartelera;
 import ar.uade.cine.service.salas.GestorSalas;
 import ar.uade.cine.service.usuarios.GestorClientes;
 import ar.uade.cine.service.ventas.GestorReservas;
-import ar.uade.cine.service.ventas.GestorReservas;
 
 class GestorFuncionesTest extends PruebaDeIntegracion {
 
