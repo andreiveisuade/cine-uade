@@ -26,7 +26,6 @@ import ar.uade.cine.service.candy.GestorCandy;
 import ar.uade.cine.service.candy.GestorProductos;
 import ar.uade.cine.controller.informes.CajaController;
 import ar.uade.cine.controller.usuarios.ClienteController;
-import ar.uade.cine.service.ventas.Ocupacion;
 import ar.uade.cine.service.ventas.GestorPagos;
 import ar.uade.cine.service.ventas.ConsultasReservas;
 import ar.uade.cine.service.ventas.GestorAcceso;
@@ -77,9 +76,6 @@ class VistasVentasTest extends PruebaDeIntegracion {
 
     @Autowired
     private GestorSalas salas;
-
-    @Autowired
-    private Ocupacion ocupacion;
 
     @Autowired
     private VistasReservas vistas;
