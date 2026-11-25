@@ -75,6 +75,7 @@ public class ConfiguracionSeguridad {
             "/api/candy/productos", "/api/candy/productos/*",
             "/api/imagenes/*",
             "/api/promociones/vigentes",
+            "/api/comentarios",
             "/api/generos", "/api/clasificaciones", "/api/tipos-sala", "/api/tipos-pelicula",
             "/api/idiomas", "/api/proyecciones", "/api/medios-pago",
             "/api/tarifas", "/api/tipos-producto", "/api/tipos-promocion"};
@@ -153,6 +154,7 @@ public class ConfiguracionSeguridad {
                         .requestMatchers(HttpMethod.GET, "/api/reservas/mias").hasRole(CLIENTE)
                         // R28: en la web se compra con la sesión de Google; elegir y bloquear butacas sigue público.
                         .requestMatchers(HttpMethod.POST, "/api/reservas").hasRole(CLIENTE)
+                        .requestMatchers(HttpMethod.POST, "/api/comentarios").hasRole(CLIENTE)
                         .requestMatchers(HttpMethod.PUT, "/api/cuenta").hasRole(CLIENTE)
                         .requestMatchers(HttpMethod.DELETE, "/api/cuenta").hasRole(CLIENTE)
                         .requestMatchers(HttpMethod.POST, "/api/reservas/codigo/*/cancelacion",

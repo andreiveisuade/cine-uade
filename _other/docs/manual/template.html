@@ -563,6 +563,7 @@ body.lightbox-locked { overflow: hidden; }
             <tr><td>CU-18b</td><td>Acomodador</td><td>Validar una entrada desde el celular: escanea el QR o tipea el código (extiende CU-18)</td><td>R18, R32</td></tr>
             <tr><td>CU-19</td><td>Admin</td><td>Emitir el <a href="#informes">borderó</a> de una función y la declaración jurada del período (INCAA)</td><td>—</td></tr>
             <tr><td>CU-20</td><td>Admin</td><td>Recaudación de una función, boletería y candy</td><td>—</td></tr>
+            <tr><td>CU-21</td><td>Cliente</td><td>Ver los comentarios (sin sesión) y publicar uno con puntaje de 1 a 5 y reseña (con sesión)</td><td>R28</td></tr>
           </tbody>
         </table>
       </div>
@@ -816,6 +817,7 @@ docker compose up -d --build
             <tr><td><code>candy/</code></td><td>Carta, combos y ventas de mostrador</td></tr>
             <tr><td><code>informes/</code></td><td>Borderó, recaudación, declaración jurada y caja del día</td></tr>
             <tr><td><code>usuarios/</code></td><td>Clientes (con Google), empleados y la cuenta del cliente</td></tr>
+            <tr><td><code>comentarios/</code></td><td>Reseñas públicas de los clientes sobre el cine</td></tr>
             <tr><td><code>imagenes/</code></td><td>Imágenes propias de promociones y productos, guardadas en la base (<a href="#imagenes">por qué</a>)</td></tr>
           </tbody>
         </table>
@@ -1137,6 +1139,7 @@ docker compose up -d --build
             <tr><td><code>#/pelicula/:id</code></td><td>Trailer arriba a lo ancho que arranca solo y muteado (el navegador no deja otra cosa) con botón Activar sonido; sin trailer, el póster difuminado. Ficha (año · duración · idioma y, si tiene votos, «★ 7,3 · 1.088 votos» de TMDB), póster y Comprar entradas que baja a las funciones, plegables por día: el primero abierto y cada encabezado con el día y cuántas tiene</td></tr>
             <tr><td><code>#/promociones</code></td><td>Promos vigentes y candy, públicas. El beneficio («2x1», «30 % OFF») lo arma cada subclase de <code>Promocion</code>; el «¡Hoy aplica!» es solo presentación (aplicar lo decide el cobro, R15/R16). Combos con el ahorro del backend. Con <code>imagenUrl</code>, la promo la lleva de fondo bajo un degradé y combos y productos arriba</td></tr>
             <tr><td><code>#/nosotros</code></td><td>Integrantes y descripción del cine</td></tr>
+            <tr><td><code>#/comentarios</code></td><td>Promedio, reparto por puntaje y reseñas, públicos; debajo, el formulario (sin sesión, el ingreso con Google, que vuelve acá). El autor sale de la sesión, no del pedido. Contra la inyección SQL, los valores van como parámetros (Spring Data); contra XSS, React escapa el texto</td></tr>
             <tr><td><code>#/pasarela-emulada/&lt;id&gt;</code></td><td>Solo sin <code>MP_ACCESS_TOKEN</code>: el link de pago de la pasarela emulada. Dice que es un pago de prueba, muestra monto y medio, y Aprobar o Rechazar vuelven por el retorno con el <code>status</code> de MP</td></tr>
             <tr><td><code>/privacidad.html</code></td><td>Política de privacidad, enlazada desde el pie y bajo el botón de <code>#/ingresar</code>. Es un HTML estático en <code>public/</code>, fuera del hash: Google la pide en la pantalla de consentimiento y tiene que leerse sin correr JS (un <code>#/privacidad</code> no llega al servidor). Vite la copia tal cual a <code>dist/</code>; en Render está en <code>FRONT</code></td></tr>
             <tr><td><code>#/ingresar</code>, <code>#/mi-cuenta</code></td><td>Botón «Ingresar con Google» (deshabilitado si el servidor no tiene credenciales) y el <code>?error=</code> de la vuelta; al volver, a la compra que quedó en <code>sessionStorage</code> o a Mis reservas. Mi cuenta: nombre y baja. La barra muestra Ingresar, o nombre, Mis reservas y Salir</td></tr>
@@ -1477,16 +1480,16 @@ docker compose up -d --build
 
     <section class="doc-section" id="der">
       <h2>Modelo de datos (DER)</h2>
-      <p>MySQL 8.4. Fuente única: <code>cine-backend/src/main/resources/db/schema.sql</code>, 22 tablas.</p>
+      <p>MySQL 8.4. Fuente única: <code>cine-backend/src/main/resources/db/schema.sql</code>, 23 tablas.</p>
       <figure class="diagram">
         {{SVG_DER_DESIGN}}
-        <figcaption>Las 22 tablas de <code>schema.sql</code> con todas sus columnas, tipos, defaults y las 26 FK, agrupadas por subdominio</figcaption>
+        <figcaption>Las 23 tablas de <code>schema.sql</code> con todas sus columnas, tipos, defaults y las 27 FK, agrupadas por subdominio</figcaption>
       </figure>
       <details>
         <summary>Versión completa en PlantUML (<code>der.puml</code>)</summary>
         <figure class="diagram">
           {{SVG_DER}}
-          <figcaption>Las 22 tablas de <code>schema.sql</code> por subdominio, en pata de gallo; <code>*</code> es <code>NOT NULL</code></figcaption>
+          <figcaption>Las 23 tablas de <code>schema.sql</code> por subdominio, en pata de gallo; <code>*</code> es <code>NOT NULL</code></figcaption>
         </figure>
       </details>
       <ul>
@@ -1515,6 +1518,7 @@ docker compose up -d --build
             <tr><td><code>producto</code>, <code>combo_item</code></td><td>carta y composición de combos</td></tr>
             <tr><td><code>compra_candy</code>, <code>item_compra</code></td><td>ventas con precio congelado</td></tr>
             <tr><td><code>importacion</code></td><td>corridas del importador</td></tr>
+            <tr><td><code>comentario</code></td><td>reseña, puntaje y autor (FK a <code>usuario</code>)</td></tr>
           </tbody>
         </table>
       </div>
@@ -2081,6 +2085,7 @@ cobro          = Σ Entrada.precio − descuento de la Promocion (al cobrar)</co
             <tr><td>CU-09 (PDF de la entrada)</td><td><code>Ticket.test.jsx</code>, <code>entradaPdf.test.jsx</code></td></tr>
             <tr><td>CU-10, CU-10b</td><td><code>ServidorTest</code>, <code>PanelIngresoTest</code>, <code>PanelProduccionTest</code>, <code>CuentaAivenTest</code> (Swing)</td></tr>
             <tr><td>CU-03b, CU-07b, CU-19, CU-20</td><td><code>ProgramacionTest</code>, <code>GestorPagosTest</code>, <code>GestorInformesTest</code></td></tr>
+            <tr><td>CU-21</td><td><code>ComentarioControllerTest</code> (permisos, validación e inyección SQL), <code>Comentarios.test.jsx</code></td></tr>
             <tr><td>CU-07c</td><td><code>ConciliacionPagosTest</code></td></tr>
             <tr><td>Buzón de revisión</td><td><code>GestorImportacionesTest</code>, <code>RevisionControllerTest</code></td></tr>
             <tr><td>Comprobantes después del commit</td><td><code>ComprobantesDeVentasTest</code>, <code>ComprobantesDeCandyTest</code></td></tr>

@@ -286,3 +286,13 @@ CREATE TABLE IF NOT EXISTS imagen (
     nombre VARCHAR(60) PRIMARY KEY,
     contenido MEDIUMBLOB NOT NULL
 );
+
+-- Resenas publicas de los clientes sobre el cine; el nombre del autor sale de usuario
+CREATE TABLE IF NOT EXISTS comentario (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    cliente_id INT NOT NULL,
+    puntaje INT NOT NULL,
+    texto VARCHAR(1000) NOT NULL,
+    fecha DATETIME NOT NULL,
+    FOREIGN KEY (cliente_id) REFERENCES usuario(id)
+);

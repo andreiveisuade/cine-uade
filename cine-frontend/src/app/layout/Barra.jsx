@@ -12,6 +12,7 @@ function Secciones({ alElegir }) {
       <Enlace a="/cartelera" alElegir={alElegir}>Cartelera</Enlace>
       <Enlace a="/promociones" alElegir={alElegir}>Promos</Enlace>
       <Enlace a="/nosotros" alElegir={alElegir}>Nosotros</Enlace>
+      <Enlace a="/comentarios" alElegir={alElegir}>Comentarios</Enlace>
     </>
   );
 }

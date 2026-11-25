@@ -48,6 +48,7 @@ ZONES = {
     "usuarios": ("Usuarios", "#7a6a3d"),
     "promociones": ("Promociones", "#8f5a6b"),
     "candy": ("Candy", "#3d7a7a"),
+    "comentarios": ("Comentarios", "#8f7a3d"),
     "imagenes": ("Imágenes", "#5a5a5a"),
 }
 ZONE_OF = {
@@ -59,6 +60,7 @@ ZONE_OF = {
     "usuario": "usuarios",
     "promocion": "promociones", "promocion_dia": "promociones", "promocion_medio": "promociones",
     "producto": "candy", "combo_item": "candy", "compra_candy": "candy", "item_compra": "candy",
+    "comentario": "comentarios",
     "imagen": "imagenes",
 }
 COLUMNS = [
@@ -66,7 +68,7 @@ COLUMNS = [
     ["programacion", "programacion_dia", "funcion"],
     ["sala", "asiento", "bloqueo_butaca"],
     ["reserva", "entrada", "pago"],
-    ["usuario", "promocion", "promocion_dia", "promocion_medio"],
+    ["usuario", "comentario", "promocion", "promocion_dia", "promocion_medio"],
     ["compra_candy", "item_compra", "producto", "combo_item"],
 ]
 # Gutter i is to the left of column i; gutter len(COLUMNS) is right of the last column.
@@ -94,6 +96,7 @@ ROUTES = {
     ("pago", "promocion_id"): (4, 4),
     ("combo_item", "combo_id"): (6, 6),
     ("combo_item", "producto_id"): (6, 6),
+    ("comentario", "cliente_id"): (4, 4),
     ("compra_candy", "cliente_id"): (5, 5),
     ("compra_candy", "reserva_id"): (5, 4),
     ("item_compra", "compra_id"): (6, 6),

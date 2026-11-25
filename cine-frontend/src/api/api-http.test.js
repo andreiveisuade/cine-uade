@@ -27,6 +27,7 @@ describe("api-http: el armado de cada pedido", () => {
     ["una función con la sesión de compra", () => api.obtenerFuncion(5, "a b"), "/api/funciones/5?sesion=a%20b"],
     ["un ticket por código", () => api.obtenerReservaPorCodigo("AB/12"), "/api/reservas/codigo/AB%2F12"],
     ["el candy de la carta", () => api.obtenerProductosCandy(), "/api/candy/productos"],
+    ["los comentarios", () => api.obtenerComentarios(), "/api/comentarios"],
     ["si el ingreso con Google está disponible", () => api.ingresoConGoogle(), "/api/sesion/google"],
   ])("GET de %s", async (_caso, llamar, url) => {
     await llamar();
@@ -40,6 +41,8 @@ describe("api-http: el armado de cada pedido", () => {
     ["crear una reserva", () => api.crearReserva({ funcionId: "5", butacas: { A1: "GENERAL" }, sesion: "s" }),
       "POST", "/api/reservas", { funcionId: 5, butacas: { A1: "GENERAL" }, sesion: "s" }],
     ["modificar la cuenta", () => api.modificarCuenta({ nombre: "Ana" }), "PUT", "/api/cuenta", { nombre: "Ana" }],
+    ["publicar un comentario", () => api.publicarComentario({ puntaje: 5, texto: "Hola" }),
+      "POST", "/api/comentarios", { puntaje: 5, texto: "Hola" }],
     ["abrir el checkout", () => api.abrirCheckout("AB12", "MERCADO_PAGO"), "POST", "/api/reservas/codigo/AB12/checkout", { medio: "MERCADO_PAGO" }],
   ])("%s manda JSON", async (_caso, llamar, metodo, url, cuerpo) => {
     await llamar();

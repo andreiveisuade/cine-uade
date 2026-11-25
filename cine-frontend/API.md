@@ -47,8 +47,8 @@ Si un cliente empieza o deja de usar una, se actualiza `ClienteDeLaApi` en el ba
 
 | Nivel | Rutas |
 |---|---|
-| Público | `POST /funciones/{id}/bloqueos`. `GET` de `/sesion/google`, `/cartelera`, `/peliculas/{id}` y `/peliculas/{id}/funciones` (una película pendiente o descartada da `404`), `/funciones/{id}`, `/reservas/codigo/{codigo}`, `/checkouts/{id}/retorno`, `/candy/productos`, `/promociones/vigentes`, `/imagenes/{nombre}`, los catálogos y Swagger |
-| Cliente (cookie de sesión) | `POST /reservas` (R28), `POST /sesion` (sin Basic: quién tiene la sesión), `DELETE /sesion`, `GET /reservas/mias`, `GET /candy/compras/mias`, `PUT /cuenta`, `DELETE /cuenta`, `POST /reservas/codigo/{codigo}/cancelacion`, `POST /reservas/codigo/{codigo}/checkout`, `PUT /reservas/codigo/{codigo}/candy` y `GET /reservas/codigo/{codigo}/cotizacion`, solo de reservas propias (R21) |
+| Público | `POST /funciones/{id}/bloqueos`. `GET` de `/sesion/google`, `/cartelera`, `/peliculas/{id}` y `/peliculas/{id}/funciones` (una película pendiente o descartada da `404`), `/funciones/{id}`, `/reservas/codigo/{codigo}`, `/checkouts/{id}/retorno`, `/candy/productos`, `/promociones/vigentes`, `/comentarios`, `/imagenes/{nombre}`, los catálogos y Swagger |
+| Cliente (cookie de sesión) | `POST /reservas` (R28), `POST /comentarios`, `POST /sesion` (sin Basic: quién tiene la sesión), `DELETE /sesion`, `GET /reservas/mias`, `GET /candy/compras/mias`, `PUT /cuenta`, `DELETE /cuenta`, `POST /reservas/codigo/{codigo}/cancelacion`, `POST /reservas/codigo/{codigo}/checkout`, `PUT /reservas/codigo/{codigo}/candy` y `GET /reservas/codigo/{codigo}/cotizacion`, solo de reservas propias (R21) |
 | `ACOMODADOR` o `ADMINISTRADOR` | `POST /sesion`, `POST /acceso`, `POST /candy/retiros` |
 | `ADMINISTRADOR` | Todo lo demás. Una ruta nueva nace así |
 
@@ -129,6 +129,21 @@ está dando. `trailerYoutube` es el id del video de YouTube o `null`: se embebe 
 `precioDesde` (la butaca más barata con tarifa general, anteojos incluidos), la sala con `minutosLimpieza` y
 `tipos`: los de `GET /tipos-pelicula` que cumple, con el mismo criterio que `GET /cartelera?tipo=`. La 3D de una sala 4D
 trae `["TRES_D","CUATRO_D"]`; los clientes filtran y muestran con esto, sin deducirlo de la sala.
+
+## Comentarios (CU-21)
+
+Las reseñas de los clientes sobre el cine. El autor es siempre el de la cookie: si viaja uno en el cuerpo, se ignora.
+
+| Ruta | Qué hace |
+|---|---|
+| `GET /comentarios` (público) | Todos, el más nuevo primero. Del autor solo el nombre, nunca el email |
+| `POST /comentarios` | `{puntaje, texto}` → `201` con el comentario, sin `Location` (no tiene GET por id). `400 Falta el puntaje`, `El puntaje tiene que estar entre 1 y 5`, `Falta la reseña` o `La reseña no puede tener más de 1000 caracteres`. Sin sesión `401`, un empleado `403` |
+
+```json
+{ "id": 7, "autor": "Ana Pérez", "puntaje": 5, "texto": "Muy buena sala", "fecha": "2026-11-25T14:30:00" }
+```
+
+El texto se guarda y se devuelve tal cual: el SQL lleva los valores como parámetros y la web lo muestra escapado.
 
 ## Mapa de butacas
 

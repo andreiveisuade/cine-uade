@@ -8,3 +8,4 @@ export * from "./clientes.js";
 export * from "./ventas.js";
 export * from "./promociones.js";
 export * from "./candy.js";
+export * from "./comentarios.js";

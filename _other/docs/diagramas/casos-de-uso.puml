@@ -21,6 +21,7 @@ rectangle Sistema {
   usecase "CU-09 Ver mis reservas\ny descargar la entrada" as CU09
   usecase "CU-15 Comprar en el candy" as CU15
   usecase "CU-15b Agregar candy\na mi compra web" as CU15b
+  usecase "CU-21 Ver y publicar\ncomentarios" as CU21
   usecase "CU-16 Ver mis compras\ndel candy" as CU16
   usecase "CU-10 Iniciar sesion\neligiendo el servidor" as CU10
   usecase "CU-10b Ver el estado de\nproduccion y despertarla" as CU10b
@@ -50,6 +51,7 @@ CU08 -[hidden]down- CU09
 CU09 -[hidden]down- CU15
 CU15 -[hidden]down- CU15b
 CU15b -[hidden]down- CU16
+CU16 -[hidden]down- CU21
 CU10 -[hidden]down- CU10b
 CU10b -[hidden]down- CU01
 CU01 -[hidden]down- CU02
@@ -72,6 +74,7 @@ cliente --> CU08
 cliente --> CU09
 cliente --> CU15
 cliente --> CU16
+cliente --> CU21
 cliente --> CU15b
 cliente --> CU07b
 

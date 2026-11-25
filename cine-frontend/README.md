@@ -44,6 +44,7 @@ src/
     pdf/          la entrada en PDF para descargar
   cuenta/         sesión, ingresar con Google, mi cuenta, mis reservas
   promos/         promos por día, candy y las tarjetas (también las usa el ticket)
+  comentarios/    reseñas de los clientes y el formulario
   institucional/  nosotros
   pasarela/       el pago de prueba de la pasarela emulada (sin MP_ACCESS_TOKEN)
   test/           setup de Vitest y renderConApp
